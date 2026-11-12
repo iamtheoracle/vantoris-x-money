@@ -434,7 +434,7 @@ export default function Messages() {
                 {openThread.status === 'closed' ? (
                   <span className="flex items-center gap-1"><CheckCheck size={10} /> Conversation closed</span>
                 ) : (
-                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Vantoris Support · Online</span>
+                  <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Vantage Support · Online</span>
                 )}
               </p>
             </div>
