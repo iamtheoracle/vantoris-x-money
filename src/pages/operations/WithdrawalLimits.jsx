@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { AlertCircle, DollarSign, Save } from 'lucide-react';
 import { logAuditEntry } from '@/lib/auditLogger';
 
+// DEFERRED: replace client-side policy writes with server-authorized dual approval before this route is re-enabled.
 const ACCOUNT_TYPES = ['Personal', 'Joint', 'Business', 'Organization'];
 
 export default function WithdrawalLimits() {
