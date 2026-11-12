@@ -14,7 +14,7 @@ const SECTIONS = [
       { id: 'travel', label: 'Travel', desc: 'Flights, hotels, cars — provider required', icon: Compass, route: '/travel', color: 'bg-navy/8 text-navy' },
       { id: 'homes', label: 'Homes', desc: 'Licensed listings only', icon: Info, route: '/homes', color: 'bg-navy/8 text-navy' },
       { id: 'news', label: 'News', desc: 'Attributed sources only', icon: FileText, route: '/news', color: 'bg-navy/8 text-navy' },
-      { id: 'ask', label: 'Ask Vantoris', desc: 'Private AI when configured; no fabricated answers', icon: Sparkles, route: '/ask', color: 'bg-brass/10 text-brass' },
+      { id: 'ask', label: 'Ask Vantage', desc: 'Private AI when configured; no fabricated answers', icon: Sparkles, route: '/ask', color: 'bg-brass/10 text-brass' },
       { id: 'support', label: 'Support', desc: 'Help and contact', icon: Phone, route: '/support', color: 'bg-emerald-500/10 text-emerald-700' },
     ],
   },
@@ -56,7 +56,7 @@ const SECTIONS = [
   {
     title: 'About',
     items: [
-      { id: 'about', label: 'About Vantoris', desc: 'Learn about us', icon: Info, color: 'bg-blue-500/10 text-blue-600' },
+      { id: 'about', label: 'About Vantage', desc: 'Learn about us', icon: Info, color: 'bg-blue-500/10 text-blue-600' },
     ],
   },
 ];
@@ -73,7 +73,7 @@ export default function More() {
 
   function handleItemClick(item) {
     if (item.external) {
-      const supportUrl = whatsappLinkFromConfig(whatsappNumber, 'Hello Vantoris Support, I have a question regarding my account.');
+      const supportUrl = whatsappLinkFromConfig(whatsappNumber, 'Hello Vantage Support, I have a question regarding my account.');
       if (!supportUrl) {
         navigate('/support');
         return;
@@ -145,8 +145,8 @@ export default function More() {
           <motion.div initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} onClick={e => e.stopPropagation()} className="vantoris-glass-premium w-full sm:max-w-sm p-6 rounded-t-3xl sm:rounded-3xl safe-bottom">
             <div className="text-center">
               <ShieldLogo size={48} className="mx-auto mb-3" />
-              <h3 className="text-foreground font-bold text-lg">VANTORIS</h3>
-              <p className="text-gray text-xs mt-1">Private Institutional Services</p>
+              <h3 className="text-foreground font-bold text-lg">VANTAGE</h3>
+              <p className="text-gray text-xs mt-1">Private Investment Services</p>
               <p className="text-gray/60 text-[10px] mt-3 leading-relaxed">A private-client digital platform for account information, investment visibility, and institutional services. Payment execution, custody, and investment activity appear only when verified providers and authorized workflows are connected.</p>
               <button onClick={() => setShowAbout(false)} className="mt-5 w-full py-2.5 bg-brass text-white font-semibold rounded-xl text-sm hover:bg-brass/90 transition-all">Close</button>
             </div>
