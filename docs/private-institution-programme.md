@@ -44,7 +44,7 @@ Do not merge a recovery branch, connect a different production source, or deploy
 | P1-01 | Financial approvals | Recovered `Approvals.jsx` attempts browser-side Account balance and Transaction status updates. | Source defect confirmed; live exposure unverified | Replace with a server-authorized, transactional, audited workflow; preserve dual control and fail closed until verified. |
 | P1-02 | Support | Recovered Support page stores a note only in local component state; it does not create a persistent ticket. | Source limitation confirmed; live exposure unverified | Implement persistent server-side ticket lifecycle and truthful delivery status. |
 | P1-03 | Investment | Investment mutations are explicitly disabled pending a trusted provider, ledger, and authorization workflow. | Guard present | Preserve the guard; verify provider/custody/legal arrangements and transactional ledger before enabling. |
-| P1-04 | Desktop operations | Recovered AdminLayout constrains the operations workspace to a 430px phone shell at desktop widths. | Source UX defect confirmed | Introduce responsive desktop navigation/workspace while preserving mobile behavior and all routes. |
+| P1-04 | Desktop operations | Recovered AdminLayout constrained the operations workspace to a 430px phone shell at desktop widths. | Responsive desktop shell implemented in PR #4; browser/build verification pending | Run responsive and route QA at mobile, tablet and desktop widths; preserve the mobile drawer and every workspace route. |
 | P1-05 | Client dashboard | Recovered Home aggregates Account balances and portfolio values in the browser. | Source behavior confirmed | Verify authoritative source, currency handling, access policies, and server-side aggregation before presenting consolidated wealth. |
 | P1-06 | Product identity | Heritage branch labels the product “Vantoris Private Investment”, not the approved “Vantoris Private Institution”. | Source mismatch confirmed | Correct the complete customer-facing identity after production-source reconciliation; preserve investment as a core capability. |
 | P1-07 | Legacy contamination | Recovery configuration and migrations contain AVCU-specific ledger naming and configuration. | Source contamination confirmed | Trace all references and dependencies; plan a safe Vantoris-native namespace migration without changing live configuration prematurely. |
@@ -119,6 +119,18 @@ Apply these interaction patterns within Vantoris's own visual identity:
 
 A successful static build is not proof of application availability, deployed authorization, provider connectivity, financial correctness or production readiness.
 
+## Implementation added on the work branch
+
+- `src/components/vantoris/AdminLayout.jsx`: replaces the fixed 430px operations phone shell with a persistent desktop sidebar and a mobile-only navigation drawer. The content area now uses a responsive, readable desktop width while retaining the existing routed page outlet and floating assistant dock.
+- `src/components/vantoris/AdminTopBar.jsx`: hides the drawer trigger at desktop widths, expands the search field on desktop, and uses the approved Vantoris Private Institution name in the workspace header.
+- The saved workspace preference is checked against the authenticated user's role-derived workspace list before it is applied. This is a navigation/display constraint only; server-side route/data authorization remains mandatory and is not replaced by localStorage.
+
+### Verification status
+
+- The three changed files were read back from the work branch and the expected desktop sidebar, mobile drawer, responsive top bar and workspace allowlist checks were confirmed in source.
+- No local dependency install, lint, typecheck, production build or browser viewport test has been run in this environment. The recovery workflow does not automatically run for this PR because it targets the recovery branch; code remains unverified until an appropriate CI run and browser QA are completed.
+- No customer data, backend policies, financial records, provider configuration, `main` branch or production deployment was changed.
+
 ## Current work branch
 
-This programme document is being added on `work/private-institution-programme`, branched from `recovery/merge-vantoris-live` for review. It does not alter `main`, production deployment, Base44 data, or customer records.
+`work/private-institution-programme` is branched from `recovery/merge-vantoris-live` for review. It contains the programme register and the first responsive operations-workspace implementation. It does not alter `main`, production deployment, Base44 data, or customer records.
