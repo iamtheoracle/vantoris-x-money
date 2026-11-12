@@ -68,6 +68,7 @@ export default function FinancialHeritage({ compact = false, className = "" }) {
           <article className="heritage-card" key={figure.name}>
             <div className="heritage-card__image-wrap">
               <img
+                onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.parentElement?.classList.add("heritage-card__image-wrap--unavailable"); }}
                 className="heritage-card__image"
                 src={figure.image}
                 alt={figure.imageAlt}
