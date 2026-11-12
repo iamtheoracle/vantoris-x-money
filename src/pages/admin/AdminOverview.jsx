@@ -21,7 +21,6 @@ export default function AdminOverview() {
   const [users, setUsers] = useState([]);
   const [applications, setApplications] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
-  const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sourceErrors, setSourceErrors] = useState({ users: false, applications: false, withdrawals: false, accounts: false });
 
@@ -46,7 +45,6 @@ export default function AdminOverview() {
       setUsers(userResult.rows);
       setApplications(applicationResult.rows);
       setWithdrawals(withdrawalResult.rows);
-      setAccounts(accountResult.rows);
       setSourceErrors({
         users: userResult.failed,
         applications: applicationResult.failed,
