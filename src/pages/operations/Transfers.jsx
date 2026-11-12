@@ -132,7 +132,7 @@ export default function Transfers() {
                   <td className="px-5 py-3 text-[#AAB4C3] text-xs">{(t.transaction_date || t.created_date).split('T')[0]}</td>
                   <td className="px-5 py-3 text-white text-xs">{t.description || '—'}</td>
                   <td className="px-5 py-3 text-[#AAB4C3] text-xs font-mono">{t.reference || '—'}</td>
-                  <td className={`px-5 py-3 text-right font-semibold text-xs ${Number.isFinite(Number(t.amount)) && t.amount != null && Number(t.amount) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <td className={`px-5 py-3 text-right font-semibold text-xs ${t.amount != null && !(typeof t.amount === 'string' && t.amount.trim() === '') && Number.isFinite(Number(t.amount)) && Number(t.amount) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                     {formatCurrency(t.amount, t.currency || t.currency_code || null)}
                   </td>
                 </tr>
