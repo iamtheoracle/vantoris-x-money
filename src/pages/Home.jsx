@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { formatCurrency } from '@/lib/formatCurrency';
+import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowDownLeft,
@@ -583,6 +584,10 @@ export default function Home() {
           </section>
         )}
       </main>
+
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 pb-8">
+        <FinancialHeritage compact />
+      </div>
 
       {toast && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-28 z-[70] bg-navy text-white px-4 py-3 rounded-full text-[14px] font-semibold max-w-[90%] shadow-lg">
