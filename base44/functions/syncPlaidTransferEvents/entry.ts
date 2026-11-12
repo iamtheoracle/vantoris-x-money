@@ -14,7 +14,7 @@ export default async function(req: Request): Promise<Response> {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => null);
-    const internalSecret = Deno.env.get('AVCU_INTERNAL_SYNC_SECRET');
+    const internalSecret = Deno.env.get('VANTORIS_INTERNAL_SYNC_SECRET');
     const trustedInternalCall = !!internalSecret && body?.internal_secret === internalSecret;
     const staff = await base44.auth.me().catch(() => null);
     if (!trustedInternalCall && (!staff?.id || !ROLES.has(staff.role))) {
