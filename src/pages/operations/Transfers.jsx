@@ -85,13 +85,13 @@ export default function Transfers() {
           <div className="flex items-center gap-2"><span className="text-xs text-[#AAB4C3]">{requests.length} records returned · max 200</span><button disabled={!!busyRequestId} onClick={runBankReconciliation} className="rounded-lg bg-sky-500/15 text-sky-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Sync & reconcile bank events</button></div>
         </div>
         {loading ? <p className="text-[#AAB4C3] text-sm">Loading requests…</p> : loadError ? <p role="status" className="text-amber-300 text-sm">{loadError}</p> : requests.length === 0 ? (
-          <p className="text-[#AAB4C3] text-sm">No bank transfer requests recorded.</p>
+          <p className="text-[#AAB4C3] text-sm">No bank transfer requests were returned by the current query.</p>
         ) : (
           <div className="space-y-3">{requests.map(r => (
             <article key={r.id} className="rounded-xl border border-[#2B3543] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div><p className="text-white font-semibold text-sm">{r.rail} · {r.beneficiary_name || 'Beneficiary not supplied'}</p><p className="text-[#AAB4C3] text-xs mt-1">{r.beneficiary_bank_name || 'Bank not supplied'} · •••• {r.beneficiary_account_last4 || '----'}</p><p className="text-[#AAB4C3] text-[11px] mt-1">{r.user_id} · {r.created_date ? new Date(r.created_date).toLocaleString() : 'Date unavailable'}</p></div>
-                <div className="text-right shrink-0"><p className="text-white font-semibold">{formatCurrency(r.amount_cents == null ? null : Number(r.amount_cents) / 100, r.currency || null)}</p><span className="inline-block mt-1 rounded-full bg-amber-500/10 text-amber-300 px-2 py-1 text-[10px] uppercase" >{r.status || 'Status not supplied'}</span></div>
+                <div className="text-right shrink-0"><p className="text-white font-semibold">{formatCurrency(r.amount_cents == null || (typeof r.amount_cents === 'string' && r.amount_cents.trim() === '') ? null : Number(r.amount_cents) / 100, r.currency || null)}</p><span className="inline-block mt-1 rounded-full bg-amber-500/10 text-amber-300 px-2 py-1 text-[10px] uppercase" >{r.status || 'Status not supplied'}</span></div>
               </div>
               <p className="mt-3 text-xs text-amber-300">{r.manual_processing ? `Manual bank record · Reference: ${r.bank_reference || 'not recorded'}` : 'Not submitted to bank. Review and separate approvals required.'}</p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -112,7 +112,7 @@ export default function Transfers() {
       ) : transactions.length === 0 ? (
         <div className="vantoris-card p-12 text-center">
           <ArrowLeftRight size={32} className="text-[#AAB4C3] mx-auto mb-3 opacity-50" />
-          <p className="text-white font-medium mb-1">No transfers recorded</p>
+          <p className="text-white font-medium mb-1">No adjustment records returned</p>
           <p className="text-[#AAB4C3] text-sm">Internal transfers and adjustments will appear here.</p>
         </div>
       ) : (
