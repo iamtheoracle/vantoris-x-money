@@ -31,6 +31,8 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import ShieldLogo from '@/components/vantoris/ShieldLogo';
+import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
+import PrivateInvestmentCardGallery from '@/components/vantoris/PrivateInvestmentCardGallery';
 import { PROVIDERS } from '@/lib/providers';
 
 const NAV = [
@@ -347,8 +349,8 @@ export default function Landing() {
             <div className="lg:col-span-5 relative">
               <figure className="overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#071C38] shadow-[0_30px_90px_rgba(0,0,0,.45)]">
                 <img
-                  src="https://raw.githubusercontent.com/iamtheoracle/vantoris-x-money/main/IMG_0981.jpeg"
-                  alt="Navy and gold Atchison Village Credit Union debit card concept artwork"
+                  src="/card-art/obsidian.svg"
+                  alt="Vantoris Private Investment Obsidian card artwork"
                   className="block w-full h-auto object-cover"
                   loading="eager"
                   fetchPriority="high"
@@ -672,6 +674,8 @@ export default function Landing() {
           </div>
         </section>
 
+        <FinancialHeritage className="py-20" />
+
         {/* Pillars */}
         <section id="banking" className="scroll-mt-24 bg-white border-y border-slate-200/80 py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -698,12 +702,10 @@ export default function Landing() {
         <section id="cards" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div>
-              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Cards</p>
-              <h2 className="text-3xl font-bold text-navy">Debit and credit pathways, under your control</h2>
+              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Private client card design</p>
+              <h2 className="text-3xl font-bold text-navy">A considered identity in four editions</h2>
               <p className="mt-4 text-slate-600 leading-relaxed">
-                Eligible members can request debit cards, review card services, and keep spend
-                visible next to cash and investments. Credit offerings follow compliance review—
-                never a one-click surprise.
+                Four print-scalable card artworks bring the institution’s visual language into a tangible format. Actual issuance, payment credentials and card-network availability remain subject to verified issuer arrangements.
               </p>
               <ul className="mt-6 space-y-2 text-[15px] text-navy">
                 {['Card request & status tracking', 'Spend visibility in Activity', 'Operator review for eligible products'].map(
@@ -716,13 +718,7 @@ export default function Landing() {
                 )}
               </ul>
             </div>
-            <div className="relative h-56 sm:h-64 rounded-[28px] bg-gradient-to-br from-navy to-[#0E2A4A] p-8 text-white shadow-xl overflow-hidden">
-              <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-brass/20 blur-2xl" />
-              <p className="text-white/50 text-xs uppercase tracking-widest">Vantoris</p>
-              <p className="mt-8 text-2xl font-semibold tracking-wide">Member Debit</p>
-              <p className="mt-auto pt-16 text-white/60 text-sm">•••• •••• •••• secure</p>
-              <p className="text-brass text-sm font-medium mt-2">Your name · Your control</p>
-            </div>
+            <PrivateInvestmentCardGallery compact />
           </div>
         </section>
 
