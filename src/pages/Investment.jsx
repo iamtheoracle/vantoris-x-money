@@ -79,73 +79,28 @@ export default function Investment() {
     return () => { active = false; };
   }, [loadData, loadAttempt]);
 
-  async function handleCreatePortfolio() {
-    if (!SERVER_INVESTMENT_OPERATIONS_ENABLED) { toast({ title: 'Investment action unavailable', description: 'Portfolio creation and investment funding requests are disabled until a trusted investment provider, ledger, and authorization workflow are connected. No investment action was submitted.', variant: 'destructive' }); return; }
-
-    setSubmitting(true);
-    try {
-      const me = await base44.auth.me();
-      const created = await base44.entities.InvestmentPortfolio.create({
-        user_id: me.id,
-        portfolio_name: 'My Portfolio',
-        status: 'pending_setup',
-        provider_connected: false,
-      });
-      setPortfolio(created);
-      toast({ title: 'Portfolio created', description: 'Your investment portfolio is pending setup.' });
-    } catch (err) {
-      toast({ title: 'Failed to create portfolio', description: err.message, variant: 'destructive' });
-    } finally {
-      setSubmitting(false);
-    }
+  function handleCreatePortfolio() {
+    toast({
+      title: 'Portfolio creation unavailable',
+      description: 'No server-side portfolio creation workflow is enabled. No portfolio record was created.',
+      variant: 'destructive',
+    });
   }
 
-  async function handleDeposit() {
-    if (!SERVER_INVESTMENT_OPERATIONS_ENABLED) { toast({ title: 'Investment action unavailable', description: 'Portfolio creation and investment funding requests are disabled until a trusted investment provider, ledger, and authorization workflow are connected. No investment action was submitted.', variant: 'destructive' }); return; }
-
-    if (!depositAmount || parseFloat(depositAmount) <= 0) return;
-    setSubmitting(true);
-    try {
-      const me = await base44.auth.me();
-      await base44.entities.InvestmentDepositRequest.create({
-        user_id: me.id,
-        portfolio_id: portfolio.id,
-        amount: parseFloat(depositAmount),
-        status: 'requested',
-      });
-      toast({ title: 'Deposit requested', description: 'Your deposit request is pending operator review.' });
-      setShowDeposit(false);
-      setDepositAmount('');
-      loadData();
-    } catch (err) {
-      toast({ title: 'Failed to submit deposit', description: err.message, variant: 'destructive' });
-    } finally {
-      setSubmitting(false);
-    }
+  function handleDeposit() {
+    toast({
+      title: 'Investment funding unavailable',
+      description: 'No server-side investment funding workflow is enabled. No deposit request or account balance was changed.',
+      variant: 'destructive',
+    });
   }
 
-  async function handleWithdraw() {
-    if (!SERVER_INVESTMENT_OPERATIONS_ENABLED) { toast({ title: 'Investment action unavailable', description: 'Portfolio creation and investment funding requests are disabled until a trusted investment provider, ledger, and authorization workflow are connected. No investment action was submitted.', variant: 'destructive' }); return; }
-
-    if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) return;
-    setSubmitting(true);
-    try {
-      const me = await base44.auth.me();
-      await base44.entities.InvestmentWithdrawalRequest.create({
-        user_id: me.id,
-        portfolio_id: portfolio.id,
-        amount: parseFloat(withdrawAmount),
-        status: 'requested',
-      });
-      toast({ title: 'Withdrawal requested', description: 'Your withdrawal request is pending operator review.' });
-      setShowWithdraw(false);
-      setWithdrawAmount('');
-      loadData();
-    } catch (err) {
-      toast({ title: 'Failed to submit withdrawal', description: err.message, variant: 'destructive' });
-    } finally {
-      setSubmitting(false);
-    }
+  function handleWithdraw() {
+    toast({
+      title: 'Investment withdrawal unavailable',
+      description: 'No server-side investment withdrawal workflow is enabled. No withdrawal request or account balance was changed.',
+      variant: 'destructive',
+    });
   }
 
   if (loading) {
