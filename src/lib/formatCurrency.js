@@ -3,7 +3,7 @@
  * Missing or invalid values are shown as unavailable, never silently coerced to zero.
  */
 export function formatCurrency(amount) {
-  if (amount === null || amount === undefined || amount === '') return 'Value unavailable';
+  if (amount === null || amount === undefined || (typeof amount === 'string' && amount.trim() === '')) return 'Value unavailable';
   const value = typeof amount === 'number' ? amount : Number(amount);
   if (!Number.isFinite(value)) return 'Value unavailable';
   return new Intl.NumberFormat('en-US', {
