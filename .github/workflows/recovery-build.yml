@@ -62,6 +62,8 @@ jobs:
             'src/pages/operations/HeroBoxFundsShipping.jsx',
             'src/pages/operations/HeroBoxAdminOrders.jsx',
             'src/pages/operations/HeroBoxAdminProducts.jsx',
+            'src/pages/operations/HeroBoxMissionControl.jsx',
+            'src/pages/operations/HeroBoxCarePackages.jsx',
           ];
           for (const file of surfaces) {
             const source = readFileSync(file, 'utf8');
