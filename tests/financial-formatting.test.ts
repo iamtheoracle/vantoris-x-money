@@ -15,7 +15,7 @@ Deno.test("formats a valid numeric amount", () => {
 });
 
 Deno.test("does not turn missing or invalid financial values into zero", () => {
-  for (const value of [null, undefined, "", "not-a-number", Number.NaN, Number.POSITIVE_INFINITY]) {
+  for (const value of [null, undefined, "", "   ", "not-a-number", Number.NaN, Number.POSITIVE_INFINITY]) {
     assertEqual(formatCurrency(value), "Value unavailable", "invalid amount");
   }
 });
