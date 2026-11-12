@@ -60,7 +60,7 @@ Deno.test("bulk transaction intake does not upload or import fabricated rows", a
   assert(!source.includes("UploadFile") && !source.includes("ExtractDataFromUploadedFile"), "bulk intake must not upload records before its workflow is verified");
   assert(!source.includes("bulkImportTransactions"), "no unverified import function may be called");
   assert(!source.includes("1234567890") && !source.includes("9876543210"), "CSV template must not contain fabricated account records");
-  assert(source.includes("header-only"), "the template must be explicitly header-only");
+  assert(source.toLowerCase().includes("header-only"), "the template must be explicitly header-only");
 });
 
 Deno.test("transaction export is read-only until the export service is verified", async () => {
