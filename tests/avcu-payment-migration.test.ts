@@ -2,7 +2,7 @@ function assert(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message);
 }
 
-Deno.test('AVCU payment control plane defines concurrency and ledger invariants', async () => {
+Deno.test('Private payment payment control plane defines concurrency and ledger invariants', async () => {
   const sql = await Deno.readTextFile('migrations/001_avcu_payment_control_plane.sql');
   for (const table of [
     'payment_operations', 'provider_events', 'provider_cursors', 'bank_receipts',
@@ -25,7 +25,7 @@ Deno.test('AVCU payment control plane defines concurrency and ledger invariants'
   assert(sql.includes('AS ' + dollar + 'fn' + dollar), 'Lease audit trigger must use valid PostgreSQL dollar quoting.');
 });
 
-Deno.test('AVCU outgoing holds lock accounts and serialize all hold transitions', async () => {
+Deno.test('Private payment outgoing holds lock accounts and serialize all hold transitions', async () => {
   const sql = await Deno.readTextFile('migrations/003_avcu_outgoing_funds_holds.sql');
   assert(sql.includes('CREATE TABLE IF NOT EXISTS avcu_payments.outgoing_funds_holds'), 'Missing durable outgoing funds holds.');
   assert(sql.includes('posted_balance-active_holds < p_amount_cents'), 'Reservation must account for posted balance and active holds.');
@@ -35,13 +35,13 @@ Deno.test('AVCU outgoing holds lock accounts and serialize all hold transitions'
   assert(sql.includes('GRANT EXECUTE ON FUNCTION avcu_payments.reserve_outgoing_funds'), 'Backend role must execute reservation function.');
 });
 
-Deno.test('AVCU payment audit is append-only', async () => {
+Deno.test('Private payment payment audit is append-only', async () => {
   const sql = await Deno.readTextFile('migrations/004_avcu_payment_audit_hardening.sql');
   assert(sql.includes('BEFORE UPDATE OR DELETE ON avcu_payments.payment_audit'), 'Audit mutation trigger is missing.');
   assert(sql.includes('REVOKE UPDATE, DELETE, TRUNCATE ON avcu_payments.payment_audit FROM avcu_backend'), 'Backend audit mutation privileges must be revoked.');
 });
 
-Deno.test('AVCU incoming receipt schema is server-written and supports reversals', async () => {
+Deno.test('Private payment incoming receipt schema is server-written and supports reversals', async () => {
   const schema = JSON.parse(await Deno.readTextFile('base44/entities/IncomingBankReceipt.jsonc'));
   assert(schema.properties.transactional_receipt_id, 'Missing PostgreSQL receipt link.');
   assert(schema.properties.ledger_posting_status.enum.includes('reversed'), 'Missing reversal projection state.');
@@ -49,7 +49,7 @@ Deno.test('AVCU incoming receipt schema is server-written and supports reversals
   assert(schema.rls.delete === false, 'Incoming receipt deletion must be denied.');
 });
 
-Deno.test('AVCU backend grants are least privilege', async () => {
+Deno.test('Private payment backend grants are least privilege', async () => {
   const sql = await Deno.readTextFile('migrations/002_avcu_backend_grants.sql');
   assert(sql.includes('TO avcu_backend'), 'Backend grants must target the dedicated service role.');
   assert(sql.includes('GRANT SELECT ON avcu_payments.ledger_accounts'), 'Ledger account mapping must be read-only to the adapter.');
@@ -59,7 +59,7 @@ Deno.test('AVCU backend grants are least privilege', async () => {
 });
 
 
-Deno.test('AVCU outbox recovery uses expiring worker claims and retry backoff', async () => {
+Deno.test('Private payment outbox recovery uses expiring worker claims and retry backoff', async () => {
   const sql = await Deno.readTextFile('migrations/005_avcu_payment_outbox_claims.sql');
   assert(sql.includes('claim_owner uuid'), 'Outbox worker ownership must be persisted.');
   assert(sql.includes('claim_expires_at timestamptz'), 'Outbox claims must expire after worker crashes.');
