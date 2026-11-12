@@ -13,7 +13,7 @@ export default function PrivateInvestmentCardGallery({ compact = false, classNam
       <div className="private-card-gallery__grid">
         {CARD_ART.map((card) => (
           <figure className="private-card-art" key={card.edition}>
-            <img src={card.src} alt={card.alt} loading="lazy" decoding="async" />
+            <img src={card.src} alt={card.alt} loading="eager" decoding="async" />
             {!compact && <figcaption><span>{card.name} Edition</span><span>VANTORIS · {card.edition}</span></figcaption>}
           </figure>
         ))}
