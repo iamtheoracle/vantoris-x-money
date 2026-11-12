@@ -551,9 +551,10 @@ export default function Home() {
                     <button
                       key={tx.id}
                       type="button"
-                      onClick={() =>
-                        primaryAccount ? navigate(`/accounts/${primaryAccount.id}`) : navigate('/accounts')
-                      }
+                      onClick={() => {
+                        const transactionAccount = accounts.find((account) => account.id === tx.account_id);
+                        navigate(transactionAccount ? `/accounts/${transactionAccount.id}` : '/accounts');
+                      }}
                       className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50/80"
                     >
                       <span className="w-10 h-10 rounded-full bg-navy/5 flex items-center justify-center text-[13px] font-bold text-navy shrink-0">

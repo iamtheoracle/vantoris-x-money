@@ -43,8 +43,8 @@ const GROUPS = [
       { label: 'Travel', to: '/travel', icon: Plane, active: (path) => path.startsWith('/travel') || path.startsWith('/discover/flights') },
       { label: 'Homes', to: '/homes', icon: Building2, active: (path) => path.startsWith('/homes') || path.startsWith('/discover/housing') },
       { label: 'HeroBox', to: '/herobox-hub', icon: Package, active: (path) => path.startsWith('/herobox') },
-      { label: 'Discover', to: '/discover', icon: Compass, active: (path) => path.startsWith('/discover') || path.startsWith('/discovery') },
-      { label: 'News', to: '/news', icon: Newspaper, active: (path) => path.startsWith('/news') || path.startsWith('/discover/news') },
+      { label: 'Discover', to: '/discover', icon: Compass, active: (path) => path === '/discover' || path === '/discovery' || ['/discover/fx', '/discover/ngo', '/discover/marketing'].some((route) => path.startsWith(route)) },
+      { label: 'News', to: '/news', icon: Newspaper, active: (path) => path === '/news' || path.startsWith('/discover/news') },
     ],
   },
   {

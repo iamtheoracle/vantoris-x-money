@@ -33,14 +33,15 @@ const SECTIONS = [
       { id: 'investment', label: 'Investment', desc: 'Portfolios & capital', icon: TrendingUp, route: '/investment', color: 'bg-brass/10 text-brass' },
       { id: 'herobox', label: 'HeroBox', desc: 'Care packages & missions', icon: Package, route: '/herobox', color: 'bg-emerald-500/10 text-emerald-700' },
       { id: 'tx', label: 'Transactions', desc: 'Records returned for this account', icon: FileText, route: '/transactions', color: 'bg-navy/8 text-navy' },
-      { id: 'qr', label: 'Member QR', desc: 'Pay & locate members', icon: QrCode, route: '/qr', color: 'bg-blue-500/10 text-blue-600' },
+      { id: 'qr', label: 'Member QR', desc: 'Member QR identity and discovery; payment execution is not enabled here', icon: QrCode, route: '/qr', color: 'bg-blue-500/10 text-blue-600' },
     ],
   },
   {
-    title: 'Banking',
+    title: 'Accounts & services',
     items: [
-      { id: 'cards', label: 'Cards', desc: 'Manage your debit cards', icon: CreditCard, route: '/services', color: 'bg-brass/10 text-brass' },
-      { id: 'accounts', label: 'Accounts', desc: 'Accounts, payments and transfers', icon: CreditCard, route: '/accounts', color: 'bg-blue-500/10 text-blue-600' },
+      { id: 'cards', label: 'Cards', desc: 'View card records and available card services', icon: CreditCard, route: '/cards', color: 'bg-brass/10 text-brass' },
+      { id: 'accounts', label: 'Accounts', desc: 'Account information and payment-request status', icon: CreditCard, route: '/accounts', color: 'bg-blue-500/10 text-blue-600' },
+      { id: 'services', label: 'Services', desc: 'Request additional institutional services', icon: Settings, route: '/services', color: 'bg-navy/8 text-navy' },
       { id: 'statements', label: 'Statements & Documents', desc: 'Account documents', icon: FileText, route: '/documents', color: 'bg-blue-500/10 text-blue-600' },
     ],
   },
@@ -48,7 +49,7 @@ const SECTIONS = [
     title: 'Support',
     items: [
       { id: 'messages', label: 'Messages', desc: 'Your support conversations', icon: MessageCircle, route: '/messages', color: 'bg-navy/8 text-navy' },
-      { id: 'advisor', label: 'Member Advisor', desc: 'AI banking assistant', icon: Sparkles, route: '/advisor', color: 'bg-brass/10 text-brass' },
+      { id: 'advisor', label: 'Member Advisor', desc: 'Account and service guidance; availability varies', icon: Sparkles, route: '/advisor', color: 'bg-brass/10 text-brass' },
       { id: 'contact', label: 'Contact Support', desc: 'WhatsApp & email support', icon: Phone, external: true, color: 'bg-emerald-500/10 text-emerald-600' },
     ],
   },
@@ -145,8 +146,8 @@ export default function More() {
             <div className="text-center">
               <ShieldLogo size={48} className="mx-auto mb-3" />
               <h3 className="text-foreground font-bold text-lg">VANTORIS</h3>
-              <p className="text-gray text-xs mt-1">Private Banking Solutions</p>
-              <p className="text-gray/60 text-[10px] mt-3 leading-relaxed">A secure, American banking platform providing personal banking, seamless money movement, and dedicated member support.</p>
+              <p className="text-gray text-xs mt-1">Private Institutional Services</p>
+              <p className="text-gray/60 text-[10px] mt-3 leading-relaxed">A private-client digital platform for account information, investment visibility, and institutional services. Payment execution, custody, and investment activity appear only when verified providers and authorized workflows are connected.</p>
               <button onClick={() => setShowAbout(false)} className="mt-5 w-full py-2.5 bg-brass text-white font-semibold rounded-xl text-sm hover:bg-brass/90 transition-all">Close</button>
             </div>
           </motion.div>

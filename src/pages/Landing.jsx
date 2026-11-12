@@ -346,8 +346,8 @@ export default function Landing() {
             <div className="lg:col-span-5 relative">
               <figure className="overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#071C38] shadow-[0_30px_90px_rgba(0,0,0,.45)]">
                 <img
-                  src="https://raw.githubusercontent.com/iamtheoracle/vantoris-x-money/main/IMG_0981.jpeg"
-                  alt="Navy and gold Atchison Village Credit Union debit card concept artwork"
+                  src="/card-art/obsidian.svg"
+                  alt="Illustrative Vantoris Private Institution card concept; not an issued card"
                   className="block w-full h-auto object-cover"
                   loading="eager"
                   fetchPriority="high"
@@ -390,8 +390,8 @@ export default function Landing() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {[
-                { title: 'Banking & accounts', detail: 'Accounts, balances, cards and statements', icon: Landmark, to: '/accounts' },
-                { title: 'Transfers & payments', detail: 'Move money and review transactions', icon: Wallet, to: '/move-money' },
+                { title: 'Accounts & services', detail: 'Accounts, balances, cards and statements', icon: Landmark, to: '/accounts' },
+                { title: 'Transfers & payment requests', detail: 'Move money and review transactions', icon: Wallet, to: '/move-money' },
                 { title: 'Markets & investing', detail: 'Market discovery and investment tools', icon: TrendingUp, to: '/investment' },
                 { title: 'Flights & travel', detail: 'Flight discovery and travel services', icon: Plane, to: '/discover/flights' },
                 { title: 'Foreign exchange', detail: 'Explore FX information and rates', icon: Globe2, to: '/discover/fx' },

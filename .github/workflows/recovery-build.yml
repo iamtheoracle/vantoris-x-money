@@ -76,7 +76,7 @@ jobs:
             'src/pages/operations/InvestmentDeposits.jsx',
             'src/pages/operations/InvestmentWithdrawals.jsx',
           ];
-          const directWrite = /base44\\.entities\\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest)\\.(create|update|delete|updateMany)\\s*\\(/;
+          const directWrite = /base44\.entities\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest)\.(create|update|delete|updateMany)\s*\(/;
           for (const file of surfaces) {
             if (directWrite.test(readFileSync(file, 'utf8'))) {
               throw new Error('Browser-side financial record mutation found in ' + file);
