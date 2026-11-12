@@ -1,6 +1,6 @@
-# Vantoris X Money
+# Vantoris Private Institution
 
-Vantoris member app with the X Money-inspired member UI, Base44-backed application services, and a separated operations workspace.
+Vantoris Private Institution client platform with a separated operations workspace. The repository name remains a technical identifier; the customer-facing identity is Vantoris Private Institution.
 
 - Repository: https://github.com/iamtheoracle/vantoris-x-money
 - Recovery branch: `recovery/merge-vantoris-live`

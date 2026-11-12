@@ -39,7 +39,7 @@ const NAV = [
   { label: 'Cards', href: '#service-availability' },
   
   { label: 'About', href: '#about' },
-  { label: 'Banking', href: '#banking' },
+  { label: 'Accounts', href: '#banking' },
   { label: 'Invest', href: '#invest' },
   { label: 'Travel', href: '#travel' },
   { label: 'Property', href: '#property' },
@@ -49,19 +49,19 @@ const NAV = [
   { label: 'Contact', href: '#contact' },
 ];
 
-const BOA_PARITY = [
-  ['Checking & savings', 'Everyday accounts with clear balances and statements'],
-  ['Transfers & payments', 'Send, request, deposit, and move money between accounts'],
-  ['Debit cards', 'Request, manage, and monitor eligible member cards'],
-  ['Credit pathways', 'Eligible credit products after compliance review'],
-  ['Direct deposit', 'Payroll routing and early-pay oriented workflows'],
-  ['Bill pay style flows', 'Structured outbound payments from member accounts'],
-  ['Mobile-first access', 'Full member workspace on phone-sized layouts'],
-  ['Alerts & messages', 'In-app notifications and secure member messaging'],
-  ['Document vault', 'Store ID, statements, and verification files'],
-  ['Investment access', 'Portfolios, deposits, and withdrawal requests'],
-  ['Fraud & security posture', 'Session controls, isolation of ops vs member views'],
-  ['Advisor / assistant help', 'Guided support without exposing staff tools to members'],
+const SERVICE_AREAS = [
+  ['Account records & statements', 'Account records and statements from verified account sources'],
+  ['Payment workflows', 'Available only when authorized ledger and provider workflows are connected'],
+  ['Card services', 'Issuer-dependent records, issuance, and controls'],
+  ['Credit services', 'Only after separate eligibility, compliance, and provider review'],
+  ['Payroll routing', 'Not live until a verified payroll provider and account details are connected'],
+  ['Outbound bill payment', 'Only after payment authorization, processing, and settlement are verified'],
+  ['Responsive access', 'Accessible client experience across supported screen sizes'],
+  ['Notifications & messaging', 'Available where persistent messaging and notification workflows are connected'],
+  ['Document access', 'Document storage and exports, subject to verified access controls'],
+  ['Investment workspace', 'Investment information and actions only when providers and authorization are verified'],
+  ['Security controls', 'Session controls and separated workspaces; server-side authorization remains required'],
+  ['Advisor & assistant support', 'Guidance with permission boundaries; human escalation only when connected'],
 ];
 
 const NGO_PARTNERS = [
@@ -87,8 +87,8 @@ const MILITARY_ORGS = [
 const PILLARS = [
   {
     icon: Landmark,
-    title: 'Private member banking',
-    body: 'A private member workspace for account records, statements, and activity. Live balances and payment execution appear only after an authorized core-banking and payments provider is connected.',
+    title: 'Private client accounts',
+    body: 'A private client workspace for account records, statements, and activity. Live balances and payment execution appear only after an authorized account and payments provider is connected.',
   },
   {
     icon: CreditCard,
@@ -103,7 +103,7 @@ const PILLARS = [
   {
     icon: HandHeart,
     title: 'HeroBox & humanitarian care',
-    body: 'Support service members and communities through curated care packages, volunteer networks, and mission logistics.',
+    body: 'Explore care-package and humanitarian services. Ordering, donations, fulfilment, and shipping depend on verified providers and approvals.',
   },
 ];
 
@@ -198,7 +198,7 @@ export default function Landing() {
             <div className="leading-tight">
               <p className="font-bold text-[15px] tracking-tight">Vantoris</p>
               <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 hidden sm:block">
-                Private banking · Impact
+                Private institution · Impact
               </p>
             </div>
           </button>
@@ -302,16 +302,15 @@ export default function Landing() {
             <div className="lg:col-span-7">
               <div className="inline-flex items-center gap-2 rounded-full border border-brass/30 bg-brass/10 px-3 py-1.5 mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-mono text-[11px] text-brass tracking-wide">AVCU MEMBER PLATFORM</span>
+                <span className="font-mono text-[11px] text-brass tracking-wide">PRIVATE CLIENT PLATFORM</span>
               </div>
               <h1 className="font-heading text-white text-[2.75rem] sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.02] tracking-tight">
-                Money that moves
+                A private institution.
                 <br />
-                <span className="font-display italic font-normal text-brass text-[1.05em]">with institutional chill.</span>
+                <span className="font-display italic font-normal text-brass text-[1.05em]">A connected client experience.</span>
               </h1>
               <p className="mt-6 text-lg sm:text-xl text-white/65 max-w-xl leading-relaxed font-body">
-                U.S.-standard accounts, cards, wires, and statements—plus HeroBox impact.
-                A self-operating AI platform: members bank, assistants guide, ops stay isolated. Built for people who want bank energy without the 2012 website energy.
+                Account records, investment information, travel, property, and impact services—presented with clear boundaries and verified availability. AI assistance is permission-scoped; sensitive information and consequential actions remain behind authorized workflows.
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Link
@@ -430,13 +429,13 @@ export default function Landing() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10">
             <div className="flex flex-wrap items-center gap-3 mb-8">
               <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-1 text-[11px] font-bold uppercase tracking-wider">
-                <BadgeCheck size={14} /> USD financial platform · Since 2015
+                <BadgeCheck size={14} /> Private client platform
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 text-navy border border-navy/10 px-3 py-1 text-[11px] font-semibold">
-                <Fingerprint size={14} /> Identity · KYC · session isolation
+                <Fingerprint size={14} /> Identity · session safeguards
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 text-slate-600 border border-slate-200 px-3 py-1 text-[11px] font-semibold">
-                U.S. banking-style controls & statements
+                Account records & statements
               </span>
             </div>
             <div className="grid lg:grid-cols-2 gap-8 items-center">
@@ -445,15 +444,13 @@ export default function Landing() {
                   Obvious trust.<span className="italic text-brass"> Premium clarity.</span>
                 </h2>
                 <p className="mt-4 text-slate-600 leading-relaxed font-body">
-                  Vantoris is built like serious American retail and private banking: verified membership,
-                  document vaults, elite statements, card chrome you recognize, and operator rails that
-                  stay separate from member screens. Sign in to access your authorized account workspace and available services.
+                  Vantoris brings together account records, investment information, service access, and dedicated support within a carefully separated workspace. Provider-dependent services remain unavailable until their production integrations and approvals are verified. Sign in to access your authorized client workspace and available services.
                 </p>
                 <ul className="mt-6 space-y-2 text-sm text-navy font-body">
                   {[
                     'Member verification before full product access',
-                    'Statements formatted for professional finance review',
-                    'Cards, wires, and activity with audit-friendly records',
+                    'Statements when available from verified account sources',
+                    'Account activity and service records with audit context where available',
                     'AI assistants for guidance—not for sharing your secrets',
                   ].map((x) => (
                     <li key={x} className="flex gap-2">
@@ -466,9 +463,9 @@ export default function Landing() {
               <div className="rounded-[24px] bg-navy text-white p-6 sm:p-8 relative overflow-hidden">
                 <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-brass/20 blur-2xl" />
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-brass">Institutional seal</p>
-                <p className="font-heading text-2xl font-bold mt-3">Vantoris Member Platform</p>
+                <p className="font-heading text-2xl font-bold mt-3">Vantoris Private Institution</p>
                 <p className="text-white/60 text-sm mt-2 font-body">
-                  Trust · Structure · Purpose — navy / brass identity system aligned with U.S. premium banking UX norms.
+                  Trust · Structure · Purpose — navy, warm ivory, and brass with a discreet institutional character.
                 </p>
                 <div className="mt-6 grid grid-cols-2 gap-3 text-center">
                   {[
@@ -494,8 +491,8 @@ export default function Landing() {
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">Provider connectivity</p>
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-navy">Services, backed by real connections</h2>
             <p className="mt-4 max-w-3xl text-slate-600 leading-relaxed">
-              AVCU displays a service as connected only when its production provider is configured and verified.
-              Internal records, sample artwork, and design concepts are not presented as live banking or payment services.
+              Vantoris displays a service as connected only when its production provider is configured and verified.
+              Internal records, sample artwork, and design concepts are not presented as live financial or payment services.
             </p>
             <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {Object.values(PROVIDERS).filter((provider) => ['financialAccount', 'payments', 'cards', 'statements', 'investment', 'flights', 'flightTracking', 'homes', 'shipping', 'donations', 'identity'].includes(provider.id)).map((provider) => (
@@ -525,12 +522,10 @@ export default function Landing() {
               <div className="absolute inset-0 bg-gradient-to-l from-transparent to-navy" />
             </div>
             <div className="relative max-w-xl">
-              <p className="font-mono text-[11px] text-brass uppercase tracking-wider">Self-operating AI platform</p>
-              <h2 className="font-heading text-3xl font-bold mt-2">Assistants that run with the bank—not beside it</h2>
+              <p className="font-mono text-[11px] text-brass uppercase tracking-wider">Permission-scoped AI assistance</p>
+              <h2 className="font-heading text-3xl font-bold mt-2">AI assistance, with clear boundaries</h2>
               <p className="mt-4 text-white/70 leading-relaxed font-body">
-                Member AI, ops AI, and command divisions coordinate on the same membership data:
-                balances, applications, HeroBox, and support threads—with isolation so staff tools
-                never appear on member screens.
+                Member guidance and staff assistance are separate. AI may explain information and help prepare work; it does not receive unrestricted private, financial, or administrative access. Sensitive actions require server-side authorization and explicit confirmation.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
                 {['Member assistant', 'Ops command', 'Image & templates', 'Secure chat'].map((x) => (
@@ -543,20 +538,19 @@ export default function Landing() {
 
         {/* AI OPS + IMAGE + CHAT — public explainer */}
         <section id="ai-ops" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20">
-          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">AI operatives · active by design</p>
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">AI assistance · permission-scoped</p>
           <h2 className="font-heading text-3xl sm:text-4xl font-bold text-navy">
             Assistants that <span className="font-display italic font-normal">scheme for clarity</span>
           </h2>
           <p className="mt-3 text-slate-600 max-w-2xl font-body">
-            Member and operations AI stay on-task: answers, drafts, image prompts for HeroBox and campaigns,
-            and routing into human support—never a replacement for compliance judgment.
+            Member guidance and staff assistance remain separate. AI can help with explanations and preparation; human review and authorized workflows govern sensitive or consequential actions.
           </p>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { icon: MessageCircle, t: 'Member chat', d: 'Ask balances, products, next steps—with redaction of secrets.' },
-              { icon: Share2, t: 'Support bridge', d: 'Escalate to humans; members and support share secure threads.' },
+              { icon: MessageCircle, t: 'Member chat', d: 'Ask general questions and get help finding authorized account information; sensitive records remain permission-scoped.' },
+              { icon: Share2, t: 'Support escalation', d: 'Human escalation is shown only when a persistent support workflow is connected.' },
               { icon: Image, t: 'Image create / import', d: 'Generate or upload visuals for packages, posts, and templates.' },
-              { icon: FileText, t: 'Template refresh', d: 'U.S. banking-style templates for statements, notices, and ops.' },
+              { icon: FileText, t: 'Institutional templates', d: 'Templates for statements, notices, and operations must use verified source data.' },
             ].map(({ icon: Icon, t: title, d }) => (
               <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5">
                 <Icon size={20} className="text-brass mb-3" />
@@ -613,12 +607,10 @@ export default function Landing() {
             <div>
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">About Vantoris</p>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-navy leading-tight">
-                A sanctuary for members who need more than a basic bank app.
+                A private workspace for clients who need more than basic account access.
               </h2>
               <p className="mt-5 text-slate-600 text-[16px] leading-relaxed">
-                Vantoris combines institutional design with human outcomes. Members manage cash,
-                cards, and investments in one place—while operators run KYC, compliance, and
-                care logistics with the same platform backbone.
+                Vantoris brings together account records, card services, investment information, travel, property, and impact services. Each space has its own permissions and availability status; staff operations remain separate from client-facing access.
               </p>
               <p className="mt-4 text-slate-600 text-[16px] leading-relaxed">
                 We built Vantoris for people who carry responsibility: households, founders,
@@ -626,8 +618,8 @@ export default function Landing() {
               </p>
               <ul className="mt-8 space-y-3">
                 {[
-                  'Role-isolated member and operations experiences',
-                  'Document vault, advisor access, and audit-ready trails',
+                  'Distinct client and staff workspaces',
+                  'Document access, advisor services, and audit records where configured',
                   'AI assistant for guided help—never a replacement for human judgment',
                 ].map((item) => (
                   <li key={item} className="flex gap-3 text-[15px] text-navy">
@@ -648,9 +640,7 @@ export default function Landing() {
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed text-[15px]">
-                From session safeguards to operations isolation, Vantoris is designed so member
-                banking and staff mission control never collide. Your money view stays yours.
-                Approvals and compliance stay with authorized operators.
+                Vantoris is designed to separate client services from staff operations. Sensitive records and consequential actions must remain protected by server-side authorization, audited workflows, and appropriate human approvals.
               </p>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {[
@@ -718,10 +708,10 @@ export default function Landing() {
             </div>
             <div className="relative h-56 sm:h-64 rounded-[28px] bg-gradient-to-br from-navy to-[#0E2A4A] p-8 text-white shadow-xl overflow-hidden">
               <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-brass/20 blur-2xl" />
-              <p className="text-white/50 text-xs uppercase tracking-widest">Vantoris</p>
-              <p className="mt-8 text-2xl font-semibold tracking-wide">Member Debit</p>
+              <p className="text-white/50 text-xs uppercase tracking-widest">Illustrative card concept</p>
+              <p className="mt-8 text-2xl font-semibold tracking-wide">Not an issued card</p>
               <p className="mt-auto pt-16 text-white/60 text-sm">•••• •••• •••• secure</p>
-              <p className="text-brass text-sm font-medium mt-2">Your name · Your control</p>
+              <p className="text-brass text-sm font-medium mt-2">Illustrative artwork only</p>
             </div>
           </div>
         </section>
@@ -763,9 +753,7 @@ export default function Landing() {
                 Flights with marketplace clarity—paid from your membership
               </h2>
               <p className="mt-4 text-slate-600 leading-relaxed">
-                Search routes, compare total fares, and keep trip charges next to everyday banking.
-                Inspired by how modern travel sites work (search → compare → book intent)—not a
-                resale of any single brand’s inventory.
+                Use the travel workspace for trip discovery. Live fares, bookings, and trip charges appear only when verified travel and payment providers are connected. The interface does not itself confirm a reservation or ticket.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
@@ -816,9 +804,9 @@ export default function Landing() {
                   Explore the market—then learn before you buy
                 </h2>
                 <p className="mt-4 text-slate-600 leading-relaxed">
-                  Listing-style discovery (maps, filters, price context) with a banking lens: how a
-                  purchase affects cash, reserves, and risk. Educational only until you work with
-                  licensed professionals in your area.
+                  Listing-style discovery (maps, filters, price context) with financial context: how a
+                  purchase may affect reserves and risk. Listings, prices, and financing remain unavailable
+                  until a verified provider is connected; consult licensed professionals in your area.
                 </p>
               </div>
               <div className="rounded-[24px] border border-slate-200 bg-[#F4F6F9] p-6 shadow-sm">
@@ -831,7 +819,7 @@ export default function Landing() {
                   authorized data providers. No sample listing or estimated payment is presented as live market data.
                 </p>
                 <Link to="/login?intent=housing" className="mt-5 block w-full text-center rounded-full bg-navy text-white py-2.5 text-sm font-bold hover:bg-navy/90">
-                  Sign in to AVCU
+                  Sign in to Vantoris
                 </Link>
               </div>
             </div>
@@ -918,9 +906,8 @@ export default function Landing() {
                 </h2>
                 <p className="mt-5 text-white/70 leading-relaxed">
                   Deployment, PCS moves, and transition to civilian life change how money and care
-                  work. Vantoris supports military households with practical banking tools and
-                  HeroBox missions that deliver tangible support—care packages, logistics, and
-                  community coordination.
+                  work. Vantoris brings account records and HeroBox services into one client workspace. Care packages,
+                  logistics, and community coordination depend on verified fulfilment partners and approvals.
                 </p>
               </div>
               <div className="space-y-4">
@@ -934,8 +921,8 @@ export default function Landing() {
                     d: 'Coordinate people and routes so help arrives where it is needed.',
                   },
                   {
-                    t: 'Member banking continuity',
-                    d: 'Accounts, transfers, and documents that stay reachable when life moves fast.',
+                    t: 'Member account continuity',
+                    d: 'Account records and documents remain accessible where the connected source and authorization allow.',
                   },
                 ].map(({ t, d }) => (
                   <div key={t} className="rounded-2xl bg-white/5 border border-white/10 p-5">
@@ -983,20 +970,17 @@ export default function Landing() {
         </section>
 
 
-        {/* Full-service banking parity */}
+        {/* Private client services */}
         <section className="max-w-6xl mx-auto px-4 sm:px-6 py-20">
-          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Full-service membership banking</p>
+          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Private client services</p>
           <h2 className="text-3xl font-bold text-navy max-w-2xl">
-            Built to cover the everyday ground a major retail bank covers—plus impact rails they don’t.
+            A connected service platform with clear boundaries and verified availability.
           </h2>
           <p className="mt-4 text-slate-600 max-w-3xl leading-relaxed">
-            Vantoris targets the practical surface area members expect from institutions like
-            Bank of America: accounts, cards, payments, deposits, mobile access, alerts, and
-            investments. On top of that stack we run HeroBox logistics, humanitarian discovery,
-            and operator-grade compliance—so banking and NGO-style action share one platform.
+            Vantoris brings account records, investment information, card services, travel, property, client support, and impact services into one platform. Each service is presented according to its actual provider connectivity, authorization, eligibility, and operational readiness.
           </p>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {BOA_PARITY.map(([t, d]) => (
+            {SERVICE_AREAS.map(([t, d]) => (
               <div key={t} className="rounded-xl border border-slate-200 bg-white p-4">
                 <p className="font-semibold text-navy text-sm">{t}</p>
                 <p className="text-xs text-slate-500 mt-1 leading-relaxed">{d}</p>
@@ -1005,7 +989,7 @@ export default function Landing() {
           </div>
           <p className="mt-6 text-[12px] text-slate-400">
             Feature availability depends on eligibility, verification, jurisdiction, and product terms.
-            Vantoris is not affiliated with Bank of America.
+            This page is not an account statement or proof of custody, investment execution, or payment-rail availability.
           </p>
         </section>
 
@@ -1102,12 +1086,11 @@ export default function Landing() {
             </div>
             <div>
               <p className="font-bold text-navy text-sm">Vantoris</p>
-              <p className="text-[11px] text-slate-500">Private banking with impact</p>
+              <p className="text-[11px] text-slate-500">Private institution with impact</p>
             </div>
           </div>
           <p className="text-[12px] text-slate-400 max-w-md">
-            Banking services provided through Vantoris. Features depend on eligibility, verification,
-            and applicable terms. This public information page is not an account statement or proof of deposit-taking or payment-rail availability.
+            Vantoris Private Institution. Service availability, eligibility, and terms are shown within each workspace. This public information page does not establish deposit-taking, custody, investment execution, or payment-rail availability.
           </p>
         </div>
       </footer>
