@@ -4,7 +4,6 @@ import { base44 } from '@/api/base44Client';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useToast } from '@/components/ui/use-toast';
 import { ArrowDownToLine, ArrowUpRight, Check, ChevronRight, CreditCard, QrCode, Search, Send, ShieldCheck, Wallet, X, Landmark } from 'lucide-react';
-import { findZelleRecipient, maskZelleIdentifier, normalizeZelleIdentifier } from '@/lib/zelle';
 
 // Payment creation stays disabled until a trusted server ledger workflow is integrated.
 const SERVER_MONEY_OPERATIONS_ENABLED = false;
@@ -282,17 +281,31 @@ function AddMoneyPanel({accounts,onClose}){const [accountId,setAccountId]=useSta
 }
 function MoneyPanel({panel,accounts,onClose}) { if(panel==='qr') return <QrPanel onClose={onClose}/>; if(panel==='send'||panel==='request') return <ZellePanel accounts={accounts} mode={panel} onClose={onClose}/>; if(panel==='add') return <AddMoneyPanel accounts={accounts} onClose={onClose}/>; if(panel?.type==='account') return <Sheet title={panel.account.account_name || panel.account.account_type} subtitle="Account details" onClose={onClose}><div className="rounded-2xl bg-slate-50 p-4 space-y-3 text-sm"><Detail label="Recorded balance (not live)" value={formatCurrency(panel.account.balance, panel.account.currency || panel.account.currency_code || null)}/><Detail label="Account type" value={panel.account.account_type}/><Detail label="Account number" value={maskAccount(panel.account.account_number)}/><Detail label="Routing number" value={panel.account.routing_number || '—'}/><Detail label="Status" value={panel.account.status || 'Status not supplied'}/></div></Sheet>; return null; }
 
-function ZellePanel({accounts,mode,onClose}) { const [identifier,setIdentifier]=useState(''),[recipient,setRecipient]=useState(null),[amount,setAmount]=useState(''),[selectedAccountId,setSelectedAccountId]=useState(accounts[0]?.id||''),[searching,setSearching]=useState(false),[showBank,setShowBank]=useState(false),[ownProfile,setOwnProfile]=useState(null); const {toast}=useToast();
-  useEffect(()=>{let active=true;base44.auth.me().then(me=>base44.entities.ZelleProfile.filter({user_id:me.id})).then(rows=>{if(active)setOwnProfile(rows.find(p=>p.status==='enrolled')||null);}).catch(()=>{if(active)setOwnProfile(null);});return()=>{active=false;};},[]);
-  async function lookup(value){setIdentifier(value);setRecipient(null);const normalized=normalizeZelleIdentifier(value);if(!normalized)return;setSearching(true);try{const rows=normalized.includes('@')?await base44.entities.ZelleProfile.filter({zelle_email:normalized}):await base44.entities.ZelleProfile.filter({zelle_phone:normalized});setRecipient(findZelleRecipient(rows,normalized));}catch(e){toast({title:'Recipient lookup failed',description:e.message||'Please try again.',variant:'destructive'});}finally{setSearching(false);}}
-  async function review() {
-    toast({
-      title: 'Member payments unavailable',
-      description: 'No server-side member-transfer workflow is enabled. No transaction, notification, or account balance was changed.',
-      variant: 'destructive',
-    });
-  }
-  return <Sheet title="Member payments" subtitle="Recipient lookup is not a payment rail; sending stays disabled until an authorized provider is connected." onClose={onClose}>{!ownProfile&&<div className="rounded-2xl border border-brass/20 bg-brass/5 p-4 mb-4 flex gap-3"><ShieldCheck size={19} className="text-brass"/><div><p className="font-semibold text-sm">Zelle enrollment required</p><p className="text-xs text-gray mt-1">Member-to-member payments are not enabled yet. Enrollment alone does not enable transfers.</p></div></div>}<div className="space-y-4"><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">Recipient email or U.S. mobile</label><div className="relative"><Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray"/><input value={identifier} onChange={e=>lookup(e.target.value)} placeholder="name@email.com or +1..." className="w-full pl-10 pr-3 py-3 rounded-2xl border border-border bg-white text-sm outline-none focus:border-brass"/></div>{searching&&<p className="text-[11px] text-gray mt-2">Checking enrolled recipients…</p>}</div>{identifier&&!searching&&!recipient&&<div className="rounded-2xl bg-slate-50 p-4 text-sm text-gray">No enrolled Zelle recipient was found for that email or mobile number.</div>}{recipient&&<div className="rounded-[24px] border border-border bg-white p-4 shadow-sm"><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-full bg-navy text-white flex items-center justify-center font-semibold">{recipient.display_name?.charAt(0)?.toUpperCase()||'V'}</div><div className="flex-1"><p className="font-semibold">{recipient.display_name}</p><p className="text-xs text-gray mt-0.5">Recipient record</p></div><Check size={18} className="text-mint"/></div><p className="mt-4 text-xs text-gray">{recipient.zelle_email?maskZelleIdentifier(recipient.zelle_email):maskZelleIdentifier(recipient.zelle_phone)}</p><button onClick={()=>setShowBank(!showBank)} className="mt-3 text-xs font-semibold text-brass">{showBank?'Hide recipient details':'Show recipient details'}</button>{showBank&&<div className="mt-3 pt-3 border-t border-border/70 space-y-2 text-xs"><Detail label="Zelle bank" value={recipient.bank_name||'Not disclosed'}/><Detail label="Linked account" value={recipient.bank_account_last4?`•••• ${recipient.bank_account_last4}`:'Not disclosed'}/></div>}</div>}<div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">From account</label><select value={selectedAccountId} onChange={e=>setSelectedAccountId(e.target.value)} className="w-full py-3 px-3 rounded-2xl border border-border bg-white text-sm"><option value="">Select account</option>{accounts.map(a=><option key={a.id} value={a.id}>{a.account_name} · {formatCurrency(a.balance, a.currency || a.currency_code || null)}</option>)}</select></div><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">Amount</label><input type="number" min="0" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" className="w-full py-3 px-3 rounded-2xl border border-border bg-white text-sm"/></div><button disabled={!SERVER_MONEY_OPERATIONS_ENABLED} onClick={review} className="w-full py-3.5 rounded-2xl bg-brass text-white font-semibold disabled:opacity-40">Member payments unavailable</button></div></Sheet>; }
+function ZellePanel({ mode, onClose }) {
+  const title = mode === 'request' ? 'Request from a member' : 'Send to a member';
+  return (
+    <Sheet
+      title={title}
+      subtitle="Private member-to-member transfers are not enabled yet. No external payment network is used."
+      onClose={onClose}
+    >
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <p className="font-semibold">Member transfers are not available</p>
+          <p className="mt-1 text-xs leading-5">
+            A first-party member directory, recipient consent, server-side authorization,
+            available-funds reservation, dual-control rules where required, and an audited
+            ledger workflow must be verified before transfers can be enabled.
+          </p>
+        </div>
+        <p className="text-xs leading-5 text-gray">
+          No recipient search, payment instruction, transfer request, or account change has
+          been created from this screen.
+        </p>
+      </div>
+    </Sheet>
+  );
+}
 
 function QrPanel({onClose}) { return <Sheet title="Member QR" subtitle="QR payments are unavailable until a privacy-safe, first-party implementation is connected." onClose={onClose}><div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><p className="font-semibold">QR temporarily unavailable</p><p className="mt-1 text-xs leading-5">Member identifiers will not be sent to an external QR image service. QR receive and scanning will return after a first-party renderer and trusted recipient lookup are implemented. No payment can be made from this screen.</p></div></Sheet>; }
 
