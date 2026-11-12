@@ -57,14 +57,14 @@ export default function RelationshipOverview({ accounts, heroProfile, heroReques
 }
 
 function AccountCard({ account, Icon }) {
-  const isActive = account.status === 'active';
+  const statusColor = account.status === 'active' ? 'bg-mint/10 text-mint' : account.status ? 'bg-crimson/10 text-crimson' : 'bg-slate-100 text-gray';
   return (
     <Link to={`/accounts/${account.id}`} className="block vantoris-glass-premium p-4 hover:shadow-float transition-all group">
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-xl bg-navy/8 flex items-center justify-center">
           <Icon size={18} className="text-navy" />
         </div>
-        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${isActive ? 'bg-mint/10 text-mint' : 'bg-crimson/10 text-crimson'}`}>
+        <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded ${statusColor}`}>
           {account.status}
         </span>
       </div>
