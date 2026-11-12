@@ -139,7 +139,7 @@ export default function SecurityComplianceDashboard() {
           ) : recentAudit.length === 0 ? (
             <div className="text-center py-6">
               <ScrollText size={24} className="text-[#AAB4C3]/30 mx-auto mb-2" />
-              <p className="text-[#AAB4C3] text-xs">No audit entries</p>
+              <p className="text-[#AAB4C3] text-xs">No audit records returned by the current query (max 10).</p>
             </div>
           ) : (
             <div className="space-y-0">
@@ -172,7 +172,7 @@ export default function SecurityComplianceDashboard() {
           ) : recentWithdrawals.length === 0 ? (
             <div className="text-center py-6">
               <ArrowUpRight size={24} className="text-[#AAB4C3]/30 mx-auto mb-2" />
-              <p className="text-[#AAB4C3] text-xs">No pending withdrawals</p>
+              <p className="text-[#AAB4C3] text-xs">No pending withdrawal records returned by the current query (max 20).</p>
             </div>
           ) : (
             <div className="space-y-0">
