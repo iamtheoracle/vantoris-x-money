@@ -39,7 +39,7 @@ import { PROVIDERS } from '@/lib/providers';
 const NAV = [
   { label: 'Verified', href: '#verified' },
   { label: 'Services', href: '#service-availability' },
-  { label: 'Cards', href: '#service-availability' },
+  { label: 'Cards', href: '#cards' },
   
   { label: 'About', href: '#about' },
   { label: 'Heritage', href: '#hambros-tribute' },
