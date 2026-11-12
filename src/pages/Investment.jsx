@@ -30,7 +30,7 @@ export default function Investment() {
   const [showWithdraw, setShowWithdraw] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [withdrawAmount, setWithdrawAmount] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const submitting = false;
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -318,7 +318,7 @@ export default function Investment() {
             />
             <div className="flex gap-2">
               <button onClick={() => setShowDeposit(false)} className="flex-1 py-3 rounded-xl border border-border text-sm font-medium text-gray">Cancel</button>
-              <button onClick={handleDeposit} disabled={submitting || !depositAmount} className="flex-1 py-3 rounded-xl bg-navy text-white text-sm font-semibold disabled:opacity-50">{submitting ? 'Submitting...' : 'Submit Request'}</button>
+              <button onClick={handleDeposit} disabled={!SERVER_INVESTMENT_OPERATIONS_ENABLED || submitting || !depositAmount} className="flex-1 py-3 rounded-xl bg-navy text-white text-sm font-semibold disabled:opacity-50">{!SERVER_INVESTMENT_OPERATIONS_ENABLED ? 'Unavailable' : submitting ? 'Submitting...' : 'Submit Request'}</button>
             </div>
           </div>
         </div>
@@ -339,7 +339,7 @@ export default function Investment() {
             />
             <div className="flex gap-2">
               <button onClick={() => setShowWithdraw(false)} className="flex-1 py-3 rounded-xl border border-border text-sm font-medium text-gray">Cancel</button>
-              <button onClick={handleWithdraw} disabled={submitting || !withdrawAmount} className="flex-1 py-3 rounded-xl bg-navy text-white text-sm font-semibold disabled:opacity-50">{submitting ? 'Submitting...' : 'Submit Request'}</button>
+              <button onClick={handleWithdraw} disabled={!SERVER_INVESTMENT_OPERATIONS_ENABLED || submitting || !withdrawAmount} className="flex-1 py-3 rounded-xl bg-navy text-white text-sm font-semibold disabled:opacity-50">{submitting ? 'Submitting...' : 'Submit Request'}</button>
             </div>
           </div>
         </div>
