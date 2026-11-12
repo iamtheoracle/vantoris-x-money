@@ -26,6 +26,12 @@
     "account_name": {
       "type": "string"
     },
+    "currency": {
+      "type": "string",
+      "enum": ["USD"],
+      "default": "USD",
+      "description": "U.S.-only account currency. Existing records require verified backfill before use in payment workflows."
+    },
     "balance": {
       "type": "number",
       "default": 0
