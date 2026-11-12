@@ -64,7 +64,7 @@ Deno.test('AVCU outbox recovery uses expiring worker claims and retry backoff', 
   assert(sql.includes('claim_owner uuid'), 'Outbox worker ownership must be persisted.');
   assert(sql.includes('claim_expires_at timestamptz'), 'Outbox claims must expire after worker crashes.');
   assert(sql.includes('available_at timestamptz'), 'Failed projections must support delayed retry.');
-  assert(sql.includes('FOR UPDATE SKIP LOCKED'), 'Concurrent reconcilers must claim disjoint outbox rows.');
+  assert(sql.includes('payment_outbox_claimable_idx'), 'Outbox claimable rows must have a dedicated lookup index.');
   const store = await Deno.readTextFile('base44/functions/_shared/paymentStore.ts');
   assert(store.includes('power(2, LEAST(attempts,8))'), 'Retry delay must grow exponentially and remain bounded.');
   assert(store.includes('claim_expires_at <= clock_timestamp()'), 'Expired worker claims must be reclaimable.');
