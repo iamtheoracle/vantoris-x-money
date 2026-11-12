@@ -9,6 +9,7 @@ export default function Transfers() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busyRequestId, setBusyRequestId] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
   async function actOnRequest(requestId, action) {
     const note = action === 'reject' ? (window.prompt('Reason for rejection (required):') || '').trim() : (window.prompt('Review note (optional):') || '').trim();
@@ -30,7 +31,10 @@ export default function Transfers() {
       const reconciliation = await base44.functions.invoke('reconcileBankTransfers', { limit: 100 });
       const refreshed = await base44.entities.TransferRequest.list('-created_date', 200);
       setRequests(refreshed);
-      window.alert(`Plaid sync: ${sync?.inserted ?? 0} new events; reconciliation: ${reconciliation?.processed ?? 0} applied, ${reconciliation?.held ?? 0} held for review.`);
+      const inserted = Number.isFinite(sync?.inserted) ? sync.inserted : 'not supplied';
+      const processed = Number.isFinite(reconciliation?.processed) ? reconciliation.processed : 'not supplied';
+      const held = Number.isFinite(reconciliation?.held) ? reconciliation.held : 'not supplied';
+      window.alert(`Plaid sync: ${inserted} new events; reconciliation: ${processed} applied, ${held} held for review.`);
     } catch (error) {
       window.alert(error?.message || 'Bank reconciliation could not complete. Check provider configuration and event queue.');
     } finally { setBusyRequestId(null); }
@@ -65,28 +69,29 @@ export default function Transfers() {
           base44.entities.Transaction.list('-created_date', 200),
           base44.entities.TransferRequest.list('-created_date', 200),
         ]);
+        if (!Array.isArray(txns) || !Array.isArray(transferRequests)) throw new Error('The transfer query returned an invalid response.');
         setTransactions(txns.filter(t => t.type === 'adjustment'));
         setRequests(transferRequests);
-      } catch (e) { console.error(e); }
+      } catch (e) { console.error(e); setLoadError('Transfer records are unavailable. No empty-queue conclusion can be drawn.'); }
       setLoading(false);
     })();
   }, []);
 
   return (
-    <OperationsPageLayout title="Transfers" description="Internal transfers and balance adjustments" icon={ArrowLeftRight}>
+    <OperationsPageLayout title="Transfers" description="Internal adjustments and reviewed domestic ACH/Fedwire requests. Submission and settlement are separate states." icon={ArrowLeftRight}>
       <section className="vantoris-card p-5 mb-6">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div><h2 className="text-white font-semibold">Bank transfer requests</h2><p className="text-[#AAB4C3] text-xs mt-1">ACH and domestic Fedwire · member requests only</p></div>
-          <div className="flex items-center gap-2"><span className="text-xs text-[#AAB4C3]">{requests.length} total</span><button disabled={!!busyRequestId} onClick={runBankReconciliation} className="rounded-lg bg-sky-500/15 text-sky-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Sync & reconcile bank events</button></div>
+          <div className="flex items-center gap-2"><span className="text-xs text-[#AAB4C3]">{requests.length} records returned · max 200</span><button disabled={!!busyRequestId} onClick={runBankReconciliation} className="rounded-lg bg-sky-500/15 text-sky-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Sync & reconcile bank events</button></div>
         </div>
-        {loading ? <p className="text-[#AAB4C3] text-sm">Loading requests…</p> : requests.length === 0 ? (
+        {loading ? <p className="text-[#AAB4C3] text-sm">Loading requests…</p> : loadError ? <p role="status" className="text-amber-300 text-sm">{loadError}</p> : requests.length === 0 ? (
           <p className="text-[#AAB4C3] text-sm">No bank transfer requests recorded.</p>
         ) : (
           <div className="space-y-3">{requests.map(r => (
             <article key={r.id} className="rounded-xl border border-[#2B3543] p-4">
               <div className="flex items-start justify-between gap-3">
                 <div><p className="text-white font-semibold text-sm">{r.rail} · {r.beneficiary_name || 'Beneficiary not supplied'}</p><p className="text-[#AAB4C3] text-xs mt-1">{r.beneficiary_bank_name || 'Bank not supplied'} · •••• {r.beneficiary_account_last4 || '----'}</p><p className="text-[#AAB4C3] text-[11px] mt-1">{r.user_id} · {r.created_date ? new Date(r.created_date).toLocaleString() : 'Date unavailable'}</p></div>
-                <div className="text-right shrink-0"><p className="text-white font-semibold">{formatCurrency((r.amount_cents || 0)/100)}</p><span className="inline-block mt-1 rounded-full bg-amber-500/10 text-amber-300 px-2 py-1 text-[10px] uppercase">{r.status}</span></div>
+                <div className="text-right shrink-0"><p className="text-white font-semibold">{formatCurrency(r.amount_cents == null ? null : Number(r.amount_cents) / 100, r.currency || null)}</p><span className="inline-block mt-1 rounded-full bg-amber-500/10 text-amber-300 px-2 py-1 text-[10px] uppercase" >{r.status || 'Status not supplied'}</span></div>
               </div>
               <p className="mt-3 text-xs text-amber-300">{r.manual_processing ? `Manual bank record · Reference: ${r.bank_reference || 'not recorded'}` : 'Not submitted to bank. Review and separate approvals required.'}</p>
               <div className="mt-3 flex flex-wrap gap-2">
@@ -94,9 +99,7 @@ export default function Transfers() {
                 {r.status === 'awaiting_dual_approval' && <button disabled={busyRequestId === r.id} onClick={() => actOnRequest(r.id, 'approve_second')} className="rounded-lg bg-emerald-500/15 text-emerald-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Second wire approval</button>}
                 {['awaiting_bank_review', 'awaiting_dual_approval'].includes(r.status) && <button disabled={busyRequestId === r.id} onClick={() => actOnRequest(r.id, 'reject')} className="rounded-lg bg-red-500/15 text-red-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Reject</button>}
                 {r.status === 'approved_awaiting_bank_submission' && <button disabled={busyRequestId === r.id} onClick={() => recordManualAction(r, 'record_submission')} className="rounded-lg bg-amber-500/15 text-amber-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Record manual bank submission</button>}
-                {['submitted_to_bank', 'pending_settlement'].includes(r.status) && r.manual_processing && <button disabled={busyRequestId === r.id} onClick={() => recordManualAction(r, 'reconcile_settled')} className="rounded-lg bg-emerald-500/15 text-emerald-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Verify & reconcile settled</button>}
-                {['submitted_to_bank', 'pending_settlement'].includes(r.status) && r.manual_processing && <button disabled={busyRequestId === r.id} onClick={() => recordManualAction(r, 'record_return')} className="rounded-lg bg-orange-500/15 text-orange-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Record bank return</button>}
-                {['submitted_to_bank', 'pending_settlement'].includes(r.status) && r.manual_processing && <button disabled={busyRequestId === r.id} onClick={() => recordManualAction(r, 'record_failure')} className="rounded-lg bg-red-500/15 text-red-200 px-3 py-2 text-xs font-semibold disabled:opacity-50">Record bank failure</button>}
+                {['submitted_to_bank', 'pending_settlement'].includes(r.status) && r.manual_processing && <p role="status" className="w-full text-xs leading-5 text-amber-300">Settlement, return and failure reconciliation are held until the PostgreSQL ledger workflow is deployed. Do not mark this request settled from this screen.</p>}
               </div>
             </article>
           ))}</div>
@@ -129,8 +132,8 @@ export default function Transfers() {
                   <td className="px-5 py-3 text-[#AAB4C3] text-xs">{(t.transaction_date || t.created_date).split('T')[0]}</td>
                   <td className="px-5 py-3 text-white text-xs">{t.description || '—'}</td>
                   <td className="px-5 py-3 text-[#AAB4C3] text-xs font-mono">{t.reference || '—'}</td>
-                  <td className={`px-5 py-3 text-right font-semibold text-xs ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {formatCurrency(t.amount)}
+                  <td className={`px-5 py-3 text-right font-semibold text-xs ${Number.isFinite(Number(t.amount)) && t.amount != null && Number(t.amount) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {formatCurrency(t.amount, t.currency || t.currency_code || null)}
                   </td>
                 </tr>
               ))}
