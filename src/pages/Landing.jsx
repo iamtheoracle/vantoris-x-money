@@ -200,7 +200,7 @@ export default function Landing() {
             <div className="leading-tight">
               <p className="font-bold text-[15px] tracking-tight">Vantoris</p>
               <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 hidden sm:block">
-                Private banking · Impact
+                Private investment · Stewardship
               </p>
             </div>
           </button>
@@ -304,16 +304,15 @@ export default function Landing() {
             <div className="lg:col-span-7">
               <div className="inline-flex items-center gap-2 rounded-full border border-brass/30 bg-brass/10 px-3 py-1.5 mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-mono text-[11px] text-brass tracking-wide">AVCU MEMBER PLATFORM</span>
+                <span className="font-mono text-[11px] text-brass tracking-wide">VANTORIS PRIVATE INVESTMENT</span>
               </div>
               <h1 className="font-heading text-white text-[2.75rem] sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.02] tracking-tight">
-                Money that moves
+                Capital, considered
                 <br />
-                <span className="font-display italic font-normal text-brass text-[1.05em]">with institutional chill.</span>
+                <span className="font-display italic font-normal text-brass text-[1.05em]">with enduring perspective.</span>
               </h1>
               <p className="mt-6 text-lg sm:text-xl text-white/65 max-w-xl leading-relaxed font-body">
-                U.S.-standard accounts, cards, wires, and statements—plus HeroBox impact.
-                A self-operating AI platform: members bank, assistants guide, ops stay isolated. Built for people who want bank energy without the 2012 website energy.
+                A private-client workspace for portfolio visibility, controlled capital requests, account records, statements and dedicated service. Investment trading, custody and external payment execution remain available only where an authorized provider and approval workflow are in place.
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Link
@@ -438,7 +437,7 @@ export default function Landing() {
                 <Fingerprint size={14} /> Identity · KYC · session isolation
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 text-slate-600 border border-slate-200 px-3 py-1 text-[11px] font-semibold">
-                U.S. banking-style controls & statements
+                Institutional controls & statements
               </span>
             </div>
             <div className="grid lg:grid-cols-2 gap-8 items-center">
@@ -447,9 +446,7 @@ export default function Landing() {
                   Obvious trust.<span className="italic text-brass"> Premium clarity.</span>
                 </h2>
                 <p className="mt-4 text-slate-600 leading-relaxed font-body">
-                  Vantoris is built like serious American retail and private banking: verified membership,
-                  document vaults, elite statements, card chrome you recognize, and operator rails that
-                  stay separate from member screens. Sign in to access your authorized account workspace and available services.
+                  Vantoris brings a considered private-investment experience to portfolio records, account services and dedicated support. Identity checks, document records and operator workflows remain separated from client screens. Sign in to access your authorized workspace and available services.
                 </p>
                 <ul className="mt-6 space-y-2 text-sm text-navy font-body">
                   {[
@@ -468,9 +465,9 @@ export default function Landing() {
               <div className="rounded-[24px] bg-navy text-white p-6 sm:p-8 relative overflow-hidden">
                 <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-brass/20 blur-2xl" />
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-brass">Institutional seal</p>
-                <p className="font-heading text-2xl font-bold mt-3">Vantoris Member Platform</p>
+                <p className="font-heading text-2xl font-bold mt-3">Vantoris Private Investment</p>
                 <p className="text-white/60 text-sm mt-2 font-body">
-                  Trust · Structure · Purpose — navy / brass identity system aligned with U.S. premium banking UX norms.
+                  Trust · Structure · Purpose — a restrained navy, ivory and brass identity with an editorial approach to private capital.
                 </p>
                 <div className="mt-6 grid grid-cols-2 gap-3 text-center">
                   {[
@@ -615,12 +612,10 @@ export default function Landing() {
             <div>
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">About Vantoris</p>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-navy leading-tight">
-                A sanctuary for members who need more than a basic bank app.
+                A private investment experience built around clarity and stewardship.
               </h2>
               <p className="mt-5 text-slate-600 text-[16px] leading-relaxed">
-                Vantoris combines institutional design with human outcomes. Members manage cash,
-                cards, and investments in one place—while operators run KYC, compliance, and
-                care logistics with the same platform backbone.
+                Vantoris combines institutional design with human outcomes. Clients review accounts, investment records and service requests in one place, while authorized operators manage verification, approvals and service workflows.
               </p>
               <p className="mt-4 text-slate-600 text-[16px] leading-relaxed">
                 We built Vantoris for people who carry responsibility: households, founders,
@@ -1098,12 +1093,11 @@ export default function Landing() {
             </div>
             <div>
               <p className="font-bold text-navy text-sm">Vantoris</p>
-              <p className="text-[11px] text-slate-500">Private banking with impact</p>
+              <p className="text-[11px] text-slate-500">Private investment with purpose</p>
             </div>
           </div>
           <p className="text-[12px] text-slate-400 max-w-md">
-            Banking services provided through Vantoris. Features depend on eligibility, verification,
-            and applicable terms. This public information page is not an account statement or proof of deposit-taking or payment-rail availability.
+            Services depend on eligibility, verification, provider availability and applicable terms. This public information page is not an account statement or proof of investment custody, deposit-taking or payment-rail availability.
           </p>
         </div>
       </footer>
