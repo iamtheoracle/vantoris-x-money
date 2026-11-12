@@ -34,10 +34,10 @@ export default async function(req: Request): Promise<Response> {
     if (transfer.status !== 'approved_awaiting_bank_submission') {
       return Response.json({ error: 'Transfer has not completed the required review approvals.' }, { status: 409 });
     }
-    if (transfer.rail === 'FEDWIRE' &&
-        (!transfer.reviewer_user_id || !transfer.approver_user_id ||
-         transfer.reviewer_user_id === transfer.approver_user_id)) {
-      return Response.json({ error: 'Wire requires two distinct staff approvals.' }, { status: 403 });
+    if (!['ACH', 'FEDWIRE'].includes(transfer.rail) ||
+        !transfer.reviewer_user_id || !transfer.approver_user_id ||
+        transfer.reviewer_user_id === transfer.approver_user_id) {
+      return Response.json({ error: 'ACH and Fedwire require two distinct staff approvals before submission.' }, { status: 403 });
     }
     if (!transfer.beneficiary_account_token) {
       return Response.json({ error: 'A provider-issued beneficiary account token is required. No bank request was sent.' }, { status: 503 });
