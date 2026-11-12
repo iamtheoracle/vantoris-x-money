@@ -34,7 +34,7 @@ export function createNexus() {
       let memory = null;
       let thread = null;
       try {
-        thread = await services.conversation.getOrCreateThread(request.userId, 'AVCU Assistant');
+        thread = await services.conversation.getOrCreateThread(request.userId, 'Vantage Assistant');
         history = await services.conversation.getRecentHistory(thread.id, 10);
         memory = thread.memory_summary || thread.preferences || null;
       } catch (error) {
