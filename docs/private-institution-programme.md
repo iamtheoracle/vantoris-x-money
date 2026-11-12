@@ -157,3 +157,14 @@ Before any release or source switch:
 5. Preserve these observations as diagnostic evidence; do not alter the production app ID, environment variables, domain configuration or customer data until the correct app/backend mapping is confirmed.
 
 These edge observations are operational evidence only. They do not establish customer login success, data access, Base44 application identity, or backend authorization.
+
+
+## CI configuration review (12 November 2026)
+
+The recovery build workflow currently injects a Base44 app identifier, a Base44 server URL, an app base URL, and a test-database secret named for the legacy AVCU ledger. These values are part of the CI job environment, not proof of the production deployment's runtime configuration or backend identity.
+
+- Keep CI credentials and test data isolated from production.
+- Verify the app identifier against the owner-confirmed Vantoris Base44 project before treating it as authoritative.
+- Verify the legacy-named test database secret points only to an isolated test database. Do not rename or repoint it until its consumers and database target are established.
+- The latest work-branch commit has no workflow run returned by the commit-associated PR-run lookup. This is not evidence of a successful build. The workflow supports manual dispatch, but no dispatch was initiated through the available GitHub actions tools.
+- No CI environment values, secrets, production variables or backend project settings were changed.
