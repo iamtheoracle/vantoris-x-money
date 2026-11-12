@@ -1,99 +1,128 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { formatCurrency } from '@/lib/formatCurrency';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
-import { DollarSign, TrendingUp, TrendingDown, Activity } from 'lucide-react';
+import { DollarSign, TrendingUp, TrendingDown, Activity, AlertTriangle } from 'lucide-react';
+
+function amountLabel(value, currency) {
+  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return 'Amount not supplied';
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  } catch {
+    return 'Amount not verified';
+  }
+}
+
+function dateLabel(value) {
+  if (!value) return 'Date not supplied';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Date not supplied' : date.toLocaleString();
+}
 
 export default function Finance() {
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [transactionsError, setTransactionsError] = useState(false);
+  const [accountsError, setAccountsError] = useState(false);
 
   useEffect(() => {
-    (async () => {
+    let active = true;
+    const safeList = async (request) => {
       try {
-        const [txns, accts] = await Promise.all([
-          base44.entities.Transaction.list('-created_date', 200),
-          base44.entities.Account.list('-created_date', 100),
-        ]);
-        setTransactions(txns);
-        setAccounts(accts);
-      } catch (e) { console.error(e); }
-      setLoading(false);
-    })();
+        const rows = await request;
+        return { rows: Array.isArray(rows) ? rows : [], failed: !Array.isArray(rows) };
+      } catch {
+        return { rows: [], failed: true };
+      }
+    };
+    (async () => {
+      const [transactionResult, accountResult] = await Promise.all([
+        safeList(base44.entities.Transaction.list('-created_date', 200)),
+        safeList(base44.entities.Account.list('-created_date', 100)),
+      ]);
+      if (!active) return;
+      setTransactions(transactionResult.rows);
+      setAccounts(accountResult.rows);
+      setTransactionsError(transactionResult.failed);
+      setAccountsError(accountResult.failed);
+    })().finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  if (loading) {
-    return (
-      <OperationsPageLayout title="Finance Overview" description="Platform-wide financial activity" icon={DollarSign}>
-        <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
-        </div>
-      </OperationsPageLayout>
-    );
-  }
-
-  const totalDeposits = transactions.filter(t => t.type === 'deposit' || t.type === 'opening_balance').reduce((s, t) => s + Math.abs(t.amount || 0), 0);
-  const totalWithdrawals = transactions.filter(t => t.type === 'withdrawal').reduce((s, t) => s + Math.abs(t.amount || 0), 0);
-  const totalAdjustments = transactions.filter(t => t.type === 'adjustment').reduce((s, t) => s + Math.abs(t.amount || 0), 0);
-  const totalAUM = accounts.reduce((s, a) => s + (a.balance || 0), 0);
-
   const stats = [
-    { label: 'Assets Under Management', value: formatCurrency(totalAUM), icon: DollarSign, color: 'text-emerald-400', bg: 'bg-olive/20' },
-    { label: 'Total Deposits', value: formatCurrency(totalDeposits), icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/15' },
-    { label: 'Total Withdrawals', value: formatCurrency(totalWithdrawals), icon: TrendingDown, color: 'text-red-400', bg: 'bg-crimson/15' },
-    { label: 'Adjustments', value: formatCurrency(totalAdjustments), icon: Activity, color: 'text-brass', bg: 'bg-brass/15' },
+    { label: 'Account records returned', value: accountsError ? 'Unavailable' : accounts.length, icon: DollarSign, color: 'text-emerald-400', bg: 'bg-olive/20', note: 'Bounded query · limit 100' },
+    { label: 'Transaction records returned', value: transactionsError ? 'Unavailable' : transactions.length, icon: Activity, color: 'text-brass', bg: 'bg-brass/15', note: 'Bounded query · limit 200' },
+    { label: 'Authoritative ledger total', value: 'Unavailable', icon: TrendingUp, color: 'text-emerald-400', bg: 'bg-emerald-500/15', note: 'Verified ledger aggregate required' },
+    { label: 'Settled payment volume', value: 'Unavailable', icon: TrendingDown, color: 'text-red-400', bg: 'bg-crimson/15', note: 'Provider settlement and reconciliation required' },
   ];
 
   return (
-    <OperationsPageLayout title="Finance Overview" description="Platform-wide financial activity" icon={DollarSign}>
-      <div className="grid grid-cols-4 gap-4 mb-6">
-        {stats.map(s => {
-          const Icon = s.icon;
+    <OperationsPageLayout title="Financial records" description="Read-only financial source records. No partial query is presented as assets under management or settled volume." icon={DollarSign}>
+      <div role="status" className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-800" />
+        <div>
+          <p className="text-sm font-semibold text-amber-950">Institutional financial aggregates unavailable</p>
+          <p className="mt-1 text-xs leading-5 text-amber-900/80">
+            Account and transaction queries are bounded and may be incomplete. Assets under management, deposits, withdrawals, adjustments, net flow, and settlement volume are withheld until server-side, currency-aware ledger aggregates and reconciliation are verified.
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        {stats.map((stat) => {
+          const Icon = stat.icon;
           return (
-            <div key={s.label} className="vantoris-card p-5">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${s.bg} mb-3`}>
-                <Icon size={20} className={s.color} />
+            <section key={stat.label} className="vantoris-card rounded-2xl p-5">
+              <div className={'mb-3 flex h-10 w-10 items-center justify-center rounded-xl ' + stat.bg}>
+                <Icon size={20} className={stat.color} />
               </div>
-              <p className="text-white font-bold text-xl">{s.value}</p>
-              <p className="text-[#AAB4C3] text-xs mt-1">{s.label}</p>
-            </div>
+              <p className="text-xl font-bold text-white">{stat.value}</p>
+              <p className="mt-1 text-xs text-[#AAB4C3]">{stat.label}</p>
+              <p className="mt-2 text-[10px] text-[#AAB4C3]/70">{stat.note}</p>
+            </section>
           );
         })}
       </div>
 
-      <div className="vantoris-card p-5">
-        <h3 className="text-white font-semibold mb-4">Recent Financial Activity</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-[#242D38]">
-                <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider py-3 pr-4">Date</th>
-                <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider py-3 pr-4">Type</th>
-                <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider py-3 pr-4">Description</th>
-                <th className="text-right text-[#AAB4C3] text-xs font-medium uppercase tracking-wider py-3 pr-4">Amount</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.slice(0, 20).map(t => (
-                <tr key={t.id} className="border-b border-[#242D38]/40 hover:bg-[#242D38]/20 transition-all">
-                  <td className="py-3 pr-4 text-[#AAB4C3] text-xs">{(t.transaction_date || t.created_date).split('T')[0]}</td>
-                  <td className="py-3 pr-4">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${
-                      t.type === 'deposit' || t.type === 'opening_balance' ? 'bg-emerald-500/10 text-emerald-400' :
-                      t.type === 'withdrawal' ? 'bg-red-500/10 text-red-400' : 'bg-brass/10 text-brass'
-                    }`}>{t.type.replace('_', ' ')}</span>
-                  </td>
-                  <td className="py-3 pr-4 text-white text-xs">{t.description || '—'}</td>
-                  <td className={`py-3 pr-4 text-right font-semibold ${t.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {formatCurrency(t.amount)}
-                  </td>
+      <section className="vantoris-card rounded-2xl p-5">
+        <h3 className="mb-4 font-semibold text-white">Recent financial records</h3>
+        {loading ? (
+          <p className="py-8 text-center text-sm text-[#AAB4C3]">Loading financial records…</p>
+        ) : transactionsError ? (
+          <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Transaction records are unavailable. Zero activity must not be inferred.</p>
+        ) : transactions.length === 0 ? (
+          <p className="py-8 text-center text-sm text-[#AAB4C3]">No transaction records were returned by the current query.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#242D38]">
+                  <th className="py-3 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Date</th>
+                  <th className="py-3 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Type</th>
+                  <th className="py-3 pr-4 text-left text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Description</th>
+                  <th className="py-3 pr-4 text-right text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Recorded amount</th>
+                  <th className="py-3 text-right text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Status</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+              </thead>
+              <tbody>
+                {transactions.slice(0, 20).map((transaction) => (
+                  <tr key={transaction.id} className="border-b border-[#242D38]/40">
+                    <td className="py-3 pr-4 text-xs text-[#AAB4C3]">{dateLabel(transaction.transaction_date || transaction.created_date)}</td>
+                    <td className="py-3 pr-4 text-xs capitalize text-white">{transaction.type ? String(transaction.type).replace(/_/g, ' ') : 'Type not supplied'}</td>
+                    <td className="py-3 pr-4 text-xs text-white">{transaction.description || 'Description not supplied'}</td>
+                    <td className="py-3 pr-4 text-right text-xs font-semibold text-white">{amountLabel(transaction.amount, transaction.currency || transaction.currency_code)}</td>
+                    <td className="py-3 text-right text-xs capitalize text-[#AAB4C3]">{transaction.status ? String(transaction.status).replace(/_/g, ' ') : 'Status not supplied'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        {accountsError && <p role="status" className="mt-4 text-xs text-amber-300">Account records are unavailable; no account total is inferred.</p>}
+        <p className="mt-4 text-[11px] text-[#AAB4C3]/70">Records shown are source records only, not a reconciled ledger, available balance, AUM, or proof of settlement.</p>
+      </section>
     </OperationsPageLayout>
   );
 }
