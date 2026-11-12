@@ -4,6 +4,7 @@ import { base44 } from '@/api/base44Client';
 import ProductShell from './ProductShell';
 import UnavailableState from '@/components/vantoris/UnavailableState';
 import { PROVIDERS } from '@/lib/providers';
+import PrivateInvestmentCardGallery from '@/components/vantoris/PrivateInvestmentCardGallery';
 
 export default function Cards() {
   const [cards, setCards] = useState([]);
@@ -30,6 +31,10 @@ export default function Cards() {
 
   return (
     <ProductShell kicker="Cards" title="Cards" subtitle="Only owner-scoped card records returned by the backend are shown. Issuer controls are not connected.">
+      <div className="mb-7 rounded-2xl border border-[#D8CBAE] bg-[#F7F5EF] p-4 sm:p-6">
+        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8B6C35]">Card design collection</p>
+        <PrivateInvestmentCardGallery />
+      </div>
       <p className="mb-4 text-xs leading-relaxed text-slate-500">
         These are application records only. Card-network status, freezing, spending controls and issuance are not confirmed by this page.
       </p>
