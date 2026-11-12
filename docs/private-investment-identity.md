@@ -6,6 +6,29 @@ The existing Vantoris application is being presented as **Vantoris Private Inves
 
 Preserve existing member, operator, administrative, investment, messaging, HeroBox, travel, service and support capabilities. Do not represent a design change as proof of a regulated investment licence, custody arrangement, brokerage relationship, issuer partnership, live market feed or payment-rail activation.
 
+## Hambros Bank tribute
+
+A dedicated, separate editorial corner titled **In Honour of Hambros Bank** is included on the public landing page and linked from the Heritage navigation item. It is a respectful historical tribute only. It must never imply that Vantoris owns, continues, succeeds, partners with, is endorsed by, or is affiliated with Hambros Bank or any later institution using the Hambros name.
+
+The tribute uses an original architectural illustration rather than reproducing a protected archival photograph. It links to the Historic England record for the 1926 banking hall at 41 Bishopsgate and to The London Archives / AIM25 catalogue for surviving Hambros Bank records.
+
+Verified chronology:
+- **1839:** C. J. Hambro & Son was established in London by Carl Joachim Hambro.
+- **1921:** following a merger with the British Bank of Northern Commerce, the institution became Hambros Bank.
+- **1926:** the new head office at 41 Bishopsgate was photographed and documented in the Historic England archive.
+- **1998:** Société Générale acquired Hambros Bank; the Hambros name later continued in successor branding, which is not the same as the former independent bank.
+
+Sources:
+- Historic England, 1926 banking hall at 41 Bishopsgate: https://historicengland.org.uk/images-books/photos/item/BL28492
+- Historic England, 1921 premises and founding history: https://historicengland.org.uk/images-books/photos/item/BL25755
+- The London Archives / AIM25, Hambros Bank collection: https://atom.aim25.com/index.php/hambros-bank-limited?sf_culture=en
+- Société Générale Private Banking, 2011 press release noting the 1998 acquisition: https://www.societegenerale.lu/uploads/tx_bisgnews/11-06-08_Baring_AM_acquisition_completion_version_SGPB_sec.pdf
+- UK Companies House, company-name history for the UK entity that used SG Hambros / Kleinwort Hambros names: https://find-and-update.company-information.service.gov.uk/company/00964058
+
+## Geographic scope
+
+Vantoris's own client and operating scope is the **United States only**. Public copy must not imply a Vantoris office, support desk, regulated service, or client onboarding operation in the United Kingdom or elsewhere. Historical editorial references and external humanitarian organizations may be international, but they do not expand Vantoris's operating geography. Do not delete existing application capabilities solely because their discovery content references another country; any actual cross-border financial service must remain unavailable unless separately authorized, legally reviewed, provider-supported, and explicitly approved.
+
 ## Visual system
 
 - Core palette: midnight navy `#071A2D`, warm ivory `#F7F5EF`, antique brass `#C9A962`, and restrained slate neutrals.
