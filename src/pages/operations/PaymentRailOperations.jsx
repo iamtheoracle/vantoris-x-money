@@ -3,12 +3,12 @@ import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
 import { ArrowDownToLine, ArrowUpRight, ClipboardCheck, ShieldCheck, Landmark, AlertTriangle } from 'lucide-react';
 
 const rails = [
-  { name: 'ACH', direction: 'Incoming and outgoing', timing: 'Typically slower; settlement and return timing depend on the bank', control: 'Standard review, available-funds check, duplicate check and bank reconciliation' },
+  { name: 'ACH', direction: 'Potential incoming and outgoing scope · not enabled', timing: 'Typically slower; settlement and return timing depend on the bank', control: 'Independent dual authorization, available-funds check, duplicate check and bank reconciliation' },
   { name: 'Domestic Fedwire', direction: 'Incoming and outgoing', timing: 'Time-sensitive bank wire; cutoff and fees are set by the bank', control: 'Enhanced beneficiary review, dual authorization and bank-reference reconciliation' },
 ];
 
 const gates = [
-  'Confirm the institution legal applicant and authorized sponsor-bank relationship',
+  'Confirm the institution’s U.S. legal applicant and authorized sponsor-bank relationship',
   'Obtain written bank approval for ACH origination/receipt and Fedwire origination/receipt',
   'Confirm bank-approved instructions, limits, cutoffs, fees and return/recall procedures',
   'Approve member disclosures, fraud screening and sanctions controls',
@@ -18,7 +18,7 @@ const gates = [
 
 export default function PaymentRailOperations() {
   return (
-    <OperationsPageLayout title="Payment rail operations" description="Manual ACH and domestic wire processing readiness" icon={Landmark}>
+    <OperationsPageLayout title="Payment rail operations" description="U.S. domestic payment rail readiness · processing disabled" icon={Landmark}>
       <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 mb-6 flex gap-3">
         <AlertTriangle className="text-amber-400 shrink-0" size={20} />
         <div>
