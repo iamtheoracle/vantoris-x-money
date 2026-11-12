@@ -171,3 +171,13 @@ Deno.test("member QR does not send member identifiers to third-party image servi
   assert(!source.includes("api.qrserver.com"), "member identifiers must not be sent to external QR image services");
   assert(source.includes("user.id") && !source.includes("user.id || user.email"), "QR payload must not fall back to personal email");
 });
+
+Deno.test("Vantage assistant uses only the configured private AI endpoint", async () => {
+  const ask = await Deno.readTextFile("netlify/functions/ask.mjs");
+  const boot = await Deno.readTextFile("base44/shared/runtime/bootLoader.ts");
+  const chat = await Deno.readTextFile("src/components/vantoris/AgentChat.jsx");
+  assert(ask.includes("return ['private']") && ask.includes("name !== 'private'"), "external AI providers must remain disabled");
+  assert(ask.includes("VANTAGE_PRIVATE_LLM_URL") && !ask.includes("avcu:ai:"), "AI endpoint and usage namespace must be Vantage-specific");
+  assert(boot.includes("VANTAGE_APP_URL") && boot.includes("parsed.origin === app.origin"), "AI gateway must be same-origin with the configured Vantage application");
+  assert(chat.includes("Messages are saved in your assistant history") && !chat.includes("List the top 10 accounts by balance"), "assistant UI must disclose storage and avoid inviting private data queries");
+});
