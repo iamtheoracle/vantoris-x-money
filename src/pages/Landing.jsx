@@ -200,9 +200,9 @@ export default function Landing() {
               <ShieldLogo size={20} />
             </div>
             <div className="leading-tight">
-              <p className="font-bold text-[15px] tracking-tight">Vantoris</p>
+              <p className="font-bold text-[15px] tracking-tight">Vantage</p>
               <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 hidden sm:block">
-                Private institution · Impact
+                Private investment · Impact
               </p>
             </div>
           </button>
@@ -309,7 +309,7 @@ export default function Landing() {
                 <span className="font-mono text-[11px] text-brass tracking-wide">PRIVATE CLIENT PLATFORM</span>
               </div>
               <h1 className="font-heading text-white text-[2.75rem] sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.02] tracking-tight">
-                A private institution.
+                A private investment institution.
                 <br />
                 <span className="font-display italic font-normal text-brass text-[1.05em]">A connected client experience.</span>
               </h1>
@@ -351,7 +351,7 @@ export default function Landing() {
               <figure className="overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#071C38] shadow-[0_30px_90px_rgba(0,0,0,.45)]">
                 <img
                   src="/card-art/obsidian.svg"
-                  alt="Illustrative Vantoris Private Institution card concept; not an issued card"
+                  alt="Illustrative Vantage Private Investment card concept; not an issued card"
                   className="block w-full h-auto object-cover"
                   loading="eager"
                   fetchPriority="high"
@@ -383,7 +383,7 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">One platform, clear paths</p>
-                <h2 className="mt-2 font-heading text-2xl sm:text-3xl font-bold tracking-tight text-navy">Explore Vantoris</h2>
+                <h2 className="mt-2 font-heading text-2xl sm:text-3xl font-bold tracking-tight text-navy">Explore Vantage</h2>
                 <p className="mt-3 max-w-2xl text-sm sm:text-base leading-relaxed text-slate-600">
                   Start with what you need. Every area below has its own dedicated experience, and the full feature tour continues further down this page.
                 </p>
@@ -448,7 +448,7 @@ export default function Landing() {
                   Obvious trust.<span className="italic text-brass"> Premium clarity.</span>
                 </h2>
                 <p className="mt-4 text-slate-600 leading-relaxed font-body">
-                  Vantoris brings together account records, investment information, service access, and dedicated support within a carefully separated workspace. Provider-dependent services remain unavailable until their production integrations and approvals are verified. Sign in to access your authorized client workspace and available services.
+                  Vantage brings together account records, investment information, service access, and dedicated support within a carefully separated workspace. Provider-dependent services remain unavailable until their production integrations and approvals are verified. Sign in to access your authorized client workspace and available services.
                 </p>
                 <ul className="mt-6 space-y-2 text-sm text-navy font-body">
                   {[
@@ -467,7 +467,7 @@ export default function Landing() {
               <div className="rounded-[24px] bg-navy text-white p-6 sm:p-8 relative overflow-hidden">
                 <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-brass/20 blur-2xl" />
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-brass">Institutional seal</p>
-                <p className="font-heading text-2xl font-bold mt-3">Vantoris Private Institution</p>
+                <p className="font-heading text-2xl font-bold mt-3">Vantage Private Investment</p>
                 <p className="text-white/60 text-sm mt-2 font-body">
                   Trust · Structure · Purpose — navy, warm ivory, and brass with a discreet institutional character.
                 </p>
@@ -495,7 +495,7 @@ export default function Landing() {
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">Provider connectivity</p>
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-navy">Services, backed by real connections</h2>
             <p className="mt-4 max-w-3xl text-slate-600 leading-relaxed">
-              Vantoris displays a service as connected only when its production provider is configured and verified.
+              Vantage displays a service as connected only when its production provider is configured and verified.
               Internal records, sample artwork, and design concepts are not presented as live financial or payment services.
             </p>
             <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -580,7 +580,7 @@ export default function Landing() {
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">Connections</p>
             <h2 className="font-heading text-3xl font-bold text-navy">Members · support · impact—linked</h2>
             <p className="mt-3 text-slate-600 max-w-2xl font-body">
-              Social proof and channels stay professional: follow official Vantoris presence, contact desks,
+              Social proof and channels stay professional: follow official Vantage presence, contact desks,
               and in-app messaging after verification. No spam growth hacks—real support paths.
             </p>
             <div className="mt-10 grid sm:grid-cols-3 gap-4">
@@ -609,15 +609,15 @@ export default function Landing() {
         <section id="about" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20">
           <div className="grid lg:grid-cols-2 gap-12 items-start">
             <div>
-              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">About Vantoris</p>
+              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">About Vantage</p>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-navy leading-tight">
                 A private workspace for clients who need more than basic account access.
               </h2>
               <p className="mt-5 text-slate-600 text-[16px] leading-relaxed">
-                Vantoris brings together account records, card services, investment information, travel, property, and impact services. Each space has its own permissions and availability status; staff operations remain separate from client-facing access.
+                Vantage brings together account records, card services, investment information, travel, property, and impact services. Each space has its own permissions and availability status; staff operations remain separate from client-facing access.
               </p>
               <p className="mt-4 text-slate-600 text-[16px] leading-relaxed">
-                We built Vantoris for people who carry responsibility: households, founders,
+                We built Vantage for people who carry responsibility: households, founders,
                 service members, and communities that deserve both security and solidarity.
               </p>
               <ul className="mt-8 space-y-3">
@@ -644,7 +644,7 @@ export default function Landing() {
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed text-[15px]">
-                Vantoris is designed to separate client services from staff operations. Sensitive records and consequential actions must remain protected by server-side authorization, audited workflows, and appropriate human approvals.
+                Vantage is designed to separate client services from staff operations. Sensitive records and consequential actions must remain protected by server-side authorization, audited workflows, and appropriate human approvals.
               </p>
               <div className="grid grid-cols-2 gap-3 pt-2">
                 {[
@@ -777,7 +777,7 @@ export default function Landing() {
                 {[
                   'Round-trip and one-way search with flexible dates',
                   'Filter nonstop, cabin class, and baggage-aware totals',
-                  'Pay with eligible Vantoris balance or card when enabled',
+                  'Pay with eligible Vantage balance or card when enabled',
                   'Refunds and charges appear in Activity for tracking',
                 ].map((item) => (
                   <li key={item} className="flex gap-3 text-[15px] text-navy">
@@ -787,7 +787,7 @@ export default function Landing() {
                 ))}
               </ul>
               <p className="mt-6 text-[12px] text-slate-400 leading-relaxed">
-                Partner inventory varies by market. Vantoris is not affiliated with Expedia Group
+                Partner inventory varies by market. Vantage is not affiliated with Expedia Group
                 or any airline. Always confirm fare rules before purchase.
               </p>
             </div>
@@ -837,7 +837,7 @@ export default function Landing() {
                   authorized data providers. No sample listing or estimated payment is presented as live market data.
                 </p>
                 <Link to="/login?intent=housing" className="mt-5 block w-full text-center rounded-full bg-navy text-white py-2.5 text-sm font-bold hover:bg-navy/90">
-                  Sign in to Vantoris
+                  Sign in to Vantage
                 </Link>
               </div>
             </div>
@@ -874,7 +874,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-navy max-w-2xl">Beware of frauds—especially wires and “investment property” pitches</h2>
             <p className="mt-4 text-slate-700 max-w-3xl leading-relaxed">
               Criminals impersonate banks, realtors, travel agents, and even military charities.
-              Vantoris will never ask you to move money via secrecy, gift cards, crypto ATMs, or
+              Vantage will never ask you to move money via secrecy, gift cards, crypto ATMs, or
               unsolicited “account recovery” links.
             </p>
             <div className="mt-10 grid sm:grid-cols-2 gap-4">
@@ -882,7 +882,7 @@ export default function Landing() {
                 ['Wire fraud', 'Always verify beneficiary details out-of-band. Fraudsters change account numbers on invoices at the last minute.'],
                 ['Property scams', '“Guaranteed returns,” pressure to wire earnest money the same day, or sellers who refuse inspections are red flags.'],
                 ['Travel phishing', 'Fake airline refunds and booking confirmations harvest cards—open airline sites yourself, don’t click cold emails.'],
-                ['Impersonation', 'Vantoris staff will not demand your password, PIN, or one-time codes by phone or chat.'],
+                ['Impersonation', 'Vantage staff will not demand your password, PIN, or one-time codes by phone or chat.'],
                 ['Romance / advance-fee', 'Someone you met online asking you to receive or forward funds is a classic laundering trap—decline and report.'],
                 ['Too-good listings', 'Luxury property or flights far below market often mean stolen cards or non-existent inventory.'],
               ].map(([t, d]) => (
@@ -914,7 +914,7 @@ export default function Landing() {
                 </h2>
                 <p className="mt-5 text-white/70 leading-relaxed">
                   Deployment, PCS moves, and transition to civilian life change how money and care
-                  work. Vantoris brings account records and HeroBox services into one client workspace. Care packages,
+                  work. Vantage brings account records and HeroBox services into one client workspace. Care packages,
                   logistics, and community coordination depend on verified fulfilment partners and approvals.
                 </p>
               </div>
@@ -961,7 +961,7 @@ export default function Landing() {
         {/* Who we help */}
         <section id="impact" className="scroll-mt-24 bg-white border-y border-slate-200/80 py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Who Vantoris helps</p>
+            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Who Vantage helps</p>
             <h2 className="text-3xl font-bold text-navy mb-10">People first. Products second.</h2>
             <div className="grid sm:grid-cols-2 gap-5">
               {HELP.map(({ title, text }) => (
@@ -985,7 +985,7 @@ export default function Landing() {
             A connected service platform with clear boundaries and verified availability.
           </h2>
           <p className="mt-4 text-slate-600 max-w-3xl leading-relaxed">
-            Vantoris brings account records, investment information, card services, travel, property, client support, and impact services into one platform. Each service is presented according to its actual provider connectivity, authorization, eligibility, and operational readiness.
+            Vantage brings account records, investment information, card services, travel, property, client support, and impact services into one platform. Each service is presented according to its actual provider connectivity, authorization, eligibility, and operational readiness.
           </p>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {SERVICE_AREAS.map(([t, d]) => (
@@ -1008,7 +1008,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-navy max-w-2xl">Humanitarian partners and causes the world is underfunding</h2>
             <p className="mt-4 text-slate-600 max-w-3xl leading-relaxed">
               International humanitarian assistance fell sharply through 2025, leaving record gaps in
-              UN-coordinated appeals. Vantoris members and operators can learn from—and when policy
+              UN-coordinated appeals. Vantage members and operators can learn from—and when policy
               allows, support—established organizations already serving people in crisis. Links below
               go to official sites; always verify before donating.
             </p>
@@ -1038,7 +1038,7 @@ export default function Landing() {
         <section id="contact" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 pb-8">
           <div className="rounded-[28px] border border-slate-200 bg-white p-8 sm:p-10">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Contact us</p>
-            <h2 className="text-2xl font-bold text-navy">Talk to Vantoris</h2>
+            <h2 className="text-2xl font-bold text-navy">Talk to Vantage</h2>
             <p className="mt-2 text-slate-600">Client enquiries, service requests, and HeroBox coordination.</p>
             <div className="mt-6 rounded-2xl border border-slate-200 bg-[#F7F5EF] p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brass">United States client services</p>
@@ -1081,12 +1081,12 @@ export default function Landing() {
               <ShieldLogo size={16} />
             </div>
             <div>
-              <p className="font-bold text-navy text-sm">Vantoris</p>
-              <p className="text-[11px] text-slate-500">Private institution with impact</p>
+              <p className="font-bold text-navy text-sm">Vantage</p>
+              <p className="text-[11px] text-slate-500">Private investment with impact</p>
             </div>
           </div>
           <p className="text-[12px] text-slate-400 max-w-md">
-            Vantoris Private Institution. Service availability, eligibility, and terms are shown within each workspace. This public information page does not establish deposit-taking, custody, investment execution, or payment-rail availability.
+            Vantage Private Investment. Service availability, eligibility, and terms are shown within each workspace. This public information page does not establish deposit-taking, custody, investment execution, or payment-rail availability.
           </p>
         </div>
       </footer>
