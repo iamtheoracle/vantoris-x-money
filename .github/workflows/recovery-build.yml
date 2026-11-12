@@ -21,7 +21,6 @@ jobs:
       AVCU_LEDGER_TEST_DATABASE_URL: ${{ secrets.AVCU_LEDGER_TEST_DATABASE_URL }}
       VITE_BASE44_APP_ID: 6a3d85c1632966fefe16f3d4
       VITE_BASE44_SERVER_URL: https://vantoris.base44.app
-      VITE_BASE44_APP_BASE_URL: https://vantoris-platform.netlify.app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -67,6 +66,24 @@ jobs:
           if (existsSync('server/llm-proxy.mjs')) throw new Error('Obsolete standalone private-model proxy still exists');
           console.log('Assistant entry points use the shared Oracle runtime.');
           NODE
+      - name: Prevent browser-side financial record mutations
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const surfaces = [
+            'src/components/vantoris/FloatingCommandDock.jsx',
+            'src/pages/operations/Approvals.jsx',
+            'src/pages/operations/InvestmentDeposits.jsx',
+            'src/pages/operations/InvestmentWithdrawals.jsx',
+          ];
+          const directWrite = /base44\\.entities\\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest)\\.(create|update|delete|updateMany)\\s*\\(/;
+          for (const file of surfaces) {
+            if (directWrite.test(readFileSync(file, 'utf8'))) {
+              throw new Error('Browser-side financial record mutation found in ' + file);
+            }
+          }
+          console.log('Critical member and operator surfaces contain no direct financial record mutations.');
+          NODE
       - name: Validate entity JSON and security rules
         run: |
           node --input-type=module <<'NODE'
@@ -79,13 +96,13 @@ jobs:
             if (!schema.name || schema.type !== 'object') throw new Error(`Invalid entity schema: ${file}`);
           }
           const schemas = Object.fromEntries(
-            ['Account', 'Transaction', 'WithdrawalRequest', 'TransferRequest', 'TransferWebhookEvent', 'IncomingBankReceipt', 'Notification', 'User'].map((name) => {
+            ['Account', 'Transaction', 'WithdrawalRequest', 'TransferRequest', 'TransferWebhookEvent', 'IncomingBankReceipt', 'Notification', 'User', 'PaymentCard'].map((name) => {
               const schema = JSON.parse(readFileSync(`${dir}/${name}.jsonc`, 'utf8'));
               if (!schema.rls) throw new Error(`Missing row-level security rules: ${name}`);
               return [name, schema];
             })
           );
-          for (const name of ['Account', 'Transaction', 'WithdrawalRequest']) {
+          for (const name of ['Account', 'Transaction', 'WithdrawalRequest', 'PaymentCard']) {
             const rls = schemas[name].rls;
             for (const action of ['create', 'update', 'delete']) {
               if (rls[action] !== false) throw new Error(`${name}.${action} must remain denied to direct clients`);
@@ -111,6 +128,9 @@ jobs:
           }
           if (!schemas.Transaction.rls.read || !schemas.Account.rls.read) {
             throw new Error('Account and Transaction read policies must remain explicitly defined');
+          }
+          if (schemas.PaymentCard.rls.read?.['data.user_id'] !== '{{user.id}}') {
+            throw new Error('PaymentCard.read must remain owner-scoped');
           }
                     const transfer = schemas.TransferRequest;
           for (const status of ['awaiting_dual_approval', 'approved_awaiting_bank_submission', 'submitted_to_bank', 'pending_settlement', 'settled', 'rejected']) {
