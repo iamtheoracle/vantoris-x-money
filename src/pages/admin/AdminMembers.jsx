@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Users, Search, Plus, Download, StickyNote, UserPlus, Trash2, History, AlertTriangle } from 'lucide-react';
+import { Search, Plus, Download, StickyNote, UserPlus, Trash2, History, AlertTriangle } from 'lucide-react';
 import MemberActivityFeed from '@/components/vantoris/MemberActivityFeed';
 import { exportToCsv } from '@/lib/exportCsv';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
