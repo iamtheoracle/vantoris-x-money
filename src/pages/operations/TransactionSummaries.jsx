@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { formatCurrency } from '@/lib/formatCurrency';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
 import { CalendarDays, FileSpreadsheet, Download, AlertTriangle } from 'lucide-react';
 
@@ -15,16 +16,6 @@ function transactionDate(transaction) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function amountLabel(value, currency) {
-  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return 'Amount not supplied';
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
-  } catch {
-    return 'Amount not verified';
-  }
-}
 
 function maskAccount(value) {
   if (!value) return 'Account number not supplied';
@@ -150,7 +141,7 @@ export default function TransactionSummaries() {
                     <p className="mt-1 text-xs text-slate-500">{account?.account_name || (accountsError ? 'Account record unavailable' : 'Account record not returned')} · {maskAccount(account?.account_number)}</p>
                   </div>
                   <div className="sm:text-right">
-                    <p className="text-sm font-semibold tabular-nums text-navy">{amountLabel(transaction.amount, currency)}</p>
+                    <p className="text-sm font-semibold tabular-nums text-navy">{formatCurrency(transaction.amount, currency || null)}</p>
                     <p className="mt-1 text-xs capitalize text-slate-500">{transaction.status ? String(transaction.status).replace(/_/g, ' ') : 'Status not supplied'}</p>
                   </div>
                 </article>
