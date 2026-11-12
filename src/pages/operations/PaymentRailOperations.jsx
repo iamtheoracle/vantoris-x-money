@@ -8,7 +8,7 @@ const rails = [
 ];
 
 const gates = [
-  'Confirm AVCU legal applicant and authorized sponsor-bank relationship',
+  'Confirm the institution legal applicant and authorized sponsor-bank relationship',
   'Obtain written bank approval for ACH origination/receipt and Fedwire origination/receipt',
   'Confirm bank-approved instructions, limits, cutoffs, fees and return/recall procedures',
   'Approve member disclosures, fraud screening and sanctions controls',
