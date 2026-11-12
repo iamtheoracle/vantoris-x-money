@@ -42,3 +42,15 @@ Deno.test("withdrawal audit labels bounded records and does not sum mixed curren
   assert(!source.includes("totalApproved"), "mixed-currency approved amounts must not be summed in the browser");
   assert(source.includes("acct?.currency || acct?.currency_code || null"), "audit values must use source currency");
 });
+
+Deno.test("withdrawal policy configuration cannot be mutated from the browser", async () => {
+  const source = await Deno.readTextFile("src/pages/operations/WithdrawalLimits.jsx");
+  assert(!/entities\.WithdrawalLimit\.(create|update|delete)\s*\(/.test(source), "withdrawal policy must not be written directly from the browser");
+  assert(!source.includes("enabled: true") && !source.includes("daily_limit: 0"), "missing policy records must not receive invented defaults");
+  assert(source.includes("server-authorized dual-approval workflow"), "policy writes must remain held pending server authorization");
+});
+
+Deno.test("withdrawal audit output masks account numbers", async () => {
+  const source = await Deno.readTextFile("src/pages/operations/WithdrawalAuditLog.jsx");
+  assert(source.includes("maskAccountNumber(acct?.account_number)"), "audit views and exports must mask account identifiers");
+});
