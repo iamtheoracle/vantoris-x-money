@@ -16,7 +16,7 @@ import {
   reserveOutgoingFunds, transitionOutgoingFundsHold,
 } from '../base44/functions/_shared/paymentStore.ts';
 
-Deno.test('AVCU transfer requester cannot act as reviewer, approver, or submitter',()=>{
+Deno.test('Vantoris transfer requester cannot act as reviewer, approver, or submitter',()=>{
   assertStaffIsNotRequester('staff-2','member-1');
   let rejected=false;
   try { assertStaffIsNotRequester('member-1','member-1'); } catch(error) {
@@ -25,7 +25,7 @@ Deno.test('AVCU transfer requester cannot act as reviewer, approver, or submitte
   assert(rejected,'Requester self-approval must be rejected.');
 });
 
-Deno.test('AVCU provider idempotency key is stable and member-scoped',async()=>{
+Deno.test('Vantoris provider idempotency key is stable and member-scoped',async()=>{
   const {deriveProviderIdempotencyKey}=await import('../base44/functions/_shared/paymentStore.ts');
   const first=await deriveProviderIdempotencyKey('member-a','same-client-key');
   const retry=await deriveProviderIdempotencyKey('member-a','same-client-key');
@@ -35,16 +35,16 @@ Deno.test('AVCU provider idempotency key is stable and member-scoped',async()=>{
   assertEquals(first.length,36);
 });
 
-const enabled = !!Deno.env.get('AVCU_LEDGER_TEST_DATABASE_URL');
+const enabled = !!Deno.env.get('VANTORIS_LEDGER_TEST_DATABASE_URL');
 Deno.test({
-  name: 'AVCU PostgreSQL payment store integration',
+  name: 'Vantoris PostgreSQL payment store integration',
   ignore: !enabled,
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-    const testUrl=Deno.env.get('AVCU_LEDGER_TEST_DATABASE_URL');
-    if(!testUrl) throw new Error('AVCU_LEDGER_TEST_DATABASE_URL is required for integration tests.');
-    Deno.env.set('AVCU_LEDGER_DATABASE_URL',testUrl);
+    const testUrl=Deno.env.get('VANTORIS_LEDGER_TEST_DATABASE_URL');
+    if(!testUrl) throw new Error('VANTORIS_LEDGER_TEST_DATABASE_URL is required for integration tests.');
+    Deno.env.set('VANTORIS_LEDGER_DATABASE_URL',testUrl);
     const key = `test-${crypto.randomUUID()}`;
     try {
       const claims = await Promise.all(Array.from({length:20},()=>claimPaymentOperation({
@@ -82,7 +82,7 @@ Deno.test({
       const accountA=crypto.randomUUID(), accountB=crypto.randomUUID();
       // Test fixture accounts are intentionally unique and isolated.
       const postgres = (await import('npm:postgres@3.4.7')).default;
-      const db=postgres(Deno.env.get('AVCU_LEDGER_DATABASE_URL')!,{ssl:'require',prepare:false});
+      const db=postgres(Deno.env.get('VANTORIS_LEDGER_DATABASE_URL')!,{ssl:'require',prepare:false});
       await db`INSERT INTO avcu_payments.ledger_accounts(id,external_account_ref,account_type) VALUES
         (${accountA},${'test:'+accountA},'member_deposit'),
         (${accountB},${'test:'+accountB},'bank_clearing')`;
