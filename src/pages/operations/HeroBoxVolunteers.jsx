@@ -1,157 +1,116 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { motion } from 'framer-motion';
-import { Users, Search, Clock, Award, Building2 } from 'lucide-react';
+import { Users, Search, Clock, Award, Building2, AlertTriangle } from 'lucide-react';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
 import StatusBadge from '@/components/vantoris/StatusBadge';
+
+function dateLabel(value) {
+  if (!value) return 'Date not supplied';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Date not supplied' : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
 
 export default function HeroBoxVolunteers() {
   const [loading, setLoading] = useState(true);
   const [volunteers, setVolunteers] = useState([]);
   const [users, setUsers] = useState({});
+  const [loadError, setLoadError] = useState(false);
+  const [usersError, setUsersError] = useState(false);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
 
-  useEffect(() => { loadVolunteers(); }, []);
-
-  async function loadVolunteers() {
-    try {
-      const [profiles, allUsers] = await Promise.all([
-        base44.entities.HeroBoxProfile.filter({ role: 'volunteer' }, '-created_date', 200).catch(() => []),
-        base44.entities.User.list('-created_date', 200).catch(() => []),
+  useEffect(() => {
+    let active = true;
+    const safeList = async (request) => {
+      try {
+        const rows = await request;
+        return { rows: Array.isArray(rows) ? rows : [], failed: !Array.isArray(rows) };
+      } catch {
+        return { rows: [], failed: true };
+      }
+    };
+    (async () => {
+      const [profileResult, userResult] = await Promise.all([
+        safeList(base44.entities.HeroBoxProfile.filter({ role: 'volunteer' }, '-created_date', 200)),
+        safeList(base44.entities.User.list('-created_date', 200)),
       ]);
-      setVolunteers(profiles);
+      if (!active) return;
+      setVolunteers(profileResult.rows);
+      setLoadError(profileResult.failed);
+      setUsersError(userResult.failed);
       const userMap = {};
-      allUsers.forEach(u => { userMap[u.id] = u; });
+      userResult.rows.forEach((user) => { userMap[user.id] = user; });
       setUsers(userMap);
-    } catch (e) {
-      console.error('Failed to load volunteers:', e);
-    } finally {
-      setLoading(false);
-    }
-  }
+    })().finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  const filtered = useMemo(() => volunteers.filter(v => {
-    const name = users[v.user_id]?.full_name || '';
-    const matchesSearch = !search || name.toLowerCase().includes(search.toLowerCase()) || (v.mission_statement || '').toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || v.status === statusFilter;
+  const filtered = useMemo(() => volunteers.filter((volunteer) => {
+    const name = users[volunteer.user_id]?.full_name || '';
+    const query = search.toLowerCase();
+    const matchesSearch = !query || name.toLowerCase().includes(query) || (volunteer.mission_statement || '').toLowerCase().includes(query);
+    const matchesStatus = statusFilter === 'all' || volunteer.status === statusFilter;
     return matchesSearch && matchesStatus;
   }), [volunteers, users, search, statusFilter]);
 
-  const totalHours = volunteers.reduce((s, v) => s + (v.volunteer_hours || 0), 0);
-  const totalMilestones = volunteers.reduce((s, v) => s + (v.mission_milestones || 0), 0);
-  const totalOrgs = volunteers.reduce((s, v) => s + (v.organizations_supported || 0), 0);
-
   const stats = [
-    { label: 'Total Volunteers', value: volunteers.length, icon: Users, color: 'text-navy' },
-    { label: 'Active', value: volunteers.filter(v => v.status === 'active').length, icon: Users, color: 'text-mint' },
-    { label: 'Volunteer Hours', value: totalHours, icon: Clock, color: 'text-brass' },
-    { label: 'Mission Milestones', value: totalMilestones, icon: Award, color: 'text-champagne' },
+    { label: 'Volunteer profile records returned', value: loadError ? 'Unavailable' : volunteers.length, icon: Users },
+    { label: 'Active profile records in returned set', value: loadError ? 'Unavailable' : volunteers.filter((item) => item.status === 'active').length, icon: Users },
+    { label: 'Profiles with hours field supplied', value: loadError ? 'Unavailable' : volunteers.filter((item) => item.volunteer_hours !== null && item.volunteer_hours !== undefined).length, icon: Clock },
+    { label: 'Profiles with milestone field supplied', value: loadError ? 'Unavailable' : volunteers.filter((item) => item.mission_milestones !== null && item.mission_milestones !== undefined).length, icon: Award },
   ];
 
   return (
-    <OperationsPageLayout
-      title="Volunteers"
-      description="Community members contributing time and service"
-      icon={Users}
-      breadcrumb="HeroBox · People"
-    >
-      <div className="flex flex-col sm:flex-row gap-3 mb-5">
+    <OperationsPageLayout title="Volunteer profiles" description="Read-only volunteer profile records. Hours and milestones are profile-entered and not independently verified." icon={Users} breadcrumb="HeroBox · People">
+      <div role="status" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <AlertTriangle size={17} className="mt-0.5 shrink-0 text-amber-800" />
+        <p className="text-xs leading-5 text-amber-950">Volunteer hours, mission milestones, and organizations supported are profile-entered fields. They are not proof of attendance, completed service, or independently verified impact. Profile and user queries are bounded to 200 records.</p>
+      </div>
+
+      <div className="mb-5 flex flex-col gap-3 sm:flex-row">
         <div className="relative flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray/50" />
-          <input
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Search volunteers..."
-            className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-white border border-slate-200 text-sm text-foreground placeholder:text-gray/40 focus:outline-none focus:border-brass/40"
-          />
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search volunteer profiles…" className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-4 text-sm text-foreground placeholder:text-gray/40 focus:border-brass/40 focus:outline-none" />
         </div>
-        <div className="flex gap-2 flex-wrap">
-          {['all', 'active', 'pending', 'inactive'].map(s => (
-            <button
-              key={s}
-              onClick={() => setStatusFilter(s)}
-              className={`px-3 py-2 rounded-xl text-xs font-medium capitalize transition-all ${
-                statusFilter === s
-                  ? 'bg-navy text-white'
-                  : 'bg-white border border-slate-200 text-gray hover:text-foreground'
-              }`}
-            >
-              {s}
-            </button>
-          ))}
+        <div className="flex flex-wrap gap-2">
+          {['all', 'active', 'pending', 'inactive'].map((status) => <button key={status} type="button" onClick={() => setStatusFilter(status)} className={'rounded-xl px-3 py-2 text-xs font-medium capitalize ' + (statusFilter === status ? 'bg-navy text-white' : 'border border-slate-200 bg-white text-gray')}>{status}</button>)}
         </div>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-        {stats.map((stat, i) => {
+      <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {stats.map((stat) => {
           const Icon = stat.icon;
-          return (
-            <div key={i} className="vantoris-glass p-3.5">
-              <Icon size={15} className={stat.color} />
-              <p className="text-foreground font-bold text-xl mt-1.5">{stat.value}</p>
-              <p className="text-gray text-[10px]">{stat.label}</p>
-            </div>
-          );
+          return <div key={stat.label} className="vantoris-glass p-3.5"><Icon size={15} className="text-brass" /><p className="mt-1.5 text-xl font-bold text-foreground">{stat.value}</p><p className="text-[10px] text-gray">{stat.label}</p></div>;
         })}
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12">
-          <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
-        </div>
+        <div className="flex justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-2 border-brass/30 border-t-brass" /></div>
+      ) : loadError ? (
+        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950">Volunteer profile records are unavailable. This is not confirmation that no profiles exist.</p>
       ) : filtered.length === 0 ? (
-        <div className="vantoris-glass p-8 text-center">
-          <Users size={32} className="text-gray/30 mx-auto mb-2" />
-          <p className="text-gray text-sm">No volunteers found</p>
-          <p className="text-gray/50 text-[11px] mt-1">Volunteers will appear here when profiles are created</p>
-        </div>
+        <div className="vantoris-glass p-8 text-center"><Users size={32} className="mx-auto mb-2 text-gray/30" /><p className="text-sm text-gray">No volunteer profile records matched this filter.</p></div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          {filtered.map((vol, i) => {
-            const user = users[vol.user_id];
-            const name = user?.full_name || `Volunteer #${vol.id.slice(-6).toUpperCase()}`;
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {filtered.map((volunteer, index) => {
+            const name = users[volunteer.user_id]?.full_name || (usersError ? 'Member name unavailable' : 'Member name not returned');
             return (
-              <motion.div
-                key={vol.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.03 }}
-                className="vantoris-glass p-4 hover:shadow-float transition-all"
-              >
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="w-10 h-10 rounded-xl bg-brass/12 flex items-center justify-center flex-shrink-0">
-                      <Users size={18} className="text-brass" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-foreground text-sm font-semibold truncate">{name}</p>
-                      <p className="text-gray text-[10px]">{new Date(vol.created_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
-                    </div>
+              <motion.article key={volunteer.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.02 }} className="vantoris-glass p-4">
+                <div className="mb-3 flex items-start justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brass/12"><Users size={18} className="text-brass" /></div>
+                    <div className="min-w-0"><p className="truncate text-sm font-semibold text-foreground">{name}</p><p className="text-[10px] text-gray">{dateLabel(volunteer.created_date)}</p></div>
                   </div>
-                  <StatusBadge status={vol.status} />
+                  <StatusBadge status={volunteer.status || 'not_supplied'} />
                 </div>
-                {vol.mission_statement && (
-                  <p className="text-gray text-xs mb-3 line-clamp-2">{vol.mission_statement}</p>
-                )}
-                <div className="grid grid-cols-3 gap-2 pt-3 border-t border-slate-100">
-                  <div className="text-center">
-                    <Clock size={13} className="text-brass mx-auto mb-1" />
-                    <p className="text-foreground font-bold text-sm">{vol.volunteer_hours || 0}</p>
-                    <p className="text-gray text-[9px]">Hours</p>
-                  </div>
-                  <div className="text-center">
-                    <Award size={13} className="text-champagne mx-auto mb-1" />
-                    <p className="text-foreground font-bold text-sm">{vol.mission_milestones || 0}</p>
-                    <p className="text-gray text-[9px]">Milestones</p>
-                  </div>
-                  <div className="text-center">
-                    <Building2 size={13} className="text-navy/60 mx-auto mb-1" />
-                    <p className="text-foreground font-bold text-sm">{vol.organizations_supported || 0}</p>
-                    <p className="text-gray text-[9px]">Orgs</p>
-                  </div>
+                {volunteer.mission_statement && <p className="mb-3 line-clamp-2 text-xs text-gray">{volunteer.mission_statement}</p>}
+                <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3">
+                  <div className="text-center"><Clock size={13} className="mx-auto mb-1 text-brass" /><p className="text-sm font-bold text-foreground">{volunteer.volunteer_hours ?? '—'}</p><p className="text-[9px] text-gray">Profile-entered hours</p></div>
+                  <div className="text-center"><Award size={13} className="mx-auto mb-1 text-champagne" /><p className="text-sm font-bold text-foreground">{volunteer.mission_milestones ?? '—'}</p><p className="text-[9px] text-gray">Profile milestones</p></div>
+                  <div className="text-center"><Building2 size={13} className="mx-auto mb-1 text-navy/60" /><p className="text-sm font-bold text-foreground">{volunteer.organizations_supported ?? '—'}</p><p className="text-[9px] text-gray">Organizations listed</p></div>
                 </div>
-              </motion.div>
+              </motion.article>
             );
           })}
         </div>
