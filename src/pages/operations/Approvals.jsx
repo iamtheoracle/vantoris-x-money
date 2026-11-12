@@ -4,10 +4,10 @@ import { base44 } from '@/api/base44Client';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { ArrowDownToLine, ArrowLeftRight, ArrowUpRight, ShieldAlert } from 'lucide-react';
 
-const PENDING = new Set(['pending', 'requested', 'review', '']);
+const PENDING = new Set(['pending', 'requested', 'review']);
 
 function isPending(item) {
-  return PENDING.has(String(item?.status || 'pending').toLowerCase());
+  return PENDING.has(String(item?.status || '').toLowerCase());
 }
 
 function destinationForTransaction(transaction) {
@@ -37,7 +37,8 @@ export default function Approvals() {
         title: transaction.type || 'Transaction',
         detail: transaction.description || 'No description supplied',
         amount: transaction.amount,
-        status: transaction.status || 'pending',
+        status: transaction.status || 'Status not supplied',
+        currency: transaction.currency || transaction.currency_code || null,
         createdDate: transaction.created_date,
         destination: destinationForTransaction(transaction),
       }));
@@ -53,7 +54,8 @@ export default function Approvals() {
         title: notification.title || 'Service request',
         detail: notification.message || 'No request details supplied',
         amount: null,
-        status: notification.status || 'pending',
+        status: notification.status || 'Status not supplied',
+        currency: null,
         createdDate: notification.created_date,
         destination: '/operations/service-requests',
       }));
@@ -121,7 +123,7 @@ export default function Approvals() {
                     {item.createdDate ? new Date(item.createdDate).toLocaleString() : 'Date unavailable'} · {item.status}
                   </p>
                 </div>
-                {item.amount != null && <p className="shrink-0 text-sm font-semibold tabular-nums text-navy">{formatCurrency(item.amount)}</p>}
+                {item.amount != null && <p className="shrink-0 text-sm font-semibold tabular-nums text-navy">{formatCurrency(item.amount, item.currency)}</p>}
               </div>
               <div className="mt-3 flex justify-end">
                 <Link to={item.destination} className="text-sm font-semibold text-navy underline underline-offset-4">
