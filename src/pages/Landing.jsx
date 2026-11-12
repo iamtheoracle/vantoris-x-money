@@ -586,7 +586,7 @@ export default function Landing() {
             <div className="mt-10 grid sm:grid-cols-3 gap-4">
               {[
                 ['In-app messages', 'Secure member ↔ support threads', '/login'],
-                ['Voice desks', 'US + UK lines on Contact', '#contact'],
+                ['Client support', 'Use the verified contact channel inside your account', '#contact'],
                 ['HeroBox network', 'Volunteers, shipping, funds in ops', '/login'],
               ].map(([t, d, href]) => (
                 href.startsWith('#') ? (
@@ -848,15 +848,13 @@ export default function Landing() {
           <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Wires & tracking</p>
           <h2 className="text-3xl font-bold text-navy max-w-2xl">Send with care. Track every step.</h2>
           <p className="mt-4 text-slate-600 max-w-3xl leading-relaxed">
-            Domestic and international wire-style transfers sit next to everyday Send / Request.
-            Members initiate, review beneficiary details, and follow status in Activity—so large
-            moves are never a black box.
+            Domestic payment requests and wire instructions are shown only where an authorized U.S. provider, review process and settlement path are confirmed. This workspace does not represent an active cross-border wire service. Members see the source-recorded status; no transfer state is inferred.
           </p>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
               ['Initiate', 'Amount, beneficiary, bank identifiers, purpose of payment'],
               ['Verify', 'Confirm names and account details before release'],
-              ['Track', 'Pending → processing → completed (or returned) in Activity'],
+              ['Track', 'Display only the status returned by the authoritative source'],
               ['Record', 'Keep reference IDs for disputes and statements'],
             ].map(([t, d]) => (
               <div key={t} className="rounded-2xl border border-slate-200 bg-white p-5">
@@ -1041,7 +1039,7 @@ export default function Landing() {
           <div className="rounded-[28px] border border-slate-200 bg-white p-8 sm:p-10">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Contact us</p>
             <h2 className="text-2xl font-bold text-navy">Talk to Vantoris</h2>
-            <p className="mt-2 text-slate-600">Membership, partnerships, and HeroBox logistics.</p>
+            <p className="mt-2 text-slate-600">Client enquiries, service requests, and HeroBox coordination.</p>
             <div className="mt-6 rounded-2xl border border-slate-200 bg-[#F7F5EF] p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brass">United States client services</p>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">Use the verified contact channel displayed inside your authenticated account. Public phone and email details are not published here until their ownership and service coverage are confirmed.</p>
