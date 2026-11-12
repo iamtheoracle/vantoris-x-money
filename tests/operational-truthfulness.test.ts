@@ -107,3 +107,11 @@ Deno.test("referral operations do not expose referred members' financial balance
   assert(!source.includes("referredBalance"), "referral reporting must not aggregate referred-member assets");
   assert(source.includes("account balances and private financial details are never exposed"), "privacy boundary must be explicit");
 });
+
+
+Deno.test("member-to-member transfer screen does not depend on an external payment network", async () => {
+  const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
+  assert(!source.includes("findZelleRecipient") && !source.includes("ZelleProfile"), "member transfers must not use an external-network recipient directory");
+  assert(source.includes("Private member-to-member transfers are not enabled yet"), "member transfer availability must be explicit");
+  assert(source.includes("No recipient search, payment instruction, transfer request, or account change has been created"), "unavailable member transfers must not imply a request was recorded");
+});
