@@ -10,7 +10,7 @@ export default function IncomingBankReceipts(){
  useEffect(()=>{load();},[]);
  async function record(){
   const member=(window.prompt('Member user ID (verify identity through approved procedures):')||'').trim();if(!member)return;
-  const account=(window.prompt('AVCU account record ID:')||'').trim();if(!account)return;
+  const account=(window.prompt('Institution account record ID:')||'').trim();if(!account)return;
   const rail=(window.prompt('Payment rail: enter ACH or FEDWIRE','ACH')||'').trim().toUpperCase();if(!['ACH','FEDWIRE'].includes(rail)){window.alert('Enter ACH or FEDWIRE.');return;}
   const amountText=(window.prompt('Amount received in USD (e.g. 125.50):')||'').trim();const amount=Number(amountText);if(!Number.isFinite(amount)||amount<=0||Math.round(amount*100)>100000000){window.alert('Enter a valid amount.');return;}
   const reference=(window.prompt('Exact bank-generated reference:')||'').trim();if(!reference)return;
