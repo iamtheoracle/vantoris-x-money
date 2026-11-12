@@ -3,6 +3,18 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Wallet, PiggyBank, Landmark, Building2, Coins, Users } from 'lucide-react';
 
+function formatRecordedAmount(value, currency) {
+  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
+  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return 'Amount not supplied';
+  const amount = typeof value === 'number' ? value : Number(value);
+  if (!Number.isFinite(amount)) return 'Amount not supplied';
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  } catch {
+    return 'Amount not verified';
+  }
+}
+
 const TYPE_META = {
   Checking: { icon: Wallet, color: 'text-navy', bg: 'bg-navy/8' },
   Savings: { icon: PiggyBank, color: 'text-mint', bg: 'bg-mint/12' },
