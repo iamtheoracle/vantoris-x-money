@@ -71,7 +71,7 @@ export default function AdminTopBar({ user, onMenuClick }) {
             </button>
           )}
           <div className="min-w-0">
-            <p className="text-gray/60 text-[9px] uppercase tracking-[0.13em] font-semibold truncate">Vantoris Private Institution</p>
+            <p className="text-gray/60 text-[9px] uppercase tracking-[0.13em] font-semibold truncate">Vantage Private Investment</p>
             <h2 className="text-foreground font-semibold text-sm truncate">{pageTitle}</h2>
           </div>
         </div>
