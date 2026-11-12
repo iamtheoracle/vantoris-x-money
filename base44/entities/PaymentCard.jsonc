@@ -14,9 +14,9 @@
   },
   "required": ["user_id", "card_type", "last4", "status"],
   "rls": {
-    "create": { "data.user_id": "{{user.id}}" },
+    "create": false,
     "read": { "data.user_id": "{{user.id}}" },
-    "update": { "data.user_id": "{{user.id}}" },
-    "delete": { "data.user_id": "{{user.id}}" }
+    "update": false,
+    "delete": false
   }
 }
