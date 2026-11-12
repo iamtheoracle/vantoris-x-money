@@ -139,7 +139,7 @@ The recovered router defines **6 public/authentication routes, 35 member routes,
 - Base44 entity schemas: **18** JSONC files.
 - Base44 server-function entry points: **11** (`bankTransferWebhook`, `createTransferRequest`, `generateAccount`, `oracleRuntime`, `reconcileBankTransfers`, `recordIncomingBankReceipt`, `recordManualTransferEvent`, `reviewTransferRequest`, `submitApplication`, `submitApprovedTransfer`, `syncPlaidTransferEvents`).
 - SQL migrations: **5** (`001_avcu_payment_control_plane.sql`, `002_avcu_backend_grants.sql`, `003_avcu_outgoing_funds_holds.sql`, `004_avcu_payment_audit_hardening.sql`, `005_avcu_payment_outbox_claims.sql`).
-- Test files: **2** (`tests/avcu-payment-migration.test.ts`, `tests/avcu-payment-store.test.ts`).
+- Test files: **5** (`tests/avcu-payment-migration.test.ts`, `tests/avcu-payment-store.test.ts`, `tests/financial-formatting.test.ts`, `tests/heritage-and-card-art.test.ts`, `tests/operational-truthfulness.test.ts`).
 
 These are repository artifacts only. They do not prove that these schemas, functions or migrations are deployed to the Base44 application or production database. The actual deployed Base44 project and data environment remain unverified.
 
@@ -194,3 +194,8 @@ GitHub Actions run [#657](https://github.com/iamtheoracle/vantoris-x-money/actio
 - The workflow permission was corrected on `recovery/merge-vantoris-live` (the PR base branch) to include `base44/functions/_shared`. A fresh PR-triggered run is required to verify this correction and continue through the AI-path checks, entity/RLS validation, lint, typecheck and build.
 - The PostgreSQL integration test was **ignored** because `AVCU_LEDGER_TEST_DATABASE_URL` was not present in the CI environment. This means no PostgreSQL concurrency/ledger integration result has been established by these runs.
 - Latest PR check `43307304580` completed successfully: Deno runtime tests, AI-path guard, entity/security validation, lint, typecheck, and production build all passed. This is branch CI evidence only; it does not establish live production or database integration correctness.
+
+
+## Follow-up correction — first-party member transfer boundary
+
+The member transfer panel no longer performs recipient lookup against Zelle-specific records or displays an external-network enrollment prompt. It now states that first-party member-to-member transfers are unavailable until the institution has a verified member directory, recipient consent, server-side authorization, funds reservation, dual-control policy where required, and an audited ledger lifecycle. The screen explicitly confirms that no recipient lookup, payment instruction, transfer request, or account change has been created. A regression test protects this boundary.
