@@ -32,6 +32,7 @@ export default function Referrals() {
   const getUser = (id) => users.find((user) => user.id === id);
   const referrerStats = {};
   referrals.forEach((referral) => {
+    if (!referral.referrer_id) return;
     if (!referrerStats[referral.referrer_id]) referrerStats[referral.referrer_id] = { count: 0 };
     referrerStats[referral.referrer_id].count += 1;
   });
