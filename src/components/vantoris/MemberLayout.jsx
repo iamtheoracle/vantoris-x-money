@@ -18,7 +18,7 @@ export default function MemberLayout() {
 
   return (
     <TabHistoryProvider>
-      <div className="min-h-screen bg-[#F4F6F9] vantoris-scroll" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}>
+      <div className="min-h-screen bg-[#F7F5EF] vantoris-scroll" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 5rem)' }}>
         <div className="safe-top w-full max-w-[430px] mx-auto">
           <PageTransition />
         </div>
