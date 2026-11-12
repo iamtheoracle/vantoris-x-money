@@ -115,3 +115,14 @@ Deno.test("member-to-member transfer screen does not depend on an external payme
   assert(source.includes("Private member-to-member transfers are not enabled yet"), "member transfer availability must be explicit");
   assert(source.includes("No recipient search, payment instruction, transfer request, or account change has been created"), "unavailable member transfers must not imply a request was recorded");
 });
+
+Deno.test("payment functions cannot read another product's clearing or database secrets", async () => {
+  const store = await Deno.readTextFile("base44/functions/_shared/paymentStore.ts");
+  const receipt = await Deno.readTextFile("base44/functions/recordIncomingBankReceipt/entry.ts");
+  const reconcile = await Deno.readTextFile("base44/functions/reconcileBankTransfers/entry.ts");
+  const sync = await Deno.readTextFile("base44/functions/syncPlaidTransferEvents/entry.ts");
+  assert(store.includes("VANTORIS_LEDGER_DATABASE_URL") && !store.includes("AVCU_LEDGER_DATABASE_URL"), "ledger adapter must use only the Vantoris database secret");
+  assert(receipt.includes("VANTORIS_ACH_CLEARING_LEDGER_ACCOUNT_ID") && !receipt.includes("AVCU_"), "incoming receipts must not read another institution's clearing account IDs");
+  assert(reconcile.includes("VANTORIS_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID") && !reconcile.includes("AVCU_"), "reconciliation must use Vantoris-specific clearing configuration");
+  assert(sync.includes("VANTORIS_INTERNAL_SYNC_SECRET") && !sync.includes("AVCU_"), "internal provider sync must use Vantoris-specific secret");
+});
