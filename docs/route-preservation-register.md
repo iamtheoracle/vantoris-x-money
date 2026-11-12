@@ -147,14 +147,15 @@ These are repository artifacts only. They do not prove that these schemas, funct
 
 | Area | Source evidence | Current classification | Required action |
 |---|---|---|---|
-| Transaction approvals | `src/pages/operations/Approvals.jsx` reads Transaction/Account records and attempts browser-side Account balance and Transaction status updates. | Insecure source path; live exposure unverified | Replace with a server-authorized, transactional, idempotent and audited approval lifecycle. Do not report “ledger updated” unless the server confirms commit. |
+| Transaction approvals | `src/pages/operations/Approvals.jsx` previously attempted browser-side Account balance and Transaction status updates. PR #4 removes these writes and keeps the inbox read-only with links to dedicated queues. | Unsafe client mutation removed; generic server-authorized approval lifecycle remains missing. | Implement a server-side transactional, idempotent and audited approval lifecycle before re-enabling decisions. Never report a ledger update without a confirmed commit. |
 | Account write policy | `base44/entities/Account.jsonc` denies direct client create/update/delete and scopes reads to owner plus named staff roles. | Repository policy present; deployed policy unverified | Compare exact deployed Base44 RLS with this schema; verify role claims are server-controlled. |
 | Client-side privilege helper | `src/lib/operationsAccess.js` contains a hard-coded super-administrator email and client-side role/capability helpers. | UI gating only; not an authorization boundary | Ensure all sensitive route, record and action authorization is independently enforced server-side. Never trust a client role or email check. |
-| Home wealth aggregation | `src/pages/Home.jsx` aggregates account and portfolio values in the browser. | Source behavior; authoritative data and currency handling unverified | Use server-authorized aggregation with explicit currency, freshness and valuation boundaries before presenting consolidated wealth. |
-| Investment mutations | `src/pages/Investment.jsx` contains a disabled server-investment-operations guard. | Fail-closed guard present | Preserve until provider, custody/legal authority, ledger, dual-control and reconciliation evidence is verified. |
+| Home wealth aggregation | `src/pages/Home.jsx` now distinguishes failed queries from empty results and withholds consolidated wealth totals; it still reads and displays individual recorded balances from client-side Base44 queries. | Safer data states in PR #4; authoritative server-side aggregation and deployed RLS remain unverified. | Verify deployed RLS, currency, freshness and valuation semantics; implement server-authorized aggregation before presenting a total. |
+| Investment mutations | `src/pages/Investment.jsx` retains a disabled server-investment-operations guard. PR #4 also removes direct portfolio writes and decision buttons from the operator deposit/withdrawal queues while preserving request records. | Fail-closed; operator queues are read-only; investment schemas/provider/ledger remain unverified. | Recover deployed entity schemas and RLS; verify provider, custody/legal authority, ledger, dual-control and reconciliation before enabling. |
 | Support lifecycle | Recovered Support implementation stores a note locally rather than proving a persistent server-side ticket lifecycle. | Incomplete source behavior; live exposure unverified | Implement durable ticket creation, assignment, status transitions, notification delivery and audit evidence. |
 | Discovery inventory | Recovered housing discovery contains hard-coded example listings and estimated values. | Not verified live inventory | Do not present these as real listings; require sourced inventory or an honest unavailable state. |
 | Provider status | Provider environment values and integration names exist in repository configuration. | Configuration is not proof of connectivity or entitlement | Verify credentials, contract, server integration, callbacks, reconciliation and operational ownership before claiming live service. |
+| Member desktop shell | `src/components/vantoris/MemberLayout.jsx` still constrains member routes to a 430px shell; Home's own max-width cannot exceed that parent. | Member desktop navigation/layout remains incomplete. | Add responsive desktop navigation and wider page content while preserving mobile bottom navigation, floating command dock, session timeout and every member route. |
 
 ## CI configuration discrepancy
 
@@ -165,7 +166,8 @@ The current `.github/workflows/recovery-build.yml` declares `pull_request` targe
 - Route existence is verified from the router source in this branch only.
 - The full customer-visible behavior, actual Base44 deployment, RLS, provider contracts, live data, account continuity and production runtime have not been verified.
 - No customer data or production configuration was read or changed.
-- No install, lint, typecheck, build, automated test suite or browser viewport QA has been run in this environment.
+- GitHub Actions run #657 passed install, Deno runtime/payment/migration checks, AI-path guard, entity/RLS validation, lint, typecheck and Vite build. The PostgreSQL integration test was ignored because `AVCU_LEDGER_TEST_DATABASE_URL` was not configured.
+- Browser viewport QA, authenticated Base44 API checks and deployed RLS tests remain outstanding.
 - The route list is a preservation baseline. Any proposed route consolidation or removal requires explicit founder approval and a verified migration plan.
 
 
@@ -173,7 +175,7 @@ The current `.github/workflows/recovery-build.yml` declares `pull_request` targe
 
 | Area | Source evidence | Current classification | Required action |
 |---|---|---|---|
-| Home dashboard | `src/pages/Home.jsx` sums all Account balances in the browser and silently converts failed Account, PaymentCard, InvestmentPortfolio and Transaction queries to empty arrays. | Misleading empty/zero states possible; live exposure unverified | Distinguish a confirmed empty result from a failed/unavailable query. Do not show an available-balance or consolidated-wealth figure until currency, freshness and source authority are established. |
+| Home dashboard | PR #4 distinguishes failed Account/Card/Investment/Activity queries from empty results, removes the consolidated wealth total until currency and valuation sources are verified, expands Home's own max width and qualifies unverified benefits copy. | Improved component behavior; member parent shell still limits the route to 430px and balances remain client-query sourced. | Complete the responsive member shell, verify deployed RLS and currency semantics, and use server-authorized data before showing a consolidated wealth figure. |
 | Currency model | `src/lib/formatCurrency.js` formats every amount as USD; the versioned `Account` schema has no currency field. | Currency metadata gap in the recovered source | Verify deployed account currency semantics. Add explicit currency and conversion/freshness metadata through a reviewed migration before multi-currency aggregation. Never add USD amounts to non-USD amounts. |
 | Investment entity contracts | The member and operations UI reference `InvestmentPortfolio`, `InvestmentTransaction`, `InvestmentDepositRequest`, `InvestmentWithdrawalRequest` and `InvestmentSignal`; none has a corresponding JSONC entity schema in the current 18-file versioned schema directory. | Versioned contract missing; live Base44 schema unknown | Recover the exact deployed entity definitions and RLS before modifying investment screens or claiming the repository fully describes the backend. |
 | Investment dashboard | `src/pages/operations/InvestmentDashboard.jsx` loads investment records with errors converted to empty arrays and computes AUM/cash/invested totals in the browser. | Unverified data source and potentially misleading zero totals | Move aggregate reporting to a server-authorized, currency-aware source with freshness and valuation timestamps. Show unavailable/error states separately from verified zero. |
@@ -182,7 +184,7 @@ The current `.github/workflows/recovery-build.yml` declares `pull_request` targe
 
 ## Current CI result
 
-The Recovery build check associated with the updated PR head started, completed the dependency installation and passed the JavaScript syntax check for `netlify/functions/ask.mjs`, then was **cancelled during Deno setup**. The Oracle runtime tests, entity/security validation, lint, typecheck and production build were skipped. This is neither a pass nor a code failure; a complete CI run remains outstanding.
+GitHub Actions run [#657](https://github.com/iamtheoracle/vantoris-x-money/actions/runs/43307304580) completed successfully for commit `827c9d0`. Dependency installation, JavaScript syntax check, Oracle runtime checks, payment-store unit tests, migration tests, browser-AI execution guard, entity/RLS validation, lint, typecheck and Vite production build passed. Test results: Oracle runtime 2 passed; payment-store 2 passed/1 ignored; migration checks 6 passed. The PostgreSQL integration test was ignored because `AVCU_LEDGER_TEST_DATABASE_URL` was not configured. Browser viewport QA and production authenticated-session checks remain outstanding.
 
 
 ## CI investigation and correction
