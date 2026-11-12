@@ -64,10 +64,10 @@ export default async function(req: Request): Promise<Response> {
       if (!['approved_awaiting_bank_submission'].includes(transfer.status)) {
         return Response.json({ error: 'Only a fully approved request can be recorded as submitted to the bank.' }, { status: 409 });
       }
-      if (transfer.rail === 'FEDWIRE' &&
-          (!transfer.reviewer_user_id || !transfer.approver_user_id ||
-           transfer.reviewer_user_id === transfer.approver_user_id)) {
-        return Response.json({ error: 'Fedwire requires two distinct recorded approvals before manual bank submission.' }, { status: 403 });
+      if (!['ACH', 'FEDWIRE'].includes(transfer.rail) ||
+          !transfer.reviewer_user_id || !transfer.approver_user_id ||
+          transfer.reviewer_user_id === transfer.approver_user_id) {
+        return Response.json({ error: 'ACH and Fedwire require two distinct recorded approvals before manual bank submission.' }, { status: 403 });
       }
       update = {
         status: 'submitted_to_bank',
