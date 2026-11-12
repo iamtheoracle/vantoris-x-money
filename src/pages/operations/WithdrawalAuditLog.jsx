@@ -90,7 +90,7 @@ export default function WithdrawalAuditLog() {
           Timestamp: new Date(l.created_date).toLocaleString('en-US'),
           Admin: l.admin_name || '—',
           Action: ACTION_META[l.action_type]?.label || l.action_type,
-          Amount: l.amount != null ? formatCurrency(Math.abs(Number(l.amount)), l.currency || l.currency_code || acct?.currency || acct?.currency_code || null) : '',
+          Amount: l.amount != null ? formatCurrency(l.amount, l.currency || l.currency_code || acct?.currency || acct?.currency_code || null) : '',
           Method: (l.description || '').match(/via\s(.+)$/)?.[1] || '',
           Account: acct?.account_name || '—',
           'Account Number': acct?.account_number || '—',
@@ -245,7 +245,7 @@ export default function WithdrawalAuditLog() {
                       <td className="px-5 py-3 text-right">
                         {log.amount != null ? (
                           <span className={`text-xs font-semibold ${log.amount >= 0 ? 'text-foreground' : 'text-crimson'}`}>
-                            {formatCurrency(Math.abs(Number(log.amount)), log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)}
+                            {formatCurrency(log.amount, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)}
                           </span>
                         ) : <span className="text-gray text-xs">—</span>}
                       </td>
