@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -58,6 +58,7 @@ export default function Home() {
   const [portfolios, setPortfolios] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataIssues, setDataIssues] = useState({ accounts: false, cards: false, investments: false, activity: false });
   const [hidden, setHidden] = useState(false);
   const [toast, setToast] = useState(null);
   const navigate = useNavigate();
@@ -73,40 +74,62 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
+    const safeList = async (request) => {
+      try {
+        const result = await request;
+        return { items: Array.isArray(result) ? result : [], failed: !Array.isArray(result) };
+      } catch {
+        return { items: [], failed: true };
+      }
+    };
+
     (async () => {
       try {
         const me = await base44.auth.me();
-        const [a, c, p] = await Promise.all([
-          base44.entities.Account.filter({ user_id: me.id }, '-created_date').catch(() => []),
-          base44.entities.PaymentCard.filter({ user_id: me.id, status: 'active' }, '-created_date').catch(() => []),
-          base44.entities.InvestmentPortfolio.filter({ user_id: me.id }, '-created_date').catch(() => []),
+        const [accountResult, cardResult, investmentResult] = await Promise.all([
+          safeList(base44.entities.Account.filter({ user_id: me.id }, '-created_date')),
+          safeList(base44.entities.PaymentCard.filter({ user_id: me.id, status: 'active' }, '-created_date')),
+          safeList(base44.entities.InvestmentPortfolio.filter({ user_id: me.id }, '-created_date')),
         ]);
 
         let txs = [];
-        if (a.length) {
-          const accountIds = a.map((x) => x.id);
+        let activityFailed = false;
+        if (accountResult.items.length) {
+          const accountIds = accountResult.items.map((account) => account.id);
           const batches = await Promise.all(
             accountIds.slice(0, 6).map((id) =>
-              base44.entities.Transaction.filter({ account_id: id }, '-created_date', 20).catch(() => [])
+              safeList(base44.entities.Transaction.filter({ account_id: id }, '-created_date', 20))
             )
           );
+          activityFailed = batches.some((batch) => batch.failed);
           txs = batches
-            .flat()
+            .flatMap((batch) => batch.items)
             .sort((x, y) => new Date(y.created_date || 0).getTime() - new Date(x.created_date || 0).getTime())
             .slice(0, 40);
         }
 
         if (!cancelled) {
           setUser(me);
-          setAccounts(Array.isArray(a) ? a : []);
-          setCards(Array.isArray(c) ? c : []);
-          setPortfolios(Array.isArray(p) ? p : []);
+          setAccounts(accountResult.items);
+          setCards(cardResult.items);
+          setPortfolios(investmentResult.items);
           setTransactions(txs);
+          setDataIssues({
+            accounts: accountResult.failed,
+            cards: cardResult.failed,
+            investments: investmentResult.failed,
+            activity: activityFailed,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setDataIssues({ accounts: true, cards: true, investments: true, activity: true });
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -118,11 +141,6 @@ export default function Home() {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  const balance = useMemo(() => accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0), [accounts]);
-  const wealth = useMemo(
-    () => portfolios.reduce((s, p) => s + (Number(p.total_value) || 0), 0),
-    [portfolios]
-  );
   const firstName = (() => {
     const raw =
       user?.first_name ||
