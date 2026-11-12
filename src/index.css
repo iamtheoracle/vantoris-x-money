@@ -359,6 +359,16 @@ button, a, input, select { touch-action: manipulation; }
   color: #68747B;
   font: 400 .92rem/1.65 Inter, sans-serif;
 }
+.financial-heritage__actions { display: flex; align-items: center; gap: 1rem; }
+.financial-heritage__print-action {
+  border: 1px solid #B89B62;
+  border-radius: 999px;
+  background: #102638;
+  color: #F7F5EF;
+  padding: .55rem 1rem;
+  font: 600 .68rem/1.2 Inter, sans-serif;
+}
+.financial-heritage__print-action:hover { background: #18384E; }
 .financial-heritage__folio {
   flex: 0 0 auto;
   padding-bottom: .3rem;
@@ -565,6 +575,13 @@ button, a, input, select { touch-action: manipulation; }
 }
 @media print {
   .financial-heritage { padding: 0; background: #fff; }
+  .financial-heritage__print-action { display: none !important; }
+  body.print-financial-heritage * { visibility: hidden !important; }
+  body.print-financial-heritage .financial-heritage,
+  body.print-financial-heritage .financial-heritage * { visibility: visible !important; }
+  body.print-financial-heritage .financial-heritage { position: fixed; inset: 0 auto auto 0; width: 100%; padding: .2in; background: #fff; }
+  body.print-financial-heritage .financial-heritage__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .18in; }
+  body.print-financial-heritage .heritage-card__image-wrap { height: 2.1in; }
   .financial-heritage__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .18in; }
   .heritage-card { box-shadow: none; border-color: #CFC6B5; }
   .heritage-card__image-wrap { height: 2.1in; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
