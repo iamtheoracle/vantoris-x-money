@@ -121,10 +121,10 @@ Deno.test("payment functions cannot read another product's clearing or database 
   const receipt = await Deno.readTextFile("base44/functions/recordIncomingBankReceipt/entry.ts");
   const reconcile = await Deno.readTextFile("base44/functions/reconcileBankTransfers/entry.ts");
   const sync = await Deno.readTextFile("base44/functions/syncPlaidTransferEvents/entry.ts");
-  assert(store.includes("VANTORIS_LEDGER_DATABASE_URL") && !store.includes("AVCU_LEDGER_DATABASE_URL"), "ledger adapter must use only the Vantoris database secret");
-  assert(receipt.includes("VANTORIS_ACH_CLEARING_LEDGER_ACCOUNT_ID") && !receipt.includes("AVCU_"), "incoming receipts must not read another institution's clearing account IDs");
-  assert(reconcile.includes("VANTORIS_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID") && !reconcile.includes("AVCU_"), "reconciliation must use Vantoris-specific clearing configuration");
-  assert(sync.includes("VANTORIS_INTERNAL_SYNC_SECRET") && !sync.includes("AVCU_"), "internal provider sync must use Vantoris-specific secret");
+  assert(store.includes("VANTAGE_LEDGER_DATABASE_URL") && !store.includes("AVCU_LEDGER_DATABASE_URL"), "ledger adapter must use only the Vantoris database secret");
+  assert(receipt.includes("VANTAGE_ACH_CLEARING_LEDGER_ACCOUNT_ID") && !receipt.includes("AVCU_"), "incoming receipts must not read another institution's clearing account IDs");
+  assert(reconcile.includes("VANTAGE_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID") && !reconcile.includes("AVCU_"), "reconciliation must use Vantoris-specific clearing configuration");
+  assert(sync.includes("VANTAGE_INTERNAL_SYNC_SECRET") && !sync.includes("AVCU_"), "internal provider sync must use Vantoris-specific secret");
 });
 
 Deno.test("U.S. account currency is explicit before any external transfer or receipt", async () => {
@@ -141,7 +141,7 @@ Deno.test("U.S. account currency is explicit before any external transfer or rec
 Deno.test("external ACH and Fedwire submission remains disabled without explicit institution authorization", async () => {
   const submit = await Deno.readTextFile("base44/functions/submitApprovedTransfer/entry.ts");
   const readiness = await Deno.readTextFile("src/pages/operations/PaymentRailOperations.jsx");
-  assert(submit.includes("Deno.env.get('VANTORIS_PROVIDER_SUBMISSION_ENABLED') !== 'true'"), "provider submission must fail closed by default");
+  assert(submit.includes("Deno.env.get('VANTAGE_PROVIDER_SUBMISSION_ENABLED') !== 'true'"), "provider submission must fail closed by default");
   assert(submit.includes("No bank request was sent"), "disabled provider submission must state that no bank request was sent");
   assert(readiness.includes("processing disabled"), "rail readiness page must not imply live processing");
 });
