@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, Wallet, ArrowDownToLine, ArrowUpRight, PieChart, Signal, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency } from '@/lib/formatCurrency';
+import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
 
 // Investment mutations stay disabled until an authorized provider workflow is integrated.
 const SERVER_INVESTMENT_OPERATIONS_ENABLED = false;
@@ -138,10 +139,12 @@ export default function Investment() {
           <TrendingUp size={22} className="text-mint" />
         </div>
         <div>
-          <h1 className="text-xl font-bold text-foreground">Vantoris Investment</h1>
-          <p className="text-xs text-gray">A separate investment experience</p>
+          <h1 className="text-xl font-bold text-foreground">Vantoris Private Investment</h1>
+          <p className="text-xs text-gray">Private capital, portfolio visibility and controlled investment workflows</p>
         </div>
       </div>
+
+      <FinancialHeritage compact className="mb-6" />
 
       {!portfolio ? (
         <div className="vantoris-glass-premium p-8 text-center">
