@@ -105,7 +105,7 @@ export default function UnifiedTimeline({ transactions, heroActivities, notifica
                 <p className="text-gray text-[10px]">{item.subtitle}</p>
               </div>
               {item.isCurrency ? (
-                <span className={`text-sm font-bold whitespace-nowrap ${item.amount < 0 ? 'text-crimson' : 'text-mint'}`}>
+                <span className={`text-sm font-bold whitespace-nowrap ${item.amount == null ? 'text-gray' : item.amount < 0 ? 'text-crimson' : 'text-mint'}`}>
                   {item.amount == null ? 'Value unavailable' : (item.amount < 0 ? '-' : '+') + formatCurrency(Math.abs(item.amount), item.currency)}
                 </span>
               ) : item.amount ? (
