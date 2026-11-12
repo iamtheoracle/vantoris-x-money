@@ -112,8 +112,31 @@ jobs:
             'src/pages/operations/DiscoveryNetwork.jsx',
             'src/pages/operations/HumanitarianCases.jsx',
             'src/pages/operations/Organizations.jsx',
+            'src/pages/operations/OperationsNotifications.jsx',
+            'src/pages/operations/Referrals.jsx',
+            'src/pages/operations/WithdrawalLimits.jsx',
+            'src/pages/operations/BulkTransactionImport.jsx',
+            'src/pages/operations/TransactionExportDashboard.jsx',
+            'src/pages/operations/Deposits.jsx',
+            'src/pages/operations/Transfers.jsx',
+            'src/pages/operations/IncomingBankReceipts.jsx',
+            'src/pages/operations/InvestmentPortfolios.jsx',
+            'src/pages/operations/InvestmentSignals.jsx',
+            'src/pages/operations/InvestmentDashboard.jsx',
+            'src/pages/operations/Finance.jsx',
+            'src/pages/operations/TransactionSummaries.jsx',
+            'src/pages/operations/WithdrawalAuditLog.jsx',
+            'src/pages/operations/SecurityComplianceDashboard.jsx',
+            'src/pages/operations/AccountAssignment.jsx',
+            'src/pages/operations/AuditLogs.jsx',
+            'src/pages/Profile.jsx',
+            'src/components/vantoris/profile/RelationshipOverview.jsx',
+            'src/components/vantoris/profile/UnifiedTimeline.jsx',
+            'src/components/vantoris/widgets/SecurityStatusWidget.jsx',
+            'src/components/vantoris/widgets/LiveBankingActivity.jsx',
+            'src/components/vantoris/home/AccountsSection.jsx',
           ];
-          const directWrite = /base44\.entities\.(Account|Transaction|Document|WithdrawalRequest|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|HeroBoxProfile|Application|User|Notification|HumanitarianCase|OrganizationProfile|DiscoveryRecord|DiscoveryRun|DiscoveryAlert|DiscoverySource|DiscoveryChange|NewsRecord|VolunteerProfile)\.(create|update|delete|updateMany|bulkCreate|createMany|bulkUpdate|upsert)\s*\(/;
+          const directWrite = /base44\.entities\.(Account|Transaction|Document|WithdrawalRequest|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|HeroBoxProfile|Application|User|Notification|HumanitarianCase|OrganizationProfile|DiscoveryRecord|DiscoveryRun|DiscoveryAlert|DiscoverySource|DiscoveryChange|NewsRecord|VolunteerProfile|WithdrawalLimit|Referral|AuditLog|TransactionExport|InvestmentSignal|IncomingBankReceipt|TransferRequest|TransferWebhookEvent)\.(create|update|delete|updateMany|bulkCreate|createMany|bulkUpdate|upsert)\s*\(/;
           const clientEmail = /base44\.integrations\.Core\.SendEmail\s*\(/;
           const clientLLM = /base44\.integrations\.Core\.InvokeLLM\s*\(/;
           for (const file of surfaces) {
