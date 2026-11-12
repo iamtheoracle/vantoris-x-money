@@ -137,3 +137,11 @@ Deno.test("U.S. account currency is explicit before any external transfer or rec
   assert(outgoing.includes("account.currency !== 'USD'"), "outgoing requests must reject accounts without verified USD currency");
   assert(incoming.includes("account.currency!=='USD'"), "incoming receipts must reject accounts without verified USD currency");
 });
+
+Deno.test("external ACH and Fedwire submission remains disabled without explicit institution authorization", async () => {
+  const submit = await Deno.readTextFile("base44/functions/submitApprovedTransfer/entry.ts");
+  const readiness = await Deno.readTextFile("src/pages/operations/PaymentRailOperations.jsx");
+  assert(submit.includes("Deno.env.get('VANTORIS_PROVIDER_SUBMISSION_ENABLED') !== 'true'"), "provider submission must fail closed by default");
+  assert(submit.includes("No bank request was sent"), "disabled provider submission must state that no bank request was sent");
+  assert(readiness.includes("processing disabled"), "rail readiness page must not imply live processing");
+});
