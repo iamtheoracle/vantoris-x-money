@@ -65,6 +65,9 @@ export default function HeroBoxMissionControl() {
         pendingWithdrawals: withdrawals.length, pendingReviews,
       });
 
+      const volunteerHoursComplete = profiles.every((profile) => profile.volunteer_hours != null && !(typeof profile.volunteer_hours === 'string' && profile.volunteer_hours.trim() === '') && Number.isFinite(Number(profile.volunteer_hours)));
+      const volunteerHoursRecorded = volunteerHoursComplete ? profiles.reduce((sum, profile) => sum + Number(profile.volunteer_hours), 0) : null;
+
       setMissionStatus({
         heroesAwaiting: pendingHeroes,
         requestsPending: requests.filter(r => r.status === 'pending').length,
@@ -73,7 +76,7 @@ export default function HeroBoxMissionControl() {
         packagesMarkedComplete: packagesRecordedComplete,
         internetRecords: activities.filter(a => a.activity_type === 'internet_sponsored').length,
         letterRecords: activities.filter(a => a.activity_type === 'letter_received').length,
-        volunteerHoursRecorded: profiles.reduce((sum, p) => sum + (Number(p.volunteer_hours) || 0), 0),
+        volunteerHoursRecorded,
       });
 
       setQueues([
@@ -135,7 +138,7 @@ export default function HeroBoxMissionControl() {
     { icon: CheckCircle2, count: missionStatus.packagesMarkedComplete || 0, label: 'Packages marked complete', to: '/operations/herobox' },
     { icon: Wifi, count: missionStatus.internetRecords || 0, label: 'Internet sponsorship records', to: '/operations/herobox' },
     { icon: Mail, count: missionStatus.letterRecords || 0, label: 'Letter records', to: '/operations/herobox' },
-    { icon: Clock, count: missionStatus.volunteerHoursRecorded || 0, label: 'Volunteer hours recorded', to: '/operations/members' },
+    { icon: Clock, count: missionStatus.volunteerHoursRecorded, label: 'Volunteer hours recorded', to: '/operations/members' },
   ];
 
   const urgentCount = queues.filter(q => q.priority === 'high').length;
@@ -154,7 +157,7 @@ export default function HeroBoxMissionControl() {
       }
     >
       <div role="note" className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-xs leading-relaxed text-amber-950">
-        Counts reflect application records only. Package statuses are not independently verified by carriers or recipients. Financial distribution is withheld until a reconciled ledger and authorized payout provider exist.
+        Counts reflect bounded source records (profiles max 200, requests max 200, activities max 100), not institution-wide totals. Package statuses are not independently verified by carriers or recipients. Financial distribution is withheld until a reconciled ledger and authorized payout provider exist.
       </div>
 
       <div className="mb-6">
@@ -175,7 +178,7 @@ export default function HeroBoxMissionControl() {
                   <div className="mx-auto mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-navy/5">
                     <Icon size={15} className="text-navy/60" />
                   </div>
-                  <p className="text-xl font-bold tracking-tight text-foreground">{item.count}</p>
+                  <p className="text-xl font-bold tracking-tight text-foreground">{item.count ?? 'Unavailable'}</p>
                   <p className="mt-0.5 text-[10px] text-gray">{item.label}</p>
                 </Link>
               </motion.div>
