@@ -53,8 +53,8 @@ const MODULES = [
   },
   {
     id: 'marketing',
-    title: 'Member marketing',
-    desc: 'Visual references and approved brand assets',
+    title: 'Brand & communications',
+    desc: 'Institutional identity, card artwork and heritage archive',
     icon: Megaphone,
     route: '/discover/marketing',
     image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=900&q=80',
