@@ -355,7 +355,7 @@ export default function Home() {
                       </span>
                       <span className="text-right shrink-0">
                         <span className="block text-[16px] font-bold tabular-nums text-navy">
-                          {hidden ? '••••••' : formatCurrency(a.balance)}
+                          {hidden ? '••••••' : formatCurrency(a.balance, a.currency || a.currency_code || null)}
                         </span>
                         <ChevronRight size={16} className="text-slate-400 ml-auto mt-0.5" />
                       </span>
@@ -574,7 +574,7 @@ export default function Home() {
                         }`}
                       >
                         {hasAmount ? (credit ? '+' : '−') : ''}
-                        {formatCurrency(hasAmount ? Math.abs(amt) : null)}
+                        {formatCurrency(hasAmount ? Math.abs(amt) : null, tx.currency || tx.currency_code || null)}
                       </span>
                     </button>
                   );
