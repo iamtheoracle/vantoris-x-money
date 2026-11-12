@@ -41,6 +41,9 @@ export default async function(req: Request): Promise<Response> {
     if (!account || account.user_id !== member.id || account.status !== 'active') {
       return Response.json({ error: 'The selected source account is unavailable.' }, { status: 404 });
     }
+    if (account.currency !== 'USD') {
+      return Response.json({ error: 'The selected account does not have a verified USD currency record. No transfer request or funds hold was created; operations review is required.' }, { status: 409 });
+    }
 
     // PostgreSQL's unique constraint arbitrates concurrent retries before the
     // Base44 projection is created. The database URL is server-side only.
