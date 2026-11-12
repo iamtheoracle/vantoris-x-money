@@ -34,8 +34,8 @@ const FIGURES = [
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/The_visit_of_William_I%2C_Elector_of_Hesse_to_Amschel_Mayer_de_Rothschild_%281744-1812%29.jpg",
     imageAlt: "Historical painting depicting Mayer Amschel Rothschild receiving William I, Elector of Hesse",
     imageCredit: "Moritz Daniel Oppenheim · Wikimedia Commons · Public domain",
-    source: "https://www.rothschildarchive.org/business/",
-    sourceLabel: "The Rothschild Archive · Origins of the business",
+    source: "https://www.rothschildarchive.org/exhibitions/timeline/",
+    sourceLabel: "The Rothschild Archive · Timeline and partnership history",
   },
   {
     name: "J. Pierpont Morgan",
