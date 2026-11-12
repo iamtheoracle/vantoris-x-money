@@ -388,6 +388,16 @@ button, a, input, select { touch-action: manipulation; }
   overflow: hidden;
   background: linear-gradient(135deg, #172E3E, #B9A477);
 }
+.heritage-card__image-wrap--unavailable::before {
+  content: "Portrait image unavailable";
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #F8F3E8;
+  font: 500 .72rem/1.4 Inter, sans-serif;
+  letter-spacing: .04em;
+}
 .heritage-card__image {
   display: block;
   width: 100%;
@@ -552,3 +562,4 @@ button, a, input, select { touch-action: manipulation; }
   .private-card-gallery__grid { grid-template-columns: repeat(2, 3.375in); justify-content: center; gap: .22in; }
   .private-card-art img { width: 3.375in; height: 2.125in; border-radius: .12in; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
   .private-card-gallery__note, .private-card-art figcaption { display: none; }
+}
