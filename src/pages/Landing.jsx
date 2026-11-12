@@ -31,6 +31,9 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import ShieldLogo from '@/components/vantoris/ShieldLogo';
+import HambrosTribute from '@/components/vantoris/HambrosTribute';
+import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
+import PrivateInvestmentCardGallery from '@/components/vantoris/PrivateInvestmentCardGallery';
 import { PROVIDERS } from '@/lib/providers';
 
 const NAV = [
@@ -39,6 +42,7 @@ const NAV = [
   { label: 'Cards', href: '#service-availability' },
   
   { label: 'About', href: '#about' },
+  { label: 'Heritage', href: '#hambros-tribute' },
   { label: 'Accounts', href: '#banking' },
   { label: 'Invest', href: '#invest' },
   { label: 'Travel', href: '#travel' },
@@ -662,6 +666,11 @@ export default function Landing() {
           </div>
         </section>
 
+        <HambrosTribute />
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
+          <FinancialHeritage />
+        </section>
+
         {/* Pillars */}
         <section id="banking" className="scroll-mt-24 bg-white border-y border-slate-200/80 py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
@@ -713,6 +722,15 @@ export default function Landing() {
               <p className="mt-auto pt-16 text-white/60 text-sm">•••• •••• •••• secure</p>
               <p className="text-brass text-sm font-medium mt-2">Illustrative artwork only</p>
             </div>
+          </div>
+        </section>
+
+        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16" aria-labelledby="card-art-title">
+          <div className="rounded-[28px] border border-[#D8CBAE] bg-[#F7F5EF] p-5 sm:p-8">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8B6C35]">Design collection</p>
+            <h2 id="card-art-title" className="mt-2 font-heading text-3xl text-[#102638]">Four considered card editions</h2>
+            <p className="mt-2 mb-6 max-w-2xl text-sm leading-relaxed text-slate-600">Original vector artwork prepared for high-resolution print output. These are design concepts, not issued payment cards or evidence of an issuer arrangement.</p>
+            <PrivateInvestmentCardGallery />
           </div>
         </section>
 
@@ -877,15 +895,7 @@ export default function Landing() {
               ))}
             </div>
             <p className="mt-8 text-sm text-slate-600">
-              If something feels wrong, stop the transfer and contact us at{' '}
-              <a href="tel:+12055688741" className="font-semibold text-navy underline">
-                +1 (205) 568-8741
-              </a>{' '}
-              or{' '}
-              <a href="tel:+447404767964" className="font-semibold text-navy underline">
-                +44 7404 767964
-              </a>
-              . Report suspected fraud to local authorities and, in the US, to reportfraud.ftc.gov where applicable.
+              If something feels wrong, stop the transfer and contact client services using the verified contact channel shown inside your authenticated account. Report suspected fraud to local authorities and, in the US, to reportfraud.ftc.gov where applicable.
             </p>
           </div>
         </section>
@@ -1032,21 +1042,9 @@ export default function Landing() {
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Contact us</p>
             <h2 className="text-2xl font-bold text-navy">Talk to Vantoris</h2>
             <p className="mt-2 text-slate-600">Membership, partnerships, and HeroBox logistics.</p>
-            <div className="mt-6 flex flex-col sm:flex-row gap-4">
-              <a
-                href="tel:+12055688741"
-                className="flex-1 rounded-2xl bg-navy text-white p-5 hover:bg-navy/90 transition"
-              >
-                <p className="text-xs text-white/60 uppercase tracking-wider">United States</p>
-                <p className="text-xl font-bold mt-1 tabular-nums">+1 (205) 568-8741</p>
-              </a>
-              <a
-                href="tel:+447404767964"
-                className="flex-1 rounded-2xl border border-slate-200 bg-[#F4F6F9] text-navy p-5 hover:border-brass/40 transition"
-              >
-                <p className="text-xs text-slate-500 uppercase tracking-wider">United Kingdom</p>
-                <p className="text-xl font-bold mt-1 tabular-nums">+44 7404 767964</p>
-              </a>
+            <div className="mt-6 rounded-2xl border border-slate-200 bg-[#F7F5EF] p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brass">United States client services</p>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">Use the verified contact channel displayed inside your authenticated account. Public phone and email details are not published here until their ownership and service coverage are confirmed.</p>
             </div>
           </div>
         </section>
