@@ -4,22 +4,22 @@ import { ArrowLeft, Image as ImageIcon, Megaphone } from 'lucide-react';
 
 const ASSETS = [
   {
-    title: 'Brand system',
+    title: 'Institutional palette reference',
     img: 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=1000&q=80',
     caption: 'Navy · brass · institutional type',
   },
   {
-    title: 'Campaign photography',
+    title: 'Photography reference',
     img: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=1000&q=80',
     caption: 'Team and product storytelling',
   },
   {
-    title: 'Member lifestyle',
+    title: 'Client service imagery reference',
     img: 'https://images.unsplash.com/photo-1556740758-90de374c12ad?auto=format&fit=crop&w=1000&q=80',
-    caption: 'Everyday banking moments',
+    caption: 'Client service moments',
   },
   {
-    title: 'Impact & HeroBox',
+    title: 'Impact imagery reference',
     img: 'https://images.unsplash.com/photo-1469571486292-0ba58a3f068b?auto=format&fit=crop&w=1000&q=80',
     caption: 'Care packages and community',
   },
@@ -32,7 +32,7 @@ export default function DiscoverMarketing() {
         <Link to="/discover" className="p-1.5 rounded-lg hover:bg-slate-100" aria-label="Back">
           <ArrowLeft size={20} />
         </Link>
-        <h1 className="font-heading font-bold text-navy">Member marketing</h1>
+        <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Vantoris Private Institution</p><h1 className="font-heading font-bold text-navy">Member marketing</h1></div>
       </div>
 
       <div className="relative h-44 overflow-hidden">
@@ -68,8 +68,7 @@ export default function DiscoverMarketing() {
         <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-4 text-sm text-slate-600 flex gap-3">
           <ImageIcon className="text-brass shrink-0" size={20} />
           <p>
-            Import campaign images after module activation. Ops can refresh assets on a schedule from approved
-            libraries—never unauthorized scrapes.
+            This is a visual reference gallery. Images are illustrative and are not approved Vantoris campaign assets. Import only rights-cleared assets through a verified content workflow; no automatic asset-refresh schedule is configured.
           </p>
         </div>
       </div>
