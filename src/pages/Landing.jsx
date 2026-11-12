@@ -185,7 +185,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] text-navy scroll-smooth">
+    <div className="min-h-screen bg-[#F7F5EF] text-navy scroll-smooth">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <button
@@ -491,7 +491,7 @@ export default function Landing() {
         </section>
 
 
-        <section id="service-availability" className="scroll-mt-24 bg-[#F4F6F9] border-y border-slate-200 py-16 sm:py-20">
+        <section id="service-availability" className="scroll-mt-24 bg-[#F7F5EF] border-y border-slate-200 py-16 sm:py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">Provider connectivity</p>
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-navy">Services, backed by real connections</h2>
@@ -663,7 +663,7 @@ export default function Landing() {
                 ].map(({ icon: Icon, label }) => (
                   <div
                     key={label}
-                    className="rounded-xl bg-[#F4F6F9] px-3 py-3 flex items-center gap-2 text-sm font-medium text-navy"
+                    className="rounded-xl bg-[#F7F5EF] px-3 py-3 flex items-center gap-2 text-sm font-medium text-navy"
                   >
                     <Icon size={16} className="text-brass" />
                     {label}
@@ -685,7 +685,7 @@ export default function Landing() {
               {PILLARS.map(({ icon: Icon, title, body }) => (
                 <article
                   key={title}
-                  className="rounded-2xl border border-slate-200/80 bg-[#F4F6F9] p-6 hover:border-brass/40 transition"
+                  className="rounded-2xl border border-slate-200/80 bg-[#F7F5EF] p-6 hover:border-brass/40 transition"
                 >
                   <div className="w-11 h-11 rounded-xl bg-navy text-brass flex items-center justify-center mb-4">
                     <Icon size={20} />
@@ -817,7 +817,7 @@ export default function Landing() {
                   licensed professionals in your area.
                 </p>
               </div>
-              <div className="rounded-[24px] border border-slate-200 bg-[#F4F6F9] p-6 shadow-sm">
+              <div className="rounded-[24px] border border-slate-200 bg-[#F7F5EF] p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <Building2 size={18} className="text-brass" />
                   <p className="font-semibold text-navy text-sm">Property discovery</p>
@@ -966,7 +966,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-navy mb-10">People first. Products second.</h2>
             <div className="grid sm:grid-cols-2 gap-5">
               {HELP.map(({ title, text }) => (
-                <div key={title} className="rounded-2xl border border-slate-200 p-6 bg-[#F4F6F9]">
+                <div key={title} className="rounded-2xl border border-slate-200 p-6 bg-[#F7F5EF]">
                   <div className="flex items-center gap-2 mb-2">
                     <Heart size={18} className="text-brass" />
                     <h3 className="font-bold text-navy">{title}</h3>
@@ -1023,7 +1023,7 @@ export default function Landing() {
                   href={n.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-2xl border border-slate-200 bg-[#F4F6F9] p-5 hover:border-brass/50 transition block"
+                  className="rounded-2xl border border-slate-200 bg-[#F7F5EF] p-5 hover:border-brass/50 transition block"
                 >
                   <p className="font-bold text-navy">{n.name}</p>
                   <p className="text-[12px] font-semibold text-brass mt-1">{n.focus}</p>
@@ -1054,7 +1054,7 @@ export default function Landing() {
               </a>
               <a
                 href="tel:+447404767964"
-                className="flex-1 rounded-2xl border border-slate-200 bg-[#F4F6F9] text-navy p-5 hover:border-brass/40 transition"
+                className="flex-1 rounded-2xl border border-slate-200 bg-[#F7F5EF] text-navy p-5 hover:border-brass/40 transition"
               >
                 <p className="text-xs text-slate-500 uppercase tracking-wider">United Kingdom</p>
                 <p className="text-xl font-bold mt-1 tabular-nums">+44 7404 767964</p>
