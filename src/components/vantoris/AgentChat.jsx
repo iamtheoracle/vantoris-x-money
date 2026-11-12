@@ -59,7 +59,7 @@ export default function AgentChat({
   title = 'Vantage Assistant',
   subtitle = 'Private client assistance',
   suggestions = null,
-  inputPlaceholder = 'Ask about members, applications, KYC status, account balances...',
+  inputPlaceholder = 'Ask about platform features, available services, or general investment concepts...',
   singleColumn = false,
   onClose = null,
   renderActionSuggestions = null
