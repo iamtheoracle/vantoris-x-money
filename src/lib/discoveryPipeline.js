@@ -32,7 +32,6 @@
  *   discovered → verification_pending → verified → approved → active → closed/rejected
  */
 
-import { base44 } from '@/api/base44Client';
 
 // ============================================================
 // §1  HUMANITARIAN CASE STATES
@@ -288,35 +287,11 @@ export function findDuplicate(newItem, existingRecords) {
  *
  * @returns {Promise<Object>} - the updated existing record
  */
-export async function consolidateDuplicate(existingRecord, newItem, entityType = 'DiscoveryRecord') {
-  // Parse existing corroborating sources
-  let corroborating = [];
-  try {
-    corroborating = JSON.parse(existingRecord.corroborating_sources || '[]');
-  } catch (e) {
-    corroborating = [];
-  }
-
-  // Add the new source URL if not already present
-  if (newItem.source_url && !corroborating.includes(newItem.source_url)) {
-    corroborating.push(newItem.source_url);
-  }
-
-  const updateData = {
-    corroborating_sources: JSON.stringify(corroborating),
-    last_checked: new Date().toISOString(),
+export async function consolidateDuplicate() {
+  return {
+    success: false,
+    error: 'Duplicate consolidation is disabled until a server-side provenance and audit workflow is connected.',
   };
-
-  // Update confidence if we now have more corroboration
-  if (corroborating.length >= 2 && existingRecord.confidence_level === 'low') {
-    updateData.confidence_level = 'medium';
-  }
-  if (corroborating.length >= 3 && existingRecord.confidence_level !== 'high') {
-    updateData.confidence_level = 'high';
-  }
-
-  await base44.entities[entityType].update(existingRecord.id, updateData);
-  return { ...existingRecord, ...updateData };
 }
 
 // ============================================================
@@ -388,59 +363,19 @@ export function flagRisks(item, verificationResult = {}) {
  * @param {Object} context - { reviewer_id, reviewer_name, notes, reason }
  * @returns {Promise<Object>} - { success, oldState, newState, error }
  */
-export async function transitionCaseState(caseId, newState, context = {}) {
-  const case_ = await base44.entities.HumanitarianCase.get(caseId).catch(() => null);
-  if (!case_) return { success: false, error: 'Case not found' };
-
-  const oldState = case_.case_status;
-  if (oldState === newState) return { success: true, oldState, newState, unchanged: true };
-
-  if (!canTransitionCase(oldState, newState)) {
-    return { success: false, oldState, newState, error: `Invalid transition: ${oldState} → ${newState}` };
-  }
-
-  const updateData = {
-    case_status: newState,
-    date_last_verified: new Date().toISOString(),
+export async function transitionCaseState() {
+  return {
+    success: false,
+    error: 'Case state changes are disabled until a server-side dual-approval and immutable audit workflow is connected.',
   };
-
-  if (context.reviewer_id) {
-    updateData.reviewer_id = context.reviewer_id;
-    updateData.reviewer_name = context.reviewer_name || '';
-    updateData.review_notes = context.notes || '';
-    updateData.reviewed_date = new Date().toISOString();
-  }
-
-  // Map pipeline states to review_status where applicable
-  if (newState === 'review_pending') updateData.review_status = 'pending';
-  if (newState === 'approved' || newState === 'active') updateData.review_status = 'approved';
-  if (newState === 'rejected') updateData.review_status = 'rejected';
-
-  await base44.entities.HumanitarianCase.update(caseId, updateData);
-
-  return { success: true, oldState, newState };
 }
 
 /**
  * Transition an organization to a new state.
  */
-export async function transitionOrgState(orgId, newState, context = {}) {
-  const org = await base44.entities.OrganizationProfile.get(orgId).catch(() => null);
-  if (!org) return { success: false, error: 'Organization not found' };
-
-  const oldState = org.status;
-  if (oldState === newState) return { success: true, oldState, newState, unchanged: true };
-
-  if (!canTransitionOrg(oldState, newState)) {
-    return { success: false, oldState, newState, error: `Invalid transition: ${oldState} → ${newState}` };
-  }
-
-  const updateData = {
-    status: newState,
-    date_last_verified: new Date().toISOString(),
+export async function transitionOrgState() {
+  return {
+    success: false,
+    error: 'Organization state changes are disabled until a server-side dual-approval and immutable audit workflow is connected.',
   };
-
-  await base44.entities.OrganizationProfile.update(orgId, updateData);
-
-  return { success: true, oldState, newState };
 }
