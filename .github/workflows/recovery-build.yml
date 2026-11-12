@@ -59,8 +59,11 @@ jobs:
             'src/pages/operations/Approvals.jsx',
             'src/pages/operations/InvestmentDeposits.jsx',
             'src/pages/operations/InvestmentWithdrawals.jsx',
+            'src/pages/operations/HeroBoxFundsShipping.jsx',
+            'src/pages/operations/HeroBoxAdminOrders.jsx',
+            'src/pages/operations/HeroBoxAdminProducts.jsx',
           ];
-          const directWrite = /base44\.entities\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest)\.(create|update|delete|updateMany)\s*\(/;
+          const directWrite = /base44\.entities\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|Notification)\.(create|update|delete|updateMany)\s*\(/;
           for (const file of surfaces) {
             const source = readFileSync(file, 'utf8');
             if (source.includes('base44.agents.') || source.includes('/.netlify/functions/ask') || source.includes('/api/ask')) {

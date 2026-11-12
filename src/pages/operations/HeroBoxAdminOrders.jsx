@@ -1,89 +1,72 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
-import { Package, Loader2, Truck, Check, Clock, AlertCircle } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatCurrency';
-import { useToast } from '@/components/ui/use-toast';
+import { Package, ShieldCheck } from 'lucide-react';
 
-const STATUS_FLOW = ['draft', 'payment_pending', 'paid', 'processing', 'packed', 'shipped', 'in_transit', 'delivered'];
+function recorded(value) {
+  return typeof value === 'string' && value.trim() ? value.replace(/_/g, ' ') : 'Not supplied';
+}
 
 export default function HeroBoxAdminOrders() {
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState('');
-  const { toast } = useToast();
+  const [state, setState] = useState('loading');
+  const [error, setError] = useState('');
 
-  const loadData = useCallback(async () => {
-    setOrders(await base44.entities.HeroBoxOrder.list('-created_date', 50).catch(() => []));
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const rows = await base44.entities.HeroBoxOrder.list('-created_date', 50);
+        if (!Array.isArray(rows)) throw new Error('Order source returned an invalid response.');
+        if (active) {
+          setOrders(rows);
+          setState('loaded');
+        }
+      } catch (loadError) {
+        if (active) {
+          setError(loadError.message || 'Order records could not be loaded.');
+          setState('error');
+        }
+      }
+    })();
+    return () => { active = false; };
   }, []);
 
-  useEffect(() => { loadData().finally(() => setLoading(false)); }, [loadData]);
-
-  async function handleAdvance(order) {
-    const currentIdx = STATUS_FLOW.indexOf(order.status);
-    if (currentIdx < 0 || currentIdx >= STATUS_FLOW.length - 1) return;
-    const nextStatus = STATUS_FLOW[currentIdx + 1];
-    setProcessing(order.id);
-    try {
-      const updates = { status: nextStatus };
-      if (nextStatus === 'paid') updates.payment_status = 'completed';
-      if (nextStatus === 'shipped') updates.shipped_date = new Date().toISOString().substring(0, 10);
-      if (nextStatus === 'delivered') updates.delivered_date = new Date().toISOString().substring(0, 10);
-      await base44.entities.HeroBoxOrder.update(order.id, updates);
-      toast({ title: 'Order updated', description: `Status changed to: ${nextStatus.replace(/_/g, ' ')}` });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Update failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setProcessing('');
-    }
-  }
-
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brass" /></div>;
-
   return (
-    <OperationsPageLayout title="HeroBox Orders" description="Manage order fulfillment lifecycle" icon={Package}>
-      {orders.length === 0 ? (
-        <div className="vantoris-glass p-12 text-center">
-          <Package size={32} className="text-gray mx-auto mb-3" />
-          <p className="text-gray">No orders yet.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {orders.map(order => {
-            const currentIdx = STATUS_FLOW.indexOf(order.status);
-            const canAdvance = currentIdx >= 0 && currentIdx < STATUS_FLOW.length - 1;
-            let items = [];
-            try { items = JSON.parse(order.items || '[]'); } catch (e) {}
-            return (
-              <div key={order.id} className="vantoris-glass p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div>
-                    <p className="text-sm font-bold text-foreground">VAN-{order.id.slice(-8).toUpperCase()}</p>
-                    <p className="text-xs text-gray">{order.created_date?.substring(0, 10)} · {order.recipient_name} · {order.destination}</p>
-                  </div>
-                  <span className="text-sm font-bold text-foreground">{formatCurrency(order.total || 0)}</span>
+    <OperationsPageLayout
+      title="HeroBox Orders"
+      description="Read-only order records. Payment, fulfillment, and delivery states are not independently provider-confirmed."
+      icon={Package}
+    >
+      <div role="note" className="mb-5 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm leading-relaxed text-amber-950">
+        <ShieldCheck size={18} className="mt-0.5 shrink-0" />
+        <p>Order lifecycle changes are disabled. A recorded status such as “paid”, “shipped”, or “delivered” is not proof of settlement or carrier delivery. Status changes require server-side authorization and provider evidence.</p>
+      </div>
+
+      {state === 'loading' && <p role="status" className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-500">Loading order records…</p>}
+      {state === 'error' && <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-900">{error} This is not confirmation that there are no orders.</p>}
+      {state === 'loaded' && !orders.length && <p className="rounded-xl border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">No order records were returned.</p>}
+
+      {state === 'loaded' && orders.length > 0 && (
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div className="divide-y divide-slate-100">
+            {orders.map((order) => (
+              <article key={order.id} className="grid gap-3 p-4 md:grid-cols-[1.2fr_1fr_1fr] md:items-center">
+                <div>
+                  <p className="text-sm font-semibold text-navy">Order {String(order.id || '').slice(-8) || 'ID unavailable'}</p>
+                  <p className="mt-1 text-xs text-slate-500">{order.recipient_name || order.recipient || 'Recipient not supplied'}</p>
                 </div>
-                <div className="flex items-center gap-1.5 mb-3">
-                  {STATUS_FLOW.map((s, i) => (
-                    <div key={s} className={`h-1.5 flex-1 rounded-full ${i <= currentIdx ? 'bg-mint' : 'bg-slate-200'}`} />
-                  ))}
+                <div className="text-xs text-slate-600">
+                  <p><span className="font-semibold">Recorded order:</span> {recorded(order.status)}</p>
+                  <p className="mt-1"><span className="font-semibold">Recorded payment:</span> {recorded(order.payment_status)}</p>
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-xs text-gray capitalize font-medium">{(order.status || '').replace(/_/g, ' ')}</span>
-                  {canAdvance && (
-                    <button
-                      onClick={() => handleAdvance(order)}
-                      disabled={processing === order.id}
-                      className="px-3 py-1.5 rounded-lg bg-navy/10 text-navy text-xs font-semibold hover:bg-navy/20 transition"
-                    >
-                      {processing === order.id ? 'Updating...' : `Advance to ${STATUS_FLOW[currentIdx + 1].replace(/_/g, ' ')}`}
-                    </button>
-                  )}
+                <div className="text-xs text-slate-600">
+                  <p><span className="font-semibold">Recorded shipping:</span> {recorded(order.shipping_status)}</p>
+                  <p className="mt-1 text-slate-400">{order.created_date ? new Date(order.created_date).toLocaleString() : 'Date not supplied'}</p>
                 </div>
-              </div>
-            );
-          })}
+              </article>
+            ))}
+          </div>
         </div>
       )}
     </OperationsPageLayout>
