@@ -182,7 +182,7 @@ export default function SecurityComplianceDashboard() {
                     <ArrowUpRight size={13} className="text-red-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-red-400 text-sm font-bold">{formatCurrency(wd.amount == null ? null : Math.abs(Number(wd.amount)), wd.currency || wd.currency_code || null)}</p>
+                    <p className="text-red-400 text-sm font-bold">{formatCurrency(wd.amount, wd.currency || wd.currency_code || null)}</p>
                     <p className="text-[#AAB4C3] text-xs truncate">{wd.method}</p>
                   </div>
                   <StatusBadge status={wd.status} />
