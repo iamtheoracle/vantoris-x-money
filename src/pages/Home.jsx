@@ -423,7 +423,7 @@ export default function Home() {
             </button>
 
             <p className="mt-4 text-[12px] text-slate-400 leading-relaxed text-center">
-              Banking services provided through Vantoris. Terms and limitations apply.
+              Vantoris private investment workspace. Features depend on eligibility, verification, provider availability and applicable terms.
             </p>
           </section>
         )}
