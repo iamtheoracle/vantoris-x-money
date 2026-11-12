@@ -2,7 +2,7 @@ import React, { useId } from 'react';
 import VantorisMonogram from './VantorisMonogram';
 
 /**
- * VANTAGE App Icon — V monogram centered on deep navy with premium blue
+ * Vantage App Icon — arch-over-river mark centered on deep navy with premium blue
  * gradients, soft glass depth, and brushed gold metallic detailing.
  */
 export default function VantorisAppIcon({ size = 120, rounded = true, className = '' }) {
