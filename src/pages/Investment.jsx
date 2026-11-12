@@ -3,18 +3,12 @@ import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, ArrowDownToLine, ArrowUpRight, PieChart, Signal, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { formatCurrency } from '@/lib/formatCurrency';
 
 
 // Investment mutations stay disabled until an authorized provider workflow is integrated.
 const SERVER_INVESTMENT_OPERATIONS_ENABLED = false;
 
-function formatPortfolioAmount(value, currency) {
-  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return 'Value unavailable';
-  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount); }
-  catch { return 'Value unavailable'; }
-}
 
 export default function Investment() {
   const [portfolio, setPortfolio] = useState(null);
@@ -127,7 +121,7 @@ export default function Investment() {
   }
 
   const portfolioCurrency = portfolio?.currency || portfolio?.currency_code || null;
-  const amountFor = (value, currency) => formatPortfolioAmount(value, currency || portfolioCurrency);
+  const amountFor = (value, currency) => formatCurrency(value, currency || portfolioCurrency);
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-[1440px] px-5 pt-6 pb-8 vantoris-scroll bg-background">
