@@ -1,18 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, ArrowDownLeft, ArrowUpRight } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { formatCurrency } from '@/lib/formatCurrency';
 
-function amountLabel(txn) {
-  const currency = txn.currency || txn.currency_code;
-  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Amount not verified';
-  const amount = Number(txn.amount);
-  if (!Number.isFinite(amount)) return 'Amount not supplied';
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(Math.abs(amount));
-  } catch {
-    return 'Amount not verified';
-  }
-}
 
 export default function LiveBankingActivity() {
   const [transactions, setTransactions] = useState([]);
@@ -67,7 +57,7 @@ export default function LiveBankingActivity() {
                   <p className="text-[10px] text-gray/60">{dateLabel}</p>
                 </div>
                 <p className={'text-right text-xs font-bold ' + (incoming ? 'text-mint' : 'text-crimson')}>
-                  {amountLabel(txn)}
+                  {formatCurrency(txn.amount, txn.currency || txn.currency_code || null)}
                 </p>
               </div>
             );
