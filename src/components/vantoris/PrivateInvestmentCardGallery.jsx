@@ -9,7 +9,15 @@ const CARD_ART = [
 
 export default function PrivateInvestmentCardGallery({ compact = false, className = '' }) {
   return (
-    <section className={`private-card-gallery ${compact ? 'private-card-gallery--compact' : ''} ${className}`.trim()} aria-label="Vantoris private investment card artwork">
+    <section className={`private-card-gallery ${compact ? 'private-card-gallery--compact' : ''} ${className}`.trim()} aria-label="Private investment card artwork">
+      <div className="private-card-gallery__actions">
+        <button type="button" className="private-card-gallery__print-action" onClick={() => {
+          document.body.classList.add("print-private-card-art");
+          const cleanup = () => document.body.classList.remove("print-private-card-art");
+          window.addEventListener("afterprint", cleanup, { once: true });
+          window.print();
+        }}>Print card artwork</button>
+      </div>
       <div className="private-card-gallery__grid">
         {CARD_ART.map((card) => (
           <figure className="private-card-art" key={card.edition}>
