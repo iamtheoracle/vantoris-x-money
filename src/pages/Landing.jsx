@@ -89,7 +89,7 @@ const MILITARY_ORGS = [
 const PILLARS = [
   {
     icon: Landmark,
-    title: 'Private member banking',
+    title: 'Private client services',
     body: 'A private member workspace for account records, statements, and activity. Live balances and payment execution appear only after an authorized core-banking and payments provider is connected.',
   },
   {
@@ -675,7 +675,7 @@ export default function Landing() {
         <section id="banking" className="scroll-mt-24 bg-white border-y border-slate-200/80 py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">What you can do</p>
-            <h2 className="text-3xl font-bold text-navy max-w-xl">Everything in one membership workspace</h2>
+            <h2 className="text-3xl font-bold text-navy max-w-xl">A considered private-client workspace</h2>
             <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {PILLARS.map(({ icon: Icon, title, body }) => (
                 <article
@@ -722,10 +722,9 @@ export default function Landing() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Investment</p>
-              <h2 className="text-3xl font-bold leading-tight">Grow with transparency</h2>
+              <h2 className="text-3xl font-bold leading-tight">Capital, considered with transparency</h2>
               <p className="mt-4 text-white/70 leading-relaxed">
-                Portfolio views, deposit and withdrawal workflows, and signals for authorized
-                operators mean members see progress while institutions keep process discipline.
+                Portfolio views, controlled deposit and withdrawal requests, and operator-reviewed signals give clients clarity while keeping every capital workflow accountable.
               </p>
             </div>
             <div className="rounded-2xl bg-white/5 border border-white/10 p-6 space-y-4">
