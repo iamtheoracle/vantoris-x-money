@@ -128,7 +128,7 @@ A successful static build is not proof of application availability, deployed aut
 ### Verification status
 
 - The three changed files were read back from the work branch and the expected desktop sidebar, mobile drawer, responsive top bar and workspace allowlist checks were confirmed in source.
-- No local dependency install, lint, typecheck, production build or browser viewport test has been run in this environment. The recovery workflow does not automatically run for this PR because it targets the recovery branch; code remains unverified until an appropriate CI run and browser QA are completed.
+- No local dependency install, lint, typecheck, production build or browser viewport test has been run in this environment. The workflow file does include `recovery/merge-vantoris-live` in its `pull_request` target branches and also supports `workflow_dispatch`; the latest commit-associated lookup returned no run for this head. Investigate Actions enablement, event delivery and run visibility rather than attributing the absence to the branch filter. Code remains unverified until a successful CI run and browser QA are completed.
 - No customer data, backend policies, financial records, provider configuration, `main` branch or production deployment was changed.
 
 ## Current work branch
