@@ -1,18 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { formatCurrency } from '@/lib/formatCurrency';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
 import { PieChart, ArrowDownToLine, ArrowUpRight, TrendingUp, AlertTriangle } from 'lucide-react';
 
-function amountLabel(value, currency) {
-  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return 'Amount not supplied';
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
-  } catch {
-    return 'Amount not verified';
-  }
-}
 
 function dateLabel(value) {
   if (!value) return 'Date not supplied';
