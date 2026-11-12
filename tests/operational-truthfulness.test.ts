@@ -75,3 +75,20 @@ Deno.test("investment signal errors are not presented as an empty signal list", 
   assert(source.includes("Investment signal records are unavailable"), "signal query errors must be visible");
   assert(source.includes("No signal records were returned by the current query"), "empty state must describe the query, not all records");
 });
+
+Deno.test("member profile does not infer private-client tiers from mixed account balances", async () => {
+  const profile = await Deno.readTextFile("src/pages/Profile.jsx");
+  const relationship = await Deno.readTextFile("src/components/vantoris/profile/RelationshipOverview.jsx");
+  const timeline = await Deno.readTextFile("src/components/vantoris/profile/UnifiedTimeline.jsx");
+  assert(!profile.includes("totalAssets = accounts.reduce"), "profile must not sum mixed or incomplete account balances");
+  assert(!profile.includes("generateReferralCode"), "referral codes must not be invented in the browser");
+  assert(profile.includes("Tier not assigned"), "tier must come from a recorded source or remain unassigned");
+  assert(relationship.includes("formatCurrency(account.balance, account.currency || account.currency_code || null)"), "member account cards must preserve currency provenance");
+  assert(timeline.includes("Value unavailable"), "missing timeline amounts must not display as zero");
+});
+
+Deno.test("member money screens do not coerce missing account balances to zero", async () => {
+  const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
+  assert(!source.includes("account.balance || 0") && !source.includes("a.balance||0"), "member money screens must preserve missing balances");
+  assert(source.includes("account.currency || account.currency_code || null"), "member money screens must use source currency");
+});
