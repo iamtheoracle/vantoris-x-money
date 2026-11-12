@@ -64,7 +64,15 @@ export default function FinancialHeritage({ compact = false, className = "" }) {
           <h2 id="financial-heritage-title">Milestones in private finance</h2>
           <p className="financial-heritage__intro">Four independent historical notes on the people, institutions and milestones that shaped banking and capital markets. This collection is editorial, not an endorsement or institutional lineage.</p>
         </div>
-        <span className="financial-heritage__folio" aria-hidden="true">ARCHIVE · 01—04</span>
+        <div className="financial-heritage__actions">
+          <span className="financial-heritage__folio" aria-hidden="true">ARCHIVE · 01—04</span>
+          <button type="button" className="financial-heritage__print-action" onClick={() => {
+            document.body.classList.add("print-financial-heritage");
+            const cleanup = () => document.body.classList.remove("print-financial-heritage");
+            window.addEventListener("afterprint", cleanup, { once: true });
+            window.print();
+          }}>Print heritage cards</button>
+        </div>
       </div>
 
       <div className="financial-heritage__grid">
