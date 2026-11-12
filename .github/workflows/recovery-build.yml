@@ -83,12 +83,17 @@ jobs:
           const surfaces = [
             'src/components/vantoris/FloatingCommandDock.jsx',
             'src/components/vantoris/HistoricalStatementImport.jsx',
+            'src/components/vantoris/herobox/DiscoverFeed.jsx',
+            'src/lib/discoveryEngine.js',
+            'src/lib/discoveryPipeline.js',
+            'src/lib/heroboxDiscovery.js',
             'src/pages/Home.jsx',
             'src/pages/Accounts.jsx',
             'src/pages/AccountDetail.jsx',
             'src/pages/MoveMoney.jsx',
             'src/pages/Investment.jsx',
             'src/pages/HeroBox.jsx',
+            'src/pages/Discovery.jsx',
             'src/pages/admin/AdminOverview.jsx',
             'src/pages/admin/AdminMembers.jsx',
             'src/pages/admin/AdminApplications.jsx',
@@ -101,9 +106,13 @@ jobs:
             'src/pages/operations/HeroBoxFundsShipping.jsx',
             'src/pages/operations/HeroBoxAdminOrders.jsx',
             'src/pages/operations/HeroBoxAdminProducts.jsx',
+            'src/pages/operations/DiscoveryNetwork.jsx',
+            'src/pages/operations/HumanitarianCases.jsx',
+            'src/pages/operations/Organizations.jsx',
           ];
-          const directWrite = /base44\.entities\.(Account|Transaction|Document|WithdrawalRequest|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|HeroBoxProfile|Application|User|Notification)\.(create|update|delete|updateMany|bulkCreate|createMany|bulkUpdate|upsert)\s*\(/;
+          const directWrite = /base44\.entities\.(Account|Transaction|Document|WithdrawalRequest|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|HeroBoxProfile|Application|User|Notification|HumanitarianCase|OrganizationProfile|DiscoveryRecord|DiscoveryRun|DiscoveryAlert|DiscoverySource|DiscoveryChange|NewsRecord|VolunteerProfile)\.(create|update|delete|updateMany|bulkCreate|createMany|bulkUpdate|upsert)\s*\(/;
           const clientEmail = /base44\.integrations\.Core\.SendEmail\s*\(/;
+          const clientLLM = /base44\.integrations\.Core\.InvokeLLM\s*\(/;
           for (const file of surfaces) {
             const source = readFileSync(file, 'utf8');
             if (directWrite.test(source)) {
@@ -112,8 +121,11 @@ jobs:
             if (clientEmail.test(source)) {
               throw new Error('Browser-side email delivery call found in ' + file);
             }
+            if (clientLLM.test(source)) {
+              throw new Error('Browser-side LLM discovery/action call found in ' + file);
+            }
           }
-          console.log('Critical member and operator surfaces contain no direct financial/privileged writes or browser-side email delivery.');
+          console.log('Critical member, admin, and discovery surfaces contain no direct privileged writes, browser-side email delivery, or browser-side LLM discovery.');
           NODE
       - name: Keep unverified financial operations fail-closed
         run: |
