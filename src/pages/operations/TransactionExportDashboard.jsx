@@ -1,281 +1,62 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
-import StatusBadge from '@/components/vantoris/StatusBadge';
-import { useToast } from '@/components/ui/use-toast';
-import {
-  Download, FileSpreadsheet, Calendar, Loader2, CheckCircle2,
-  AlertTriangle, Clock, RefreshCw, FileDown, TrendingUp,
-} from 'lucide-react';
+import { AlertTriangle, Download, FileSpreadsheet, Clock } from 'lucide-react';
 
-const EXPORT_TYPE_LABELS = {
-  monthly: 'Monthly Export',
-  weekly: 'Weekly Export',
-  daily: 'Daily Export',
-  manual: 'Manual Export',
-};
+const label = (value, dictionary) => value ? (dictionary[value] || String(value).replace(/_/g, ' ')) : 'Not supplied';
+function dateLabel(value) {
+  if (!value) return 'Date not supplied';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Date not supplied' : date.toLocaleString();
+}
 
-const FORMAT_LABELS = {
-  csv: 'CSV',
-  excel: 'Excel',
-  google_sheets: 'Google Sheets',
-};
+const EXPORT_TYPES = { monthly: 'Monthly', weekly: 'Weekly', daily: 'Daily', manual: 'Manual' };
+const FORMATS = { csv: 'CSV', excel: 'Excel', google_sheets: 'Google Sheets' };
 
 export default function TransactionExportDashboard() {
   const [exports, setExports] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const [exportType, setExportType] = useState('manual');
-  const [format, setFormat] = useState('csv');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const { toast } = useToast();
-
-  const loadExports = useCallback(async () => {
-    const records = await base44.entities.TransactionExport.list('-created_date', 20);
-    setExports(records);
-  }, []);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    loadExports().catch(e => {
-      toast({ title: 'Failed to load export history', description: e.message, variant: 'destructive' });
-    }).finally(() => setLoading(false));
-  }, [loadExports]);
+    let active = true;
+    base44.entities.TransactionExport.list('-created_date', 20).then((rows) => {
+      if (!Array.isArray(rows)) throw new Error('Invalid export history response');
+      if (active) setExports(rows);
+    }).catch(() => {
+      if (active) setError('Export history is unavailable. No export-success or empty-history conclusion can be drawn.');
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
-  async function handleExport() {
-    setExporting(true);
-    try {
-      const response = await base44.functions.invoke('exportTransactionLedger', {
-        export_type: exportType,
-        format,
-        date_from: dateFrom || undefined,
-        date_to: dateTo || undefined,
-      });
-      const data = response.data || response;
-      toast({
-        title: 'Export completed',
-        description: `${data.rowsExported} transactions exported successfully.`,
-      });
-      loadExports();
-    } catch (e) {
-      toast({ title: 'Export failed', description: e.message, variant: 'destructive' });
-    } finally {
-      setExporting(false);
-    }
-  }
-
-  const lastExport = exports[0];
-  const totalRowsExported = exports.reduce((sum, e) => sum + (e.rows_exported || 0), 0);
-  const failedExports = exports.filter(e => e.status === 'failed').length;
-
-  // Calculate next scheduled export (first of next month)
-  const nextMonth = new Date();
-  nextMonth.setMonth(nextMonth.getMonth() + 1, 1);
-  const nextScheduledExport = nextMonth.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const failed = exports.filter((item) => item.status === 'failed').length;
+  const successful = exports.filter((item) => item.status === 'completed' || item.status === 'success').length;
+  const last = exports[0];
 
   return (
-    <div className="px-5 lg:px-8 py-6">
-      <OperationsPageLayout
-        title="Transaction Ledger Export"
-        description="Automated financial transaction export for reconciliation and reporting."
-        icon={FileSpreadsheet}
-        breadcrumb="HeroBox Operations"
-        actions={
-          <button
-            onClick={handleExport}
-            disabled={exporting}
-            className="flex items-center gap-2 px-4 py-2.5 bg-navy text-white font-semibold rounded-lg text-sm hover:bg-navy/90 transition-all disabled:opacity-50"
-          >
-            {exporting ? <Loader2 size={16} className="animate-spin" /> : <Download size={16} />}
-            {exporting ? 'Exporting...' : 'Export Now'}
-          </button>
-        }
-      >
-        {/* Overview cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <StatCard
-            icon={Clock}
-            label="Last Export"
-            value={lastExport ? new Date(lastExport.created_date).toLocaleDateString('en-US') : 'Never'}
-            sublabel={lastExport ? EXPORT_TYPE_LABELS[lastExport.export_type] : 'No exports yet'}
-          />
-          <StatCard
-            icon={Calendar}
-            label="Next Scheduled"
-            value={nextScheduledExport}
-            sublabel="Monthly auto-export"
-          />
-          <StatCard
-            icon={TrendingUp}
-            label="Total Rows Exported"
-            value={totalRowsExported.toLocaleString()}
-            sublabel={`${exports.length} exports total`}
-          />
-          <StatCard
-            icon={failedExports > 0 ? AlertTriangle : CheckCircle2}
-            label="Failed Exports"
-            value={failedExports.toString()}
-            sublabel={failedExports > 0 ? 'Requires attention' : 'All successful'}
-            iconColor={failedExports > 0 ? 'text-crimson' : 'text-mint'}
-          />
-        </div>
-
-        {/* Export configuration */}
-        <div className="vantoris-glass-premium p-5 mb-6">
-          <h3 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-            <FileDown size={16} className="text-gray" />
-            Export Configuration
-          </h3>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Export type */}
-            <div>
-              <label className="text-xs text-gray font-medium mb-1.5 block">Export Type</label>
-              <select
-                value={exportType}
-                onChange={e => setExportType(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-foreground focus:border-brass/50 focus:outline-none"
-              >
-                <option value="manual">Manual Export</option>
-                <option value="monthly">Monthly</option>
-                <option value="weekly">Weekly</option>
-                <option value="daily">Daily</option>
-              </select>
-            </div>
-            {/* Format */}
-            <div>
-              <label className="text-xs text-gray font-medium mb-1.5 block">Format</label>
-              <select
-                value={format}
-                onChange={e => setFormat(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-foreground focus:border-brass/50 focus:outline-none"
-              >
-                <option value="csv">CSV</option>
-                <option value="excel">Excel</option>
-                <option value="google_sheets">Google Sheets</option>
-              </select>
-            </div>
-            {/* Date from */}
-            <div>
-              <label className="text-xs text-gray font-medium mb-1.5 block">From Date (optional)</label>
-              <input
-                type="date"
-                value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-foreground focus:border-brass/50 focus:outline-none"
-              />
-            </div>
-            {/* Date to */}
-            <div>
-              <label className="text-xs text-gray font-medium mb-1.5 block">To Date (optional)</label>
-              <input
-                type="date"
-                value={dateTo}
-                onChange={e => setDateTo(e.target.value)}
-                className="w-full bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm text-foreground focus:border-brass/50 focus:outline-none"
-              />
-            </div>
-          </div>
-          <p className="text-xs text-gray mt-3">
-            Leave dates empty to export all new transactions since the last export. Duplicate prevention is automatic.
-          </p>
-        </div>
-
-        {/* Export history */}
-        <div className="vantoris-glass p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-semibold text-foreground">Export History</h3>
-            <button
-              onClick={() => { setLoading(true); loadExports().finally(() => setLoading(false)); }}
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-gray transition-colors"
-            >
-              <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            </button>
-          </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 size={20} className="text-gray animate-spin" />
-            </div>
-          ) : exports.length === 0 ? (
-            <div className="text-center py-12">
-              <FileSpreadsheet size={32} className="text-gray mx-auto mb-2" />
-              <p className="text-sm text-gray">No exports yet. Run your first export above.</p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {exports.map(exp => (
-                <div
-                  key={exp.id}
-                  className="flex items-center justify-between gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                      exp.status === 'completed' ? 'bg-mint/10' :
-                      exp.status === 'failed' ? 'bg-crimson/10' :
-                      exp.status === 'in_progress' ? 'bg-brass/10' : 'bg-slate-100'
-                    }`}>
-                      {exp.status === 'completed' ? <CheckCircle2 size={14} className="text-mint" /> :
-                       exp.status === 'failed' ? <AlertTriangle size={14} className="text-crimson" /> :
-                       <Clock size={14} className="text-brass" />}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-medium text-foreground">
-                        {EXPORT_TYPE_LABELS[exp.export_type]} · {FORMAT_LABELS[exp.format]}
-                      </p>
-                      <p className="text-xs text-gray">
-                        {new Date(exp.created_date).toLocaleString('en-US')}
-                        {exp.exported_by_name ? ` · ${exp.exported_by_name}` : ''}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    <div className="text-right">
-                      <p className="text-sm font-semibold text-foreground">{exp.rows_exported || 0} rows</p>
-                      {exp.failed_rows > 0 && (
-                        <p className="text-xs text-crimson">{exp.failed_rows} failed</p>
-                      )}
-                    </div>
-                    {exp.google_sheet_url && exp.status === 'completed' && (
-                      <a
-                        href={exp.google_sheet_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="p-2 rounded-lg bg-mint/10 text-mint hover:bg-mint/20 transition-colors"
-                        title="Open Google Sheet"
-                      >
-                        <FileSpreadsheet size={14} />
-                      </a>
-                    )}
-                    {exp.file_url && exp.status === 'completed' && (
-                      <a
-                        href={exp.file_url}
-                        download
-                        className="p-2 rounded-lg bg-navy/8 text-navy hover:bg-navy/12 transition-colors"
-                        title="Download export"
-                      >
-                        <Download size={14} />
-                      </a>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </OperationsPageLayout>
-    </div>
-  );
-}
-
-function StatCard({ icon: Icon, label, value, sublabel, iconColor = 'text-navy' }) {
-  return (
-    <div className="vantoris-glass p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Icon size={14} className={iconColor} />
-        <p className="text-[10px] uppercase tracking-wider text-gray font-semibold">{label}</p>
+    <OperationsPageLayout title="Transaction export records" description="Read-only export history. New exports remain held until an authorized, complete-ledger export service is verified." icon={FileSpreadsheet} actions={<button type="button" disabled title="Export service is not verified or enabled" className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-400"><Download size={14} /> Export unavailable</button>}>
+      <div role="status" className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-800" />
+        <div><p className="text-sm font-semibold text-amber-950">Export generation is held</p><p className="mt-1 text-xs leading-5 text-amber-900/80">No schedule, export job or complete-ledger output is assumed. A release requires server authorization, full query coverage, currency-aware reconciliation, secure delivery and an immutable audit record.</p></div>
       </div>
-      <p className="text-lg font-bold text-foreground">{value}</p>
-      {sublabel && <p className="text-xs text-gray mt-0.5">{sublabel}</p>}
-    </div>
+
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <section className="vantoris-glass-premium rounded-2xl p-5"><Clock size={17} className="mb-3 text-brass" /><p className="text-lg font-semibold text-foreground">{last ? dateLabel(last.created_date) : 'Not available'}</p><p className="mt-1 text-xs text-gray">Latest returned export record</p></section>
+        <section className="vantoris-glass-premium rounded-2xl p-5"><FileSpreadsheet size={17} className="mb-3 text-brass" /><p className="text-lg font-semibold text-foreground">{loading || error ? 'Unavailable' : exports.length}</p><p className="mt-1 text-xs text-gray">History records returned · max 20</p></section>
+        <section className="vantoris-glass-premium rounded-2xl p-5"><AlertTriangle size={17} className="mb-3 text-brass" /><p className="text-lg font-semibold text-foreground">{loading || error ? 'Unavailable' : failed + ' failed · ' + successful + ' successful'}</p><p className="mt-1 text-xs text-gray">Statuses in returned history only</p></section>
+      </div>
+
+      <section className="vantoris-glass-premium rounded-2xl p-5">
+        <div className="mb-4 flex items-center justify-between gap-3"><h2 className="text-sm font-semibold text-foreground">Export history</h2><span className="text-[10px] text-gray">Read-only · newest 20 records</span></div>
+        {loading ? <p className="py-10 text-center text-sm text-gray">Loading export records…</p> : error ? <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">{error}</p> : exports.length === 0 ? <p className="py-10 text-center text-sm text-gray">No export history records were returned by the current query.</p> : (
+          <div className="overflow-x-auto"><table className="w-full text-sm">
+            <thead><tr className="border-b border-slate-200 text-left text-[10px] uppercase tracking-wider text-gray"><th className="py-3 pr-4">Created</th><th className="py-3 pr-4">Type</th><th className="py-3 pr-4">Format</th><th className="py-3 pr-4">Rows</th><th className="py-3">Status</th></tr></thead>
+            <tbody>{exports.map((item, index) => <tr key={item.id || index} className="border-b border-slate-100"><td className="py-3 pr-4 text-xs text-foreground">{dateLabel(item.created_date)}</td><td className="py-3 pr-4 text-xs capitalize text-foreground">{label(item.export_type, EXPORT_TYPES)}</td><td className="py-3 pr-4 text-xs text-foreground">{label(item.format, FORMATS)}</td><td className="py-3 pr-4 text-xs tabular-nums text-foreground">{item.rows_exported == null ? 'Not supplied' : item.rows_exported}</td><td className="py-3 text-xs capitalize text-foreground">{label(item.status)}</td></tr>)}</tbody>
+          </table></div>
+        )}
+      </section>
+    </OperationsPageLayout>
   );
 }
