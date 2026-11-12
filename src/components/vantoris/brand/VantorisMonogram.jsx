@@ -1,18 +1,13 @@
 import React, { useId } from 'react';
 
 /**
- * VANTORIS — Custom Geometric "V" Monogram
- *
- * The V is constructed from two engineered strokes converging at a precise apex.
- * Symbolism (intentionally subtle):
- *  — Two architectural pillars converging (strength, stability, structure)
- *  — Upward sweep of the arms (growth, forward momentum, capital appreciation)
- *  — Sharp engineered apex (precision, foundation, legacy)
- *  — The negative space between the strokes reads as an upward chevron at scale
+ * VANTAGE — Architectural arch over a flowing river.
+ * The arch represents enduring structure; the river represents continuity,
+ * movement and stewardship. The mark is original vector artwork.
  *
  * Treatments: flat | metallic | glass | monochrome | outline | foil | embossed
  */
-export const VANTORIS_COLORS = {
+export const VANTAGE_COLORS = {
   navy: '#071C38',
   executiveBlue: '#0A2342',
   royalBlue: '#1F5EFF',
@@ -22,7 +17,11 @@ export const VANTORIS_COLORS = {
   slateGray: '#64748B',
 };
 
-const V_PATH = 'M16,24 L32,24 L60,81 L88,24 L104,24 L60,96 Z';
+export const VANTORIS_COLORS = VANTAGE_COLORS; // Internal compatibility alias for existing component imports.
+
+const ARCH_PATH = 'M18 88V56A42 42 0 0 1 102 56V88';
+const RIVER_PATH = 'M10 96C22 86 34 106 46 96S70 86 82 96S106 106 114 96';
+const RIVER_PATH_LOWER = 'M14 106C26 96 38 116 50 106S74 96 86 106S108 116 116 106';
 
 /** @param {{ size?: number, variant?: string, theme?: string, color?: string, className?: string, strokeWidth?: number }} param0 */
 export default function VantorisMonogram({
@@ -39,7 +38,7 @@ export default function VantorisMonogram({
   const sid = `vs-${uid}`;
 
   const isDark = theme === 'dark';
-  const flatColor = color || (isDark ? VANTORIS_COLORS.white : VANTORIS_COLORS.navy);
+  const flatColor = color || (isDark ? VANTAGE_COLORS.white : VANTAGE_COLORS.navy);
 
   let fill = flatColor;
   let stroke = 'none';
@@ -106,25 +105,16 @@ export default function VantorisMonogram({
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Vantoris monogram"
+      aria-label="Vantage arch over river mark"
     >
       <defs>{defs}</defs>
       <g filter={variant === 'embossed' ? `url(#${sid})` : undefined}>
-        <path
-          d={V_PATH}
-          fill={fill}
-          stroke={stroke}
-          strokeWidth={sw}
-          strokeLinejoin="miter"
-        />
+        <path d={ARCH_PATH} fill="none" stroke={variant === 'outline' ? stroke : fill} strokeWidth={variant === 'outline' ? (sw || 2.5) : 5.5} strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M18 86H102" fill="none" stroke={variant === 'outline' ? stroke : fill} strokeWidth="3" strokeLinecap="round" />
+        <path d={RIVER_PATH} fill="none" stroke={variant === 'outline' ? stroke : fill} strokeWidth="4.5" strokeLinecap="round" />
+        <path d={RIVER_PATH_LOWER} fill="none" stroke={variant === 'outline' ? stroke : fill} strokeWidth="3.5" strokeLinecap="round" opacity=".75" />
         {(variant === 'metallic' || variant === 'foil') && (
-          <path
-            d="M22,26 L57,90"
-            stroke="#FFFFFF"
-            strokeOpacity="0.35"
-            strokeWidth="1.4"
-            strokeLinecap="round"
-          />
+          <path d="M25 56A35 35 0 0 1 95 56" fill="none" stroke="#FFFFFF" strokeOpacity="0.35" strokeWidth="1.4" strokeLinecap="round" />
         )}
       </g>
     </svg>
