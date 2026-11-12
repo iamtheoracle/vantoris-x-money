@@ -39,6 +39,9 @@ export default async function(req: Request): Promise<Response> {
         transfer.reviewer_user_id === transfer.approver_user_id) {
       return Response.json({ error: 'ACH and Fedwire require two distinct staff approvals before submission.' }, { status: 403 });
     }
+    if (Deno.env.get('VANTORIS_PROVIDER_SUBMISSION_ENABLED') !== 'true') {
+      return Response.json({ error: 'External bank submission is disabled until U.S. sponsor-bank authorization, compliance approval and provider configuration are verified. No bank request was sent.' }, { status: 503 });
+    }
     if (!transfer.beneficiary_account_token) {
       return Response.json({ error: 'A provider-issued beneficiary account token is required. No bank request was sent.' }, { status: 503 });
     }
