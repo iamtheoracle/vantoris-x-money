@@ -56,7 +56,7 @@ function setLabel(convId, label) {
 
 export default function AgentChat({
   agentName = 'vantoris_assistant',
-  title = 'Vantoris AI Assistant',
+  title = 'Vantage Assistant',
   subtitle = 'Platform-wide operations',
   suggestions = null,
   inputPlaceholder = 'Ask about members, applications, KYC status, account balances...',
@@ -406,7 +406,7 @@ export default function AgentChat({
               </div>
               <h4 className="font-bold text-base mb-1" style={{ color: COLORS.textPrimary }}>What can I help you with?</h4>
               <p className="text-sm max-w-sm mb-6" style={{ color: COLORS.textSecondary }}>
-                I have full access to your Vantoris platform. Ask me about members, accounts, applications, withdrawals, KYC status, and more.
+                I can help with information and actions explicitly made available to this workspace. I do not have unrestricted access to accounts, private member records, withdrawals or identity files. Sensitive actions require authorized human review.
               </p>
               {renderActionSuggestions
                 ? renderActionSuggestions({ setInput, sendMessage })
