@@ -121,7 +121,7 @@ export default async function(req: Request): Promise<Response> {
       base44.asServiceRole.entities.Notification.create({
         user_id:receipt.member_user_id,
         title:next==='verified_received'?'Incoming payment verified':next==='returned'?'Incoming payment returned':'Incoming payment exception',
-        message:next==='verified_received'?'The incoming receipt was independently verified and posted to the institution's transactional ledger. Account balance display reconciliation remains a separate step.':next==='returned'?'The bank return was recorded and the corresponding ledger reversal was created.':'The incoming payment requires follow-up with client services.',
+        message:next==='verified_received'?'The incoming receipt was independently verified and posted to the institution’s transactional ledger. Account balance display reconciliation remains a separate step.':next==='returned'?'The bank return was recorded and the corresponding ledger reversal was created.':'The incoming payment requires follow-up with client services.',
         type:next==='verified_received'?'info':'warning',read:false
       })
     ]);
