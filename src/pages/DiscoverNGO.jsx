@@ -13,9 +13,10 @@ export default function DiscoverNGO() {
     <div className="min-h-screen bg-[#F4F6F9] pb-24">
       <div className="sticky top-0 z-10 bg-white/95 border-b border-slate-200 px-4 py-3 flex items-center gap-3">
         <Link to="/discover" className="p-1.5 rounded-lg hover:bg-slate-100"><ArrowLeft size={20} /></Link>
-        <h1 className="font-heading font-bold text-navy">NGO & impact</h1>
+        <div><p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Vantoris Private Institution</p><h1 className="font-heading font-bold text-navy">NGO & impact</h1></div>
       </div>
-      <div className="p-4 space-y-4">
+      <div className="space-y-4 p-4">
+        <p className="rounded-xl border border-slate-200 bg-white p-4 text-xs leading-5 text-slate-600">Public organization directory only. Inclusion does not imply partnership, endorsement, authorization to collect funds, or an active donation relationship with Vantoris.</p>
         {ORGS.map((o) => (
           <a key={o.name} href={o.url} target="_blank" rel="noopener noreferrer" className="block rounded-2xl bg-white border border-slate-200 overflow-hidden">
             <img src={o.img} alt="" className="h-32 w-full object-cover" loading="lazy" />
