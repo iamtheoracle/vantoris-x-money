@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import ShieldLogo from '@/components/vantoris/ShieldLogo';
 import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
+import HambrosTribute from '@/components/vantoris/HambrosTribute';
 import PrivateInvestmentCardGallery from '@/components/vantoris/PrivateInvestmentCardGallery';
 import { PROVIDERS } from '@/lib/providers';
 
@@ -41,6 +42,7 @@ const NAV = [
   { label: 'Cards', href: '#service-availability' },
   
   { label: 'About', href: '#about' },
+  { label: 'Heritage', href: '#hambros-tribute' },
   { label: 'Banking', href: '#banking' },
   { label: 'Invest', href: '#invest' },
   { label: 'Travel', href: '#travel' },
@@ -123,8 +125,8 @@ const HELP = [
     text: 'Business-oriented member tools, document organization, and access to support when decisions get complex.',
   },
   {
-    title: 'Global citizens',
-    text: 'Cross-border awareness, discovery tools, and support channels that don’t stop at a single zip code.',
+    title: 'U.S. households',
+    text: 'U.S.-focused account information, discovery tools, and dedicated support for households across the United States.',
   },
 ];
 
@@ -587,7 +589,7 @@ export default function Landing() {
             <div className="mt-10 grid sm:grid-cols-3 gap-4">
               {[
                 ['In-app messages', 'Secure member ↔ support threads', '/login'],
-                ['Voice desks', 'US + UK lines on Contact', '#contact'],
+                ['Voice desk', 'U.S. contact line on Contact', '#contact'],
                 ['HeroBox network', 'Volunteers, shipping, funds in ops', '/login'],
               ].map(([t, d, href]) => (
                 href.startsWith('#') ? (
@@ -670,6 +672,7 @@ export default function Landing() {
         </section>
 
         <FinancialHeritage className="py-20" />
+        <HambrosTribute />
 
         {/* Pillars */}
         <section id="banking" className="scroll-mt-24 bg-white border-y border-slate-200/80 py-20">
@@ -832,7 +835,7 @@ export default function Landing() {
           <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Wires & tracking</p>
           <h2 className="text-3xl font-bold text-navy max-w-2xl">Send with care. Track every step.</h2>
           <p className="mt-4 text-slate-600 max-w-3xl leading-relaxed">
-            Domestic and international wire-style transfers sit next to everyday Send / Request.
+            U.S. domestic wire-style requests sit next to everyday Send / Request. The public service scope is the United States.
             Members initiate, review beneficiary details, and follow status in Activity—so large
             moves are never a black box.
           </p>
@@ -883,10 +886,6 @@ export default function Landing() {
               <a href="tel:+12055688741" className="font-semibold text-navy underline">
                 +1 (205) 568-8741
               </a>{' '}
-              or{' '}
-              <a href="tel:+447404767964" className="font-semibold text-navy underline">
-                +44 7404 767964
-              </a>
               . Report suspected fraud to local authorities and, in the US, to reportfraud.ftc.gov where applicable.
             </p>
           </div>
@@ -1045,13 +1044,6 @@ export default function Landing() {
               >
                 <p className="text-xs text-white/60 uppercase tracking-wider">United States</p>
                 <p className="text-xl font-bold mt-1 tabular-nums">+1 (205) 568-8741</p>
-              </a>
-              <a
-                href="tel:+447404767964"
-                className="flex-1 rounded-2xl border border-slate-200 bg-[#F7F5EF] text-navy p-5 hover:border-brass/40 transition"
-              >
-                <p className="text-xs text-slate-500 uppercase tracking-wider">United Kingdom</p>
-                <p className="text-xl font-bold mt-1 tabular-nums">+44 7404 767964</p>
               </a>
             </div>
           </div>
