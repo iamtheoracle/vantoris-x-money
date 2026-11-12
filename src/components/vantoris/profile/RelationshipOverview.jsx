@@ -69,9 +69,9 @@ function AccountCard({ account, Icon }) {
         </span>
       </div>
       <p className="text-gray text-[10px] uppercase tracking-wider font-medium mb-0.5">{account.account_type}</p>
-      <p className="text-foreground font-bold text-2xl tracking-tight">{formatCurrency(account.balance || 0)}</p>
+      <p className="text-foreground font-bold text-2xl tracking-tight">{formatCurrency(account.balance, account.currency || account.currency_code || null)}</p>
       <div className="flex items-center justify-between mt-2.5">
-        <span className="text-gray text-[10px] font-mono tracking-wider">••••{account.account_number?.slice(-4) || '----'}</span>
+        <span className="text-gray text-[10px] font-mono tracking-wider">{account.account_number ? '••••' + String(account.account_number).slice(-4) : 'Account number not supplied'}</span>
         <span className="text-navy text-[10px] font-semibold flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">View <ChevronRight size={11} /></span>
       </div>
     </Link>
@@ -81,9 +81,9 @@ function AccountCard({ account, Icon }) {
 function HeroBoxCard({ heroProfile, heroRequests }) {
   const pendingCount = heroRequests?.filter(r => r.status === 'pending' || r.status === 'under_review').length || 0;
   const metrics = [
-    { icon: Users, label: 'Heroes', value: heroProfile.heroes_supported || 0 },
-    { icon: Package, label: 'Delivered', value: heroProfile.packages_delivered || 0 },
-    { icon: Gift, label: 'Contributed', value: formatCurrency(heroProfile.total_contribution || 0) },
+    { icon: Users, label: 'Heroes', value: heroProfile.heroes_supported ?? 'Not supplied' },
+    { icon: Package, label: 'Delivered', value: heroProfile.packages_delivered ?? 'Not supplied' },
+    { icon: Gift, label: 'Contributed', value: formatCurrency(heroProfile.total_contribution, heroProfile.currency || heroProfile.currency_code || null) },
   ];
 
   return (
