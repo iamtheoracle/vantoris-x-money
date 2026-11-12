@@ -143,7 +143,7 @@ jobs:
           ];
           for (const [file, reason] of readOnlySurfaces) {
             const source = readFileSync(file, 'utf8');
-            if (/base44\\.entities\\.(Account|Transaction|WithdrawalRequest)\\.(create|update|delete|updateMany|bulkCreate|bulkUpdate)\\s*\\(/.test(source)) {
+            if (/base44\.entities\.(Account|Transaction|WithdrawalRequest)\.(create|update|delete|updateMany|bulkCreate|bulkUpdate)\s*\(/.test(source)) {
               throw new Error(reason + ': direct mutation found in ' + file);
             }
           }
