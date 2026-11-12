@@ -16,35 +16,51 @@ import SystemHealthWidget from '@/components/vantoris/widgets/SystemHealthWidget
 
 export default function SecurityComplianceDashboard() {
   const navigate = useNavigate();
-  const [stats, setStats] = useState({ totalAccounts: 0, frozenAccounts: 0, totalMembers: 0, pendingWithdrawals: 0, pendingApps: 0, pendingKyc: 0, totalAuditLogs: 0 });
+  const [stats, setStats] = useState({ frozenAccounts: null, pendingWithdrawals: null, pendingApps: null, pendingKyc: null });
+  const [sourceErrors, setSourceErrors] = useState({ accounts: false, withdrawals: false, applications: false, auditLogs: false });
   const [recentAudit, setRecentAudit] = useState([]);
   const [recentWithdrawals, setRecentWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadData();
-  }, []);
-
-  async function loadData() {
-    try {
-      const [accounts, users, withdrawals, apps, auditLogs] = await Promise.all([
-        base44.entities.Account.list('-created_date', 200),
-        base44.entities.User.list('-created_date', 200),
-        base44.entities.WithdrawalRequest.list('-created_date', 20),
-        base44.entities.Application.list('-created_date', 100),
-        base44.entities.AuditLog.list('-created_date', 10),
+    let active = true;
+    const safeList = async (request) => {
+      try {
+        const rows = await request;
+        return { rows: Array.isArray(rows) ? rows : [], failed: !Array.isArray(rows) };
+      } catch {
+        return { rows: [], failed: true };
+      }
+    };
+    (async () => {
+      const [accountResult, withdrawalResult, applicationResult, auditResult] = await Promise.all([
+        safeList(base44.entities.Account.list('-created_date', 200)),
+        safeList(base44.entities.WithdrawalRequest.list('-created_date', 20)),
+        safeList(base44.entities.Application.list('-created_date', 100)),
+        safeList(base44.entities.AuditLog.list('-created_date', 10)),
       ]);
-      const frozenAccounts = accounts.filter(a => a.status === 'frozen').length;
-      const pendingWithdrawals = withdrawals.filter(w => w.status === 'pending').length;
-      const pendingKyc = apps.filter(a => a.kyc_status === 'pending').length;
-      const pendingApps = apps.filter(a => a.application_status === 'pending').length;
-      const memberCount = users.filter(u => u.role === 'user').length;
-      setStats({ totalAccounts: accounts.length, frozenAccounts, totalMembers: memberCount, pendingWithdrawals, pendingApps, pendingKyc, totalAuditLogs: auditLogs.length });
-      setRecentAudit(auditLogs.slice(0, 6));
-      setRecentWithdrawals(withdrawals.filter(w => w.status === 'pending').slice(0, 5));
-    } catch (e) { console.error(e); }
-    setLoading(false);
-  }
+      if (!active) return;
+      setSourceErrors({
+        accounts: accountResult.failed,
+        withdrawals: withdrawalResult.failed,
+        applications: applicationResult.failed,
+        auditLogs: auditResult.failed,
+      });
+      setStats({
+        frozenAccounts: accountResult.failed ? null : accountResult.rows.filter((account) => account.status === 'frozen').length,
+        pendingWithdrawals: withdrawalResult.failed ? null : withdrawalResult.rows.filter((item) => item.status === 'pending').length,
+        pendingKyc: applicationResult.failed ? null : applicationResult.rows.filter((item) => item.kyc_status === 'pending').length,
+        pendingApps: applicationResult.failed ? null : applicationResult.rows.filter((item) => item.application_status === 'pending').length,
+      });
+      setRecentAudit(auditResult.rows.slice(0, 6));
+      setRecentWithdrawals(withdrawalResult.rows.filter((item) => item.status === 'pending').slice(0, 5));
+    })().catch(() => {
+      if (active) setSourceErrors({ accounts: true, withdrawals: true, applications: true, auditLogs: true });
+    }).finally(() => {
+      if (active) setLoading(false);
+    });
+    return () => { active = false; };
+  }, []);
 
   if (loading) {
     return (
@@ -69,12 +85,16 @@ export default function SecurityComplianceDashboard() {
 
   return (
     <OperationsPageLayout title="Security & Compliance" description="Risk monitoring, fraud detection, and compliance overview" icon={ShieldCheck} breadcrumb="Security & Compliance Workspace">
+      <div role="status" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs leading-5 text-amber-950">
+        Counts below are records returned by bounded reads, not institution-wide totals: accounts ≤ 200, withdrawals ≤ 20, applications ≤ 100. Source failures display as unavailable. Complete risk and compliance totals require authoritative server-side aggregates.
+      </div>
+
       {/* Risk Indicator Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
-        <PremiumStatCard label="Frozen Accounts" value={stats.frozenAccounts} icon={Lock} accent="crimson" alert={stats.frozenAccounts > 0 ? stats.frozenAccounts : ''} alertIcon={AlertTriangle} onClick={() => navigate('/operations/accounts')} />
-        <PremiumStatCard label="Pending Withdrawals" value={stats.pendingWithdrawals} icon={ArrowUpRight} accent="gold" alert={stats.pendingWithdrawals > 0 ? stats.pendingWithdrawals : ''} alertIcon={AlertTriangle} onClick={() => navigate('/operations/withdrawals')} />
-        <PremiumStatCard label="Pending KYC" value={stats.pendingKyc} icon={ShieldCheck} accent="brass" alert={stats.pendingKyc > 0 ? stats.pendingKyc : ''} alertIcon={AlertTriangle} onClick={() => navigate('/operations/kyc')} />
-        <PremiumStatCard label="Pending Applications" value={stats.pendingApps} icon={FileText} accent="blue" onClick={() => navigate('/operations/applications')} />
+        <PremiumStatCard label="Frozen records returned · max 200" value={stats.frozenAccounts ?? 'Unavailable'} icon={Lock} accent="crimson" alert={stats.frozenAccounts > 0 ? stats.frozenAccounts : ''} alertIcon={AlertTriangle} onClick={() => navigate('/operations/accounts')} />
+        <PremiumStatCard label="Pending withdrawal records · max 20" value={stats.pendingWithdrawals ?? 'Unavailable'} icon={ArrowUpRight} accent="gold" alert={stats.pendingWithdrawals > 0 ? stats.pendingWithdrawals : ''} alertIcon={AlertTriangle} onClick={() => navigate('/operations/withdrawals')} />
+        <PremiumStatCard label="Pending KYC records · max 100" value={stats.pendingKyc ?? 'Unavailable'} icon={ShieldCheck} accent="brass" alert={stats.pendingKyc > 0 ? stats.pendingKyc : ''} alertIcon={AlertTriangle} onClick={() => navigate('/operations/kyc')} />
+        <PremiumStatCard label="Pending application records · max 100" value={stats.pendingApps ?? 'Unavailable'} icon={FileText} accent="blue" onClick={() => navigate('/operations/applications')} />
       </div>
 
       {/* Security Status + High Priority + AI Recommendations */}
@@ -114,7 +134,9 @@ export default function SecurityComplianceDashboard() {
             </div>
             <Link to="/operations/audit-logs" className="text-brass text-xs hover:underline flex items-center gap-1">View all <ArrowUpRight size={12} /></Link>
           </div>
-          {recentAudit.length === 0 ? (
+          {sourceErrors.auditLogs ? (
+            <p role="status" className="py-6 text-center text-xs text-amber-300">Audit records are unavailable; no empty-state conclusion can be drawn.</p>
+          ) : recentAudit.length === 0 ? (
             <div className="text-center py-6">
               <ScrollText size={24} className="text-[#AAB4C3]/30 mx-auto mb-2" />
               <p className="text-[#AAB4C3] text-xs">No audit entries</p>
@@ -145,7 +167,9 @@ export default function SecurityComplianceDashboard() {
             </div>
             <Link to="/operations/withdrawals" className="text-brass text-xs hover:underline flex items-center gap-1">View all <ArrowUpRight size={12} /></Link>
           </div>
-          {recentWithdrawals.length === 0 ? (
+          {sourceErrors.withdrawals ? (
+            <p role="status" className="py-6 text-center text-xs text-amber-300">Withdrawal records are unavailable; no zero-queue conclusion can be drawn.</p>
+          ) : recentWithdrawals.length === 0 ? (
             <div className="text-center py-6">
               <ArrowUpRight size={24} className="text-[#AAB4C3]/30 mx-auto mb-2" />
               <p className="text-[#AAB4C3] text-xs">No pending withdrawals</p>
@@ -158,7 +182,7 @@ export default function SecurityComplianceDashboard() {
                     <ArrowUpRight size={13} className="text-red-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-red-400 text-sm font-bold">{formatCurrency(Math.abs(wd.amount))}</p>
+                    <p className="text-red-400 text-sm font-bold">{formatCurrency(wd.amount == null ? null : Math.abs(Number(wd.amount)), wd.currency || wd.currency_code || null)}</p>
                     <p className="text-[#AAB4C3] text-xs truncate">{wd.method}</p>
                   </div>
                   <StatusBadge status={wd.status} />
