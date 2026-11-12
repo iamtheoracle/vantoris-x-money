@@ -51,10 +51,16 @@ jobs:
           node --input-type=module <<'NODE'
           import { readFileSync, existsSync } from 'node:fs';
           const surfaces = [
-            'src/components/vantoris/AgentChat.jsx',
-            'src/components/vantoris/VantorisAssistant.jsx',
-            'src/components/vantoris/MemberAdvisorChat.jsx',
+            'src/components/vantoris/FloatingCommandDock.jsx',
+            'src/pages/Home.jsx',
+            'src/pages/Accounts.jsx',
+            'src/pages/MoveMoney.jsx',
+            'src/pages/Investment.jsx',
+            'src/pages/operations/Approvals.jsx',
+            'src/pages/operations/InvestmentDeposits.jsx',
+            'src/pages/operations/InvestmentWithdrawals.jsx',
           ];
+          const directWrite = /base44\.entities\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest)\.(create|update|delete|updateMany)\s*\(/;
           for (const file of surfaces) {
             const source = readFileSync(file, 'utf8');
             if (source.includes('base44.agents.') || source.includes('/.netlify/functions/ask') || source.includes('/api/ask')) {
