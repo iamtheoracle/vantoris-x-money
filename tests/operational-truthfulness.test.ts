@@ -126,3 +126,14 @@ Deno.test("payment functions cannot read another product's clearing or database 
   assert(reconcile.includes("VANTORIS_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID") && !reconcile.includes("AVCU_"), "reconciliation must use Vantoris-specific clearing configuration");
   assert(sync.includes("VANTORIS_INTERNAL_SYNC_SECRET") && !sync.includes("AVCU_"), "internal provider sync must use Vantoris-specific secret");
 });
+
+Deno.test("U.S. account currency is explicit before any external transfer or receipt", async () => {
+  const accountSchema = await Deno.readTextFile("base44/entities/Account.jsonc");
+  const issuance = await Deno.readTextFile("base44/functions/generateAccount/entry.ts");
+  const outgoing = await Deno.readTextFile("base44/functions/createTransferRequest/entry.ts");
+  const incoming = await Deno.readTextFile("base44/functions/recordIncomingBankReceipt/entry.ts");
+  assert(accountSchema.includes('"currency"') && accountSchema.includes('"USD"'), "account schema must record USD explicitly");
+  assert(issuance.includes("currency: 'USD'"), "new account issuance must set USD");
+  assert(outgoing.includes("account.currency !== 'USD'"), "outgoing requests must reject accounts without verified USD currency");
+  assert(incoming.includes("account.currency!=='USD'"), "incoming receipts must reject accounts without verified USD currency");
+});
