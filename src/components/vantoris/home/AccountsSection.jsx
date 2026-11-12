@@ -1,7 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency } from '@/lib/formatCurrency';
 import { ChevronRight, Wallet, PiggyBank, Landmark, Building2, Coins, Users } from 'lucide-react';
 
 const TYPE_META = {
@@ -46,15 +45,15 @@ export default function AccountsSection({ accounts, hideBalance }) {
               <div className="flex-1 min-w-0">
                 <p className="text-foreground font-semibold text-sm">{acct.account_name || acct.account_type}</p>
                 <p className="text-gray text-[11px]">
-                  {acct.account_type} · ••{acct.account_number?.slice(-4) || '····'}
+                  {acct.account_type || 'Account type not supplied'} · ••{acct.account_number?.slice(-4) || '····'}
                 </p>
               </div>
               <div className="text-right flex-shrink-0">
                 <p className="text-foreground font-semibold text-sm">
-                  {hideBalance ? '••••' : formatCurrency(acct.balance || 0)}
+                  {hideBalance ? '••••' : formatRecordedAmount(acct.balance, acct.currency || acct.currency_code)}
                 </p>
                 <p className={`text-[10px] ${acct.status === 'active' ? 'text-mint' : 'text-crimson'}`}>
-                  {acct.status}
+                  {acct.status ? String(acct.status).replace(/_/g, ' ') : 'Status not supplied'}
                 </p>
               </div>
               <ChevronRight size={16} className="text-gray/20 group-hover:text-navy/30 transition-all" />
