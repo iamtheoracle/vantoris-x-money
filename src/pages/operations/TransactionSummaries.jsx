@@ -1,19 +1,35 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { formatCurrency } from '@/lib/formatCurrency';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
-import { exportToCsv } from '@/lib/exportCsv';
-import { useToast } from '@/components/ui/use-toast';
-import { CalendarDays, Download, FileSpreadsheet, TrendingUp, TrendingDown, ArrowLeftRight, Wallet, Loader2 } from 'lucide-react';
+import { CalendarDays, FileSpreadsheet, Download, AlertTriangle } from 'lucide-react';
 
 const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-function getTxnDate(t) {
-  if (t.transaction_date) return new Date(t.transaction_date);
-  return new Date(t.created_date);
+function transactionDate(transaction) {
+  const value = transaction.transaction_date || transaction.created_date;
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function amountLabel(value, currency) {
+  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return 'Amount not supplied';
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  } catch {
+    return 'Amount not verified';
+  }
+}
+
+function maskAccount(value) {
+  if (!value) return 'Account number not supplied';
+  const digits = String(value).replace(/\s/g, '');
+  return digits.length > 4 ? '•••• ' + digits.slice(-4) : '••••';
 }
 
 export default function TransactionSummaries() {
@@ -23,318 +39,127 @@ export default function TransactionSummaries() {
   const [transactions, setTransactions] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [exporting, setExporting] = useState(false);
-  const { toast } = useToast();
+  const [transactionsError, setTransactionsError] = useState(false);
+  const [accountsError, setAccountsError] = useState(false);
 
-  useEffect(() => { loadData(); }, []);
-
-  async function loadData() {
-    try {
-      const [txns, accts] = await Promise.all([
-        base44.entities.Transaction.list('-created_date', 500),
-        base44.entities.Account.list('-created_date', 200),
-      ]);
-      setTransactions(txns);
-      setAccounts(accts);
-    } catch (e) {
-      console.error(e);
-      toast({ title: 'Load failed', description: e.message || 'Unable to load transactions.', variant: 'destructive' });
-    }
-    setLoading(false);
-  }
-
-  const accountMap = useMemo(() => {
-    const map = {};
-    accounts.forEach(a => { map[a.id] = a; });
-    return map;
-  }, [accounts]);
-
-  const monthTxns = useMemo(() => {
-    const start = new Date(year, month, 1);
-    const end = new Date(year, month + 1, 1);
-    return transactions.filter(t => {
-      const d = getTxnDate(t);
-      return d >= start && d < end;
-    });
-  }, [transactions, month, year]);
-
-  const summary = useMemo(() => {
-    const deposits = monthTxns.filter(t => t.type === 'deposit' || t.type === 'opening_balance');
-    const withdrawals = monthTxns.filter(t => t.type === 'withdrawal');
-    const adjustments = monthTxns.filter(t => t.type === 'adjustment');
-    const totalIn = deposits.reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
-    const totalOut = withdrawals.reduce((s, t) => s + Math.abs(Number(t.amount) || 0), 0);
-    const totalAdj = adjustments.reduce((s, t) => s + (Number(t.amount) || 0), 0);
-    const net = totalIn - totalOut + totalAdj;
-    return {
-      count: monthTxns.length,
-      deposits: { count: deposits.length, total: totalIn },
-      withdrawals: { count: withdrawals.length, total: totalOut },
-      adjustments: { count: adjustments.length, total: totalAdj },
-      net,
-      volume: totalIn + totalOut,
-    };
-  }, [monthTxns]);
-
-  const monthLabel = `${MONTHS[month]} ${year}`;
-
-  function exportFullLedger() {
-    setExporting(true);
-    try {
-      const rows = monthTxns
-        .slice()
-        .sort((a, b) => getTxnDate(a).getTime() - getTxnDate(b).getTime())
-        .map((t, i) => {
-          const acct = accountMap[t.account_id];
-          return {
-            '#': i + 1,
-            Date: getTxnDate(t).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }),
-            Type: t.type,
-            Account: acct?.account_name || '—',
-            'Account Number': acct?.account_number || '—',
-            Description: t.description || '',
-            Reference: t.reference || '',
-            Amount: Number(t.amount) || 0,
-            'Balance After': t.balance_after ?? '',
-            'Admin Created': t.created_by_admin ? 'Yes' : 'No',
-          };
-        });
-      if (rows.length === 0) {
-        toast({ title: 'No data', description: 'No transactions found for this period.', variant: 'destructive' });
-        setExporting(false);
-        return;
+  useEffect(() => {
+    let active = true;
+    const safeList = async (request) => {
+      try {
+        const rows = await request;
+        return { rows: Array.isArray(rows) ? rows : [], failed: !Array.isArray(rows) };
+      } catch {
+        return { rows: [], failed: true };
       }
-      exportToCsv(
-        `vantoris_transactions_${year}_${String(month + 1).padStart(2, '0')}`,
-        ['#', 'Date', 'Type', 'Account', 'Account Number', 'Description', 'Reference', 'Amount', 'Balance After', 'Admin Created'],
-        rows,
-      );
-      toast({ title: 'Ledger exported', description: `${rows.length} transactions exported for ${monthLabel}.` });
-    } catch (e) {
-      console.error(e);
-      toast({ title: 'Export failed', description: e.message || 'Unable to export ledger.', variant: 'destructive' });
-    }
-    setExporting(false);
-  }
+    };
+    (async () => {
+      const [transactionResult, accountResult] = await Promise.all([
+        safeList(base44.entities.Transaction.list('-created_date', 500)),
+        safeList(base44.entities.Account.list('-created_date', 200)),
+      ]);
+      if (!active) return;
+      setTransactions(transactionResult.rows);
+      setAccounts(accountResult.rows);
+      setTransactionsError(transactionResult.failed);
+      setAccountsError(accountResult.failed);
+    })().finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, []);
 
-  function exportSummary() {
-    setExporting(true);
-    try {
-      const rows = [
-        { Metric: 'Period', Value: monthLabel },
-        { Metric: 'Total Transactions', Value: summary.count },
-        { Metric: 'Total Deposits', Value: summary.deposits.total },
-        { Metric: 'Deposit Count', Value: summary.deposits.count },
-        { Metric: 'Total Withdrawals', Value: summary.withdrawals.total },
-        { Metric: 'Withdrawal Count', Value: summary.withdrawals.count },
-        { Metric: 'Adjustments', Value: summary.adjustments.total },
-        { Metric: 'Adjustment Count', Value: summary.adjustments.count },
-        { Metric: 'Total Volume', Value: summary.volume },
-        { Metric: 'Net Flow', Value: summary.net },
-        { Metric: 'Generated', Value: new Date().toLocaleString() },
-      ];
-      exportToCsv(
-        `vantoris_monthly_summary_${year}_${String(month + 1).padStart(2, '0')}`,
-        ['Metric', 'Value'],
-        rows,
-      );
-      toast({ title: 'Summary exported', description: `Monthly summary for ${monthLabel} downloaded.` });
-    } catch (e) {
-      console.error(e);
-      toast({ title: 'Export failed', description: e.message || 'Unable to export summary.', variant: 'destructive' });
-    }
-    setExporting(false);
-  }
-
+  const accountById = useMemo(() => new Map(accounts.map((account) => [account.id, account])), [accounts]);
   const yearOptions = useMemo(() => {
-    const years = new Set();
-    transactions.forEach(t => years.add(getTxnDate(t).getFullYear()));
-    years.add(now.getFullYear());
+    const years = new Set([now.getFullYear()]);
+    transactions.forEach((transaction) => {
+      const date = transactionDate(transaction);
+      if (date) years.add(date.getFullYear());
+    });
     return Array.from(years).sort((a, b) => b - a);
-  }, [transactions]);
+  }, [transactions, now]);
 
-  const sortedTxns = useMemo(() => {
-    return monthTxns.slice().sort((a, b) => getTxnDate(b).getTime() - getTxnDate(a).getTime());
-  }, [monthTxns]);
+  const monthRecords = useMemo(() => transactions.filter((transaction) => {
+    const date = transactionDate(transaction);
+    return date && date.getFullYear() === year && date.getMonth() === month;
+  }).sort((a, b) => transactionDate(b).getTime() - transactionDate(a).getTime()), [transactions, month, year]);
 
-  const summaryCards = [
-    { label: 'Deposits', value: formatCurrency(summary.deposits.total), sub: `${summary.deposits.count} transactions`, icon: TrendingUp, accent: 'text-mint', bg: 'bg-mint/10' },
-    { label: 'Withdrawals', value: formatCurrency(summary.withdrawals.total), sub: `${summary.withdrawals.count} transactions`, icon: TrendingDown, accent: 'text-crimson', bg: 'bg-crimson/10' },
-    { label: 'Adjustments', value: formatCurrency(summary.adjustments.total), sub: `${summary.adjustments.count} transactions`, icon: ArrowLeftRight, accent: 'text-brass', bg: 'bg-brass/10' },
-    { label: 'Net Flow', value: formatCurrency(summary.net), sub: `${summary.count} total transactions`, icon: Wallet, accent: summary.net >= 0 ? 'text-mint' : 'text-crimson', bg: summary.net >= 0 ? 'bg-mint/10' : 'bg-crimson/10' },
-  ];
-
-  if (loading) {
-    return (
-      <OperationsPageLayout title="Transaction Summaries" description="Export monthly transaction summaries for record-keeping" icon={CalendarDays}>
-        <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
-        </div>
-      </OperationsPageLayout>
-    );
-  }
+  const monthLabel = MONTHS[month] + ' ' + year;
 
   return (
     <OperationsPageLayout
-      title="Transaction Summaries"
-      description="Export monthly transaction summaries for record-keeping"
+      title="Transaction records"
+      description="Monthly record explorer. Authoritative financial summaries and exports are withheld until complete reconciled data is available."
       icon={CalendarDays}
       actions={
-        <div className="flex items-center gap-2">
-          <button
-            onClick={exportSummary}
-            disabled={exporting || summary.count === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-navy rounded-xl text-xs font-semibold hover:bg-slate-50 transition-colors disabled:opacity-40"
-          >
-            {exporting ? <Loader2 size={14} className="animate-spin" /> : <FileSpreadsheet size={14} />} Export Summary
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" disabled title="Requires a verified server-side monthly aggregate" className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-400">
+            <FileSpreadsheet size={14} /> Summary export unavailable
           </button>
-          <button
-            onClick={exportFullLedger}
-            disabled={exporting || summary.count === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-xl text-xs font-semibold hover:bg-navy/90 transition-colors disabled:opacity-40"
-          >
-            {exporting ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />} Export Full Ledger
+          <button type="button" disabled title="Requires an authorized complete-ledger export service" className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl bg-navy px-4 py-2 text-xs font-semibold text-white opacity-45">
+            <Download size={14} /> Ledger export unavailable
           </button>
         </div>
       }
     >
-      {/* Period Selector */}
-      <div className="vantoris-card p-4 mb-6">
+      <div role="status" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <AlertTriangle size={18} className="mt-0.5 shrink-0 text-amber-800" />
+        <div>
+          <p className="text-sm font-semibold text-amber-950">Monthly totals are not verified</p>
+          <p className="mt-1 text-xs leading-5 text-amber-900/80">
+            The current browser query is limited to 500 transaction records. It cannot establish complete deposits, withdrawals, adjustments, net flow, or settled volume. No totals or official monthly exports are generated here.
+          </p>
+        </div>
+      </div>
+
+      <section className="mb-5 rounded-2xl border border-slate-200 bg-white p-4">
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-2">
-            <CalendarDays size={16} className="text-gray" />
-            <span className="text-sm font-semibold text-foreground">Select Period</span>
+            <CalendarDays size={16} className="text-slate-500" />
+            <span className="text-sm font-semibold text-navy">Selected period</span>
           </div>
-          <div className="flex items-center gap-2">
-            <select
-              value={month}
-              onChange={e => setMonth(parseInt(e.target.value))}
-              className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-foreground focus:border-navy/30 focus:outline-none"
-            >
-              {MONTHS.map((m, i) => <option key={m} value={i}>{m}</option>)}
-            </select>
-            <select
-              value={year}
-              onChange={e => setYear(parseInt(e.target.value))}
-              className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-foreground focus:border-navy/30 focus:outline-none"
-            >
-              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-          </div>
-          <div className="ml-auto flex items-center gap-2 text-xs text-gray">
-            <span className="px-2.5 py-1 bg-slate-100 rounded-lg font-medium text-foreground">{monthLabel}</span>
-            <span>·</span>
-            <span>{summary.count} transactions</span>
-          </div>
+          <select value={month} onChange={(event) => setMonth(Number(event.target.value))} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+            {MONTHS.map((name, index) => <option key={name} value={index}>{name}</option>)}
+          </select>
+          <select value={year} onChange={(event) => setYear(Number(event.target.value))} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+            {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
+          </select>
+          <span className="ml-auto text-xs text-slate-500">{transactionsError ? 'Records unavailable' : monthRecords.length + ' records returned for ' + monthLabel}</span>
         </div>
-      </div>
+      </section>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {summaryCards.map(card => {
-          const Icon = card.icon;
-          return (
-            <div key={card.label} className="vantoris-card p-5">
-              <div className={`w-10 h-10 rounded-xl ${card.bg} flex items-center justify-center mb-3`}>
-                <Icon size={20} className={card.accent} />
-              </div>
-              <p className="text-foreground font-bold text-lg">{card.value}</p>
-              <p className="text-gray text-xs mt-0.5">{card.label}</p>
-              <p className="text-gray/60 text-[10px] mt-1">{card.sub}</p>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Transaction Preview */}
-      <div className="vantoris-card overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h3 className="font-semibold text-sm text-foreground">Transaction Preview — {monthLabel}</h3>
-          <span className="text-xs text-gray">{sortedTxns.length} records</span>
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+        <div className="border-b border-slate-100 px-5 py-4">
+          <h2 className="font-semibold text-navy">Transaction records — {monthLabel}</h2>
+          <p className="mt-1 text-xs text-slate-500">Source records only. Amounts are shown only when their currency is supplied.</p>
         </div>
-        {sortedTxns.length === 0 ? (
-          <div className="py-12 text-center">
-            <CalendarDays size={28} className="text-gray/30 mx-auto mb-2" />
-            <p className="text-gray text-sm">No transactions found for {monthLabel}</p>
-            <p className="text-gray/60 text-xs mt-1">Try selecting a different month or year.</p>
-          </div>
+        {loading ? (
+          <p className="py-10 text-center text-sm text-slate-500">Loading transaction records…</p>
+        ) : transactionsError ? (
+          <p role="status" className="m-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Transaction records are unavailable. No empty-month conclusion can be drawn.</p>
+        ) : monthRecords.length === 0 ? (
+          <p className="py-10 text-center text-sm text-slate-500">No transaction records were returned for {monthLabel}.</p>
         ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50">
-                    <th className="text-left text-gray text-xs font-medium uppercase tracking-wider px-5 py-3">Date</th>
-                    <th className="text-left text-gray text-xs font-medium uppercase tracking-wider px-5 py-3">Type</th>
-                    <th className="text-left text-gray text-xs font-medium uppercase tracking-wider px-5 py-3">Account</th>
-                    <th className="text-left text-gray text-xs font-medium uppercase tracking-wider px-5 py-3">Description</th>
-                    <th className="text-right text-gray text-xs font-medium uppercase tracking-wider px-5 py-3">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sortedTxns.slice(0, 50).map(t => {
-                    const acct = accountMap[t.account_id];
-                    const isInflow = t.type === 'deposit' || t.type === 'opening_balance';
-                    return (
-                      <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
-                        <td className="px-5 py-3 text-gray text-xs">
-                          {getTxnDate(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                        </td>
-                        <td className="px-5 py-3">
-                          <span className={`px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wide ${
-                            t.type === 'deposit' || t.type === 'opening_balance' ? 'bg-mint/10 text-mint' :
-                            t.type === 'withdrawal' ? 'bg-crimson/10 text-crimson' :
-                            'bg-brass/10 text-brass'
-                          }`}>
-                            {t.type}
-                          </span>
-                        </td>
-                        <td className="px-5 py-3">
-                          <p className="text-foreground text-xs font-medium">{acct?.account_name || '—'}</p>
-                          <p className="text-gray text-[10px] font-mono">{acct?.account_number || ''}</p>
-                        </td>
-                        <td className="px-5 py-3 text-gray text-xs">{t.description || '—'}</td>
-                        <td className={`px-5 py-3 text-right font-semibold text-xs ${isInflow ? 'text-mint' : t.type === 'withdrawal' ? 'text-crimson' : 'text-foreground'}`}>
-                          {isInflow ? '+' : t.type === 'withdrawal' ? '-' : ''}{formatCurrency(Math.abs(Number(t.amount) || 0))}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Mobile Cards */}
-            <div className="md:hidden divide-y divide-slate-50">
-              {sortedTxns.slice(0, 30).map(t => {
-                const acct = accountMap[t.account_id];
-                const isInflow = t.type === 'deposit' || t.type === 'opening_balance';
-                return (
-                  <div key={t.id} className="p-4 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-foreground text-sm font-medium truncate">{acct?.account_name || '—'}</p>
-                      <p className="text-gray text-xs">{t.type} · {getTxnDate(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</p>
-                      {t.description && <p className="text-gray/60 text-[10px] truncate mt-0.5">{t.description}</p>}
-                    </div>
-                    <span className={`text-sm font-semibold flex-shrink-0 ${isInflow ? 'text-mint' : t.type === 'withdrawal' ? 'text-crimson' : 'text-foreground'}`}>
-                      {isInflow ? '+' : t.type === 'withdrawal' ? '-' : ''}{formatCurrency(Math.abs(Number(t.amount) || 0))}
-                    </span>
+          <div className="divide-y divide-slate-100">
+            {monthRecords.slice(0, 100).map((transaction, index) => {
+              const account = accountById.get(transaction.account_id);
+              const date = transactionDate(transaction);
+              const currency = transaction.currency || transaction.currency_code || account?.currency || account?.currency_code;
+              return (
+                <article key={transaction.id || (String(transaction.created_date || 'record') + '-' + index)} className="grid gap-2 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-navy">{transaction.description || transaction.type || 'Transaction record'}</p>
+                    <p className="mt-1 text-xs text-slate-500">{date ? date.toLocaleString() : 'Date not supplied'} · {transaction.type ? String(transaction.type).replace(/_/g, ' ') : 'Type not supplied'}</p>
+                    <p className="mt-1 text-xs text-slate-500">{account?.account_name || (accountsError ? 'Account record unavailable' : 'Account record not returned')} · {maskAccount(account?.account_number)}</p>
                   </div>
-                );
-              })}
-            </div>
-
-            {sortedTxns.length > 50 && (
-              <div className="px-5 py-3 border-t border-slate-100 bg-slate-50 text-center">
-                <p className="text-gray text-xs">
-                  Showing first 50 of {sortedTxns.length} transactions. Export the full ledger for all records.
-                </p>
-              </div>
-            )}
-          </>
+                  <div className="sm:text-right">
+                    <p className="text-sm font-semibold tabular-nums text-navy">{amountLabel(transaction.amount, currency)}</p>
+                    <p className="mt-1 text-xs capitalize text-slate-500">{transaction.status ? String(transaction.status).replace(/_/g, ' ') : 'Status not supplied'}</p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         )}
-      </div>
+        {!transactionsError && monthRecords.length > 100 && <p className="border-t border-slate-100 bg-slate-50 px-5 py-3 text-center text-xs text-slate-500">Showing 100 of {monthRecords.length} returned records. The source query is still limited to 500 overall.</p>}
+      </section>
     </OperationsPageLayout>
   );
 }
