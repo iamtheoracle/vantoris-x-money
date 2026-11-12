@@ -14,7 +14,7 @@ export default function VantorisSeal({ size = 160, theme = 'light', className = 
   const textColor = isDark ? 'rgba(248,250,252,0.7)' : 'rgba(18,58,110,0.8)';
 
   // circular text via textPath
-  const topText = 'VANTORIS PIP · PRIVATE INVESTMENT & PAYMENTS · ';
+  const topText = 'VANTAGE PRIVATE INVESTMENT · ';
   const bottomText = 'TRUST · STRUCTURE · PURPOSE · ARCH · RIVER · ';
 
   return (
@@ -26,7 +26,7 @@ export default function VantorisSeal({ size = 160, theme = 'light', className = 
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Vantoris Executive Seal"
+      aria-label="Vantage Private Investment seal"
     >
       <defs>
         <path id={`${gid}-top`} d="M100,100 m-78,0 a78,78 0 1,1 156,0" fill="none" />
