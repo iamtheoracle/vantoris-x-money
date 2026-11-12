@@ -10,7 +10,7 @@ export default function DiscoverNews() {
           <ArrowLeft size={20} />
         </Link>
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Vantoris Private Institution</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Vantage Private Investment</p>
           <h1 className="font-heading font-bold text-navy">Markets & news</h1>
         </div>
       </div>
