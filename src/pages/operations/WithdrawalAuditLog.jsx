@@ -11,6 +11,12 @@ const ACTION_META = {
   withdrawal_rejected: { label: 'Rejected', icon: XCircle, color: 'text-crimson', bg: 'bg-crimson/10' },
 };
 
+function maskAccountNumber(value) {
+  if (!value) return 'Account number not supplied';
+  const digits = String(value).replace(/\s/g, '');
+  return digits.length > 4 ? '•••• ' + digits.slice(-4) : '••••';
+}
+
 function parseRequestId(details) {
   if (!details) return null;
   const match = details.match(/Request ID:\s*([a-f0-9]+)/i);
@@ -71,7 +77,7 @@ export default function WithdrawalAuditLog() {
   const stats = useMemo(() => {
     const approved = logs.filter(l => l.action_type === 'withdrawal_processed');
     const rejected = logs.filter(l => l.action_type === 'withdrawal_rejected');
-    const uniqueAdmins = new Set(logs.map(l => l.admin_name)).size;
+    const uniqueAdmins = new Set(logs.map(l => l.admin_name).filter(Boolean)).size;
     return {
       total: logs.length,
       approved: approved.length,
@@ -93,7 +99,7 @@ export default function WithdrawalAuditLog() {
           Amount: l.amount != null ? formatCurrency(l.amount, l.currency || l.currency_code || acct?.currency || acct?.currency_code || null) : '',
           Method: (l.description || '').match(/via\s(.+)$/)?.[1] || '',
           Account: acct?.account_name || '—',
-          'Account Number': acct?.account_number || '—',
+          'Account Number': maskAccountNumber(acct?.account_number),
           'Balance Before': l.balance_before != null ? formatCurrency(l.balance_before, l.currency || l.currency_code || acct?.currency || acct?.currency_code || null) : '',
           'Balance After': l.balance_after != null ? formatCurrency(l.balance_after, l.currency || l.currency_code || acct?.currency || acct?.currency_code || null) : '',
           Details: l.details || '',
@@ -240,7 +246,7 @@ export default function WithdrawalAuditLog() {
                       </td>
                       <td className="px-5 py-3">
                         <p className="text-foreground text-xs font-medium">{acct?.account_name || '—'}</p>
-                        <p className="text-gray text-[10px] font-mono">{acct?.account_number || ''}</p>
+                        <p className="text-gray text-[10px] font-mono">{maskAccountNumber(acct?.account_number)}</p>
                       </td>
                       <td className="px-5 py-3 text-right">
                         {log.amount != null ? (
@@ -294,13 +300,13 @@ export default function WithdrawalAuditLog() {
                     </div>
                     {log.amount != null && (
                       <span className={`text-sm font-semibold ${log.amount >= 0 ? 'text-foreground' : 'text-crimson'}`}>
-                        {formatCurrency(Math.abs(log.amount))}
+                        {formatCurrency(log.amount, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)}
                       </span>
                     )}
                   </div>
                   {log.balance_before != null && log.balance_after != null && (
                     <p className="text-[11px] font-mono text-gray">
-                      {formatCurrency(log.balance_before)} → {formatCurrency(log.balance_after)}
+                      {formatCurrency(log.balance_before, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)} → {formatCurrency(log.balance_after, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)}
                     </p>
                   )}
                   {log.details && (
