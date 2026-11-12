@@ -80,7 +80,7 @@ export default function MoveMoney() {
   return (
     <div className="px-5 pt-6 pb-28 max-w-[1440px] mx-auto">
       <header className="mb-6">
-        <p className="text-gray text-sm">Vantoris Private Institution</p>
+        <p className="text-gray text-sm">Vantage Private Investment</p>
         <h1 className="text-3xl font-bold mt-1">Payments</h1>
         <p className="text-gray text-sm mt-1">Review account records and prepare authorized transfer requests.</p>
       </header>
@@ -256,7 +256,7 @@ function BankTransferPanel({accounts,onClose}) {
     <form onSubmit={submit} className="space-y-4">
       {!eligibleAccounts.length && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">No active account with a verified USD currency record is available. No transfer request can be submitted from this screen.</p>}
       <div><label className="block text-xs text-gray mb-2">Transfer rail</label><select value={rail} onChange={e=>setRail(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"><option value="ACH">ACH transfer</option><option value="FEDWIRE">Domestic Fedwire</option></select></div>
-      <div><label className="block text-xs text-gray mb-2">From Vantoris account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{eligibleAccounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · •••• {String(a.account_number||'').slice(-4)}</option>)}</select></div>
+      <div><label className="block text-xs text-gray mb-2">From Vantage account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{eligibleAccounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · •••• {String(a.account_number||'').slice(-4)}</option>)}</select></div>
       <div><label className="block text-xs text-gray mb-2">Amount (USD)</label><input required inputMode="decimal" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
       <div><label className="block text-xs text-gray mb-2">Beneficiary full name</label><input required maxLength={120} value={beneficiary} onChange={e=>setBeneficiary(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
       <div><label className="block text-xs text-gray mb-2">Beneficiary bank</label><input required maxLength={120} value={bank} onChange={e=>setBank(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
@@ -269,7 +269,7 @@ function BankTransferPanel({accounts,onClose}) {
   </Sheet>;
 }
 
-function PaymentCard({card}) { return <div className="relative overflow-hidden rounded-[26px] p-5 min-h-[190px] text-white shadow-2xl bg-gradient-to-br from-[#0A2140] via-[#122F53] to-[#07162A]"><div className="absolute -right-10 -top-10 w-32 h-32 rounded-full border border-brass/25"/><div className="flex justify-between"><span className="text-sm font-semibold tracking-[0.18em]">VANTORIS</span><CreditCard size={22} className="text-white/70"/></div><div className="mt-10 text-lg tracking-[0.22em]">•••• •••• •••• {card.last4 || '••••'}</div><div className="mt-5 flex justify-between"><div><p className="text-[9px] uppercase text-white/45">Cardholder</p><p className="text-xs mt-1 uppercase">{card.cardholder_name || 'Name not supplied'}</p></div><div><p className="text-[9px] uppercase text-white/45">Type</p><p className="text-xs mt-1 capitalize">{card.card_type || 'Type not supplied'}</p></div></div></div>; }
+function PaymentCard({card}) { return <div className="relative overflow-hidden rounded-[26px] p-5 min-h-[190px] text-white shadow-2xl bg-gradient-to-br from-[#0A2140] via-[#122F53] to-[#07162A]"><div className="absolute -right-10 -top-10 w-32 h-32 rounded-full border border-brass/25"/><div className="flex justify-between"><span className="text-sm font-semibold tracking-[0.18em]">VANTAGE</span><CreditCard size={22} className="text-white/70"/></div><div className="mt-10 text-lg tracking-[0.22em]">•••• •••• •••• {card.last4 || '••••'}</div><div className="mt-5 flex justify-between"><div><p className="text-[9px] uppercase text-white/45">Cardholder</p><p className="text-xs mt-1 uppercase">{card.cardholder_name || 'Name not supplied'}</p></div><div><p className="text-[9px] uppercase text-white/45">Type</p><p className="text-xs mt-1 capitalize">{card.card_type || 'Type not supplied'}</p></div></div></div>; }
 
 function AddMoneyPanel({accounts,onClose}){const [accountId,setAccountId]=useState(accounts[0]?.id||'');const [amount,setAmount]=useState('');const [note,setNote]=useState('Member deposit');const {toast}=useToast();
   async function post() {
