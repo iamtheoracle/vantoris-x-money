@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, Wallet, ArrowDownToLine, ArrowUpRight, PieChart, Signal, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, ArrowDownToLine, ArrowUpRight, PieChart, Signal, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 
@@ -203,8 +203,9 @@ export default function Investment() {
         </div>
       ) : (
         <>
+          <div className="grid gap-5 lg:grid-cols-12">
           {/* Portfolio summary */}
-          <div className="vantoris-balance-hero p-6 mb-5 rounded-2xl">
+          <div className="vantoris-balance-hero rounded-2xl p-6 lg:col-span-8">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-white/70 text-xs uppercase tracking-wider">Recorded portfolio value</p>
@@ -221,14 +222,14 @@ export default function Investment() {
                 <p className="text-white text-lg font-bold mt-0.5">{amountFor(portfolio.cash_balance, portfolioCurrency)}</p>
               </div>
               <div className="bg-white/10 rounded-xl p-3">
-                <p className="text-white/60 text-[10px] uppercase tracking-wider">Invested</p>
+                <p className="text-white/60 text-[10px] uppercase tracking-wider">Recorded invested component</p>
                 <p className="text-white text-lg font-bold mt-0.5">{amountFor(portfolio.invested_amount, portfolioCurrency)}</p>
               </div>
             </div>
           </div>
 
           {/* Provider status — honest */}
-          <div role="status" className="mb-5 flex items-start gap-3 rounded-xl border border-warning/20 bg-warning/10 p-4">
+          <div role="status" className="mb-5 flex items-start gap-3 rounded-xl border border-warning/20 bg-warning/10 p-4 lg:col-span-4">
             <AlertCircle size={18} className="mt-0.5 flex-shrink-0 text-warning" />
             <div>
               <p className="text-foreground text-sm font-semibold">Investment execution unavailable</p>
@@ -239,7 +240,7 @@ export default function Investment() {
           </div>
 
           {/* Actions */}
-          <div className="grid grid-cols-2 gap-3 mb-5">
+          <div className="grid grid-cols-2 gap-3 lg:col-span-12">
             <button
               onClick={() => setShowDeposit(true)}
               disabled={!SERVER_INVESTMENT_OPERATIONS_ENABLED}
@@ -260,7 +261,7 @@ export default function Investment() {
 
           {/* Pending requests */}
           {(detailIssues.deposits || detailIssues.withdrawals || depositRequests.length > 0 || withdrawalRequests.length > 0) && (
-            <div className="mb-5">
+            <div className="mb-5 lg:col-span-6">
               <h3 className="text-sm font-bold text-foreground mb-3">Recorded Requests</h3>
               {detailIssues.deposits && <p role="status" className="mb-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-950">Deposit request history is unavailable.</p>}
               {detailIssues.withdrawals && <p role="status" className="mb-2 rounded-xl bg-amber-50 p-3 text-xs text-amber-950">Withdrawal request history is unavailable.</p>}
@@ -269,15 +270,15 @@ export default function Investment() {
                   <div key={r.id} className="vantoris-glass-flat p-3 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">Deposit · {amountFor(r.amount, r.currency || r.currency_code)}</p>
-                      <p className="text-xs text-gray capitalize">{r.status.replace(/_/g, ' ')}</p>
+                      <p className="text-xs text-gray capitalize">{r.status ? String(r.status).replace(/_/g, ' ') : 'Status not supplied'}</p>
                     </div>
-                    <span className="text-xs text-brass font-medium">Pending</span>
+                    <span className="text-xs text-brass font-medium">Recorded</span>
                   </div>
                 ))}
                 {withdrawalRequests.filter(r => !['completed', 'rejected', 'failed'].includes(r.status)).map(r => (
                   <div key={r.id} className="vantoris-glass-flat p-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground">Withdrawal · {amountFor(r.amount)}</p>
+                      <p className="text-sm font-medium text-foreground">Withdrawal · {amountFor(r.amount, r.currency || r.currency_code)}</p>
                       <p className="text-xs text-gray capitalize">{r.status.replace(/_/g, ' ')}</p>
                     </div>
                     <span className="text-xs text-brass font-medium">Pending</span>
@@ -291,7 +292,7 @@ export default function Investment() {
           {detailIssues.signals ? (
             <div role="status" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Investment signal records are unavailable.</div>
           ) : signals.length > 0 && (
-            <div className="mb-5">
+            <div className="mb-5 lg:col-span-6">
               <div className="flex items-center gap-2 mb-3">
                 <Signal size={16} className="text-champagne" />
                 <h3 className="text-sm font-bold text-foreground">Signals</h3>
@@ -321,14 +322,14 @@ export default function Investment() {
           {/* Recent transactions */}
           {detailIssues.transactions ? (
             <div role="status" className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">Investment activity records are unavailable.</div>
-          ) : transactions.length > 0 && (
-            <div className="mb-5">
+          ) : transactions.length > 0 ? (
+            <div className="mb-5 lg:col-span-12">
               <h3 className="text-sm font-bold text-foreground mb-3">Recent Activity</h3>
               <div className="space-y-2">
                 {transactions.map(t => (
                   <div key={t.id} className="vantoris-glass-flat p-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground capitalize">{t.type.replace(/_/g, ' ')}</p>
+                      <p className="text-sm font-medium text-foreground capitalize">{t.type ? String(t.type).replace(/_/g, ' ') : 'Activity'}</p>
                       <p className="text-xs text-gray">{t.description || ''}</p>
                     </div>
                     <p className={`text-sm font-semibold ${t.type === 'withdrawal' || t.type === 'fee' ? 'text-crimson' : 'text-mint'}`}>
@@ -338,7 +339,12 @@ export default function Investment() {
                 ))}
               </div>
             </div>
+          ) : (
+            <div className="rounded-xl border border-slate-200 bg-white p-4 text-sm text-gray lg:col-span-12">
+              No recent investment activity records were returned.
+            </div>
           )}
+          </div>
         </>
       )}
 
