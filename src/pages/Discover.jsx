@@ -36,7 +36,7 @@ const MODULES = [
   {
     id: 'news',
     title: 'Markets & news',
-    desc: 'Public financial headlines and updates',
+    desc: 'Approved news feed when a verified source is connected',
     icon: Newspaper,
     route: '/discover/news',
     image: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=900&q=80',
@@ -54,7 +54,7 @@ const MODULES = [
   {
     id: 'marketing',
     title: 'Member marketing',
-    desc: 'Campaign tools, templates and brand materials',
+    desc: 'Visual references and approved brand assets',
     icon: Megaphone,
     route: '/discover/marketing',
     image: 'https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&w=900&q=80',
