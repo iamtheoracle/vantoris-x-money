@@ -1,0 +1,169 @@
+# Vantoris Private Institution — Route and Capability Preservation Register
+
+**Source inspected:** `work/private-institution-programme`  
+**Route source:** `src/App.jsx` (blob 7cc8f315b180ada29ee39f3ff1d5b7759df10b39)  
+**Inspection date:** 12 November 2026  
+**Purpose:** record the existing recovered application surface before redesign. This is a source inventory, not proof that each route is deployed, accessible to a particular user, or backed by a live provider.
+
+## Route inventory
+
+The recovered router defines **6 public/authentication routes, 35 member routes, and 62 operations routes**. Redirect and fallback routes are recorded separately. No route is authorized for removal by this register.
+
+### Public and authentication
+
+| Path | Component |
+|---|---|
+| `/welcome` | `Landing` |
+| `/login` | `Login` |
+| `/brand` | `BrandIdentity` |
+| `/register` | `Register` |
+| `/forgot-password` | `ForgotPassword` |
+| `/reset-password` | `ResetPassword` |
+
+### Member experience
+
+| Path | Component |
+|---|---|
+| `/` | `Home` |
+| `/apply` | `Navigate` |
+| `/apply/kyc` | `ApplyKYC` |
+| `/accounts` | `Accounts` |
+| `/accounts/:id` | `AccountDetail` |
+| `/services` | `Services` |
+| `/messages` | `Messages` |
+| `/profile` | `Profile` |
+| `/documents` | `MemberDocuments` |
+| `/advisor` | `AskPage` |
+| `/discovery` | `Discovery` |
+| `/discover` | `Discover` |
+| `/discover/news` | `DiscoverNews` |
+| `/discover/fx` | `DiscoverFX` |
+| `/discover/ngo` | `DiscoverNGO` |
+| `/discover/marketing` | `DiscoverMarketing` |
+| `/discover/flights` | `DiscoverFlights` |
+| `/discover/housing` | `DiscoverHousing` |
+| `/transactions` | `Transactions` |
+| `/qr` | `MemberQR` |
+| `/money` | `Money` |
+| `/cards` | `CardsPage` |
+| `/travel` | `TravelPage` |
+| `/homes` | `HomesPage` |
+| `/news` | `NewsPage` |
+| `/ask` | `AskPage` |
+| `/herobox-hub` | `HeroBoxHub` |
+| `/support` | `SupportPage` |
+| `/move-money` | `MoveMoney` |
+| `/move` | `MoveMoney` |
+| `/more` | `More` |
+| `/dispute` | `TransactionDispute` |
+| `/assistant` | `VantorisAssistant` |
+| `/herobox` | `HeroBox` |
+| `/investment` | `Investment` |
+
+### Staff and operations
+
+| Path | Component |
+|---|---|
+| `/operations` | `AdminOverview` |
+| `/operations/executive` | `ExecutiveDashboard` |
+| `/operations/security-dashboard` | `SecurityComplianceDashboard` |
+| `/operations/applications` | `AdminApplications` |
+| `/operations/kyc` | `AdminKYC` |
+| `/operations/members` | `AdminMembers` |
+| `/operations/operational-profiles` | `OperationalProfiles` |
+| `/operations/accounts` | `AdminAccounts` |
+| `/operations/withdrawals` | `AdminWithdrawals` |
+| `/operations/withdrawal-limits` | `WithdrawalLimits` |
+| `/operations/verification-requests` | `VerificationRequests` |
+| `/operations/service-requests` | `ServiceRequests` |
+| `/operations/member-messages` | `MemberMessages` |
+| `/operations/referrals` | `Referrals` |
+| `/operations/response-templates` | `ResponseTemplates` |
+| `/operations/assistant` | `AdminAgent` |
+| `/operations/recommendations` | `RecommendationReview` |
+| `/operations/transaction-export` | `TransactionExportDashboard` |
+| `/operations/impact-analytics` | `ImpactAnalytics` |
+| `/operations/leaderboard` | `SupporterLeaderboard` |
+| `/operations/herobox` | `HeroBoxMissionControl` |
+| `/operations/herobox/heroes` | `HeroBoxHeroes` |
+| `/operations/herobox/care-packages` | `HeroBoxCarePackages` |
+| `/operations/herobox/volunteers` | `HeroBoxVolunteers` |
+| `/operations/herobox/products` | `HeroBoxAdminProducts` |
+| `/operations/herobox/orders` | `HeroBoxAdminOrders` |
+| `/operations/herobox/funds-shipping` | `HeroBoxFundsShipping` |
+| `/operations/discovery-network` | `DiscoveryNetwork` |
+| `/operations/humanitarian-cases` | `HumanitarianCases` |
+| `/operations/organizations` | `Organizations` |
+| `/operations/finance` | `Finance` |
+| `/operations/approvals` | `Approvals` |
+| `/operations/deposits` | `Deposits` |
+| `/operations/transfers` | `Transfers` |
+| `/operations/incoming-bank-receipts` | `IncomingBankReceipts` |
+| `/operations/payment-rails` | `PaymentRailOperations` |
+| `/operations/documents` | `OperationsDocuments` |
+| `/operations/cards` | `Cards` |
+| `/operations/wallet-assignment` | `WalletAssignment` |
+| `/operations/account-assignment` | `AccountAssignment` |
+| `/operations/reports` | `Reports` |
+| `/operations/executive-reports` | `ExecutiveReports` |
+| `/operations/audit-logs` | `AuditLogs` |
+| `/operations/aum-growth` | `AumGrowth` |
+| `/operations/bulk-import` | `BulkTransactionImport` |
+| `/operations/transaction-summaries` | `TransactionSummaries` |
+| `/operations/withdrawal-audit-log` | `WithdrawalAuditLog` |
+| `/operations/activity` | `ActivityTimeline` |
+| `/operations/configuration` | `Configuration` |
+| `/operations/api-management` | `ApiManagement` |
+| `/operations/integrations` | `Integrations` |
+| `/operations/notifications` | `OperationsNotifications` |
+| `/operations/security` | `Security` |
+| `/operations/feature-flags` | `FeatureFlags` |
+| `/operations/background-jobs` | `BackgroundJobs` |
+| `/operations/system-health` | `SystemHealth` |
+| `/operations/data-integrity` | `DataIntegrityAudit` |
+| `/operations/investment` | `InvestmentDashboard` |
+| `/operations/investment/deposits` | `InvestmentDeposits` |
+| `/operations/investment/withdrawals` | `InvestmentWithdrawals` |
+| `/operations/investment/portfolios` | `InvestmentPortfolios` |
+| `/operations/investment/signals` | `InvestmentSignals` |
+
+### Redirect and fallback
+
+| Path | Component |
+|---|---|
+| `/admin/*` | `Navigate` |
+| `*` | `PageNotFound` |
+
+## Backend surface present in this branch
+
+- Base44 entity schemas: **18** JSONC files.
+- Base44 server-function entry points: **11** (`bankTransferWebhook`, `createTransferRequest`, `generateAccount`, `oracleRuntime`, `reconcileBankTransfers`, `recordIncomingBankReceipt`, `recordManualTransferEvent`, `reviewTransferRequest`, `submitApplication`, `submitApprovedTransfer`, `syncPlaidTransferEvents`).
+- SQL migrations: **5** (`001_avcu_payment_control_plane.sql`, `002_avcu_backend_grants.sql`, `003_avcu_outgoing_funds_holds.sql`, `004_avcu_payment_audit_hardening.sql`, `005_avcu_payment_outbox_claims.sql`).
+- Test files: **2** (`tests/avcu-payment-migration.test.ts`, `tests/avcu-payment-store.test.ts`).
+
+These are repository artifacts only. They do not prove that these schemas, functions or migrations are deployed to the Base44 application or production database. The actual deployed Base44 project and data environment remain unverified.
+
+## Source-confirmed risks requiring remediation or proof
+
+| Area | Source evidence | Current classification | Required action |
+|---|---|---|---|
+| Transaction approvals | `src/pages/operations/Approvals.jsx` reads Transaction/Account records and attempts browser-side Account balance and Transaction status updates. | Insecure source path; live exposure unverified | Replace with a server-authorized, transactional, idempotent and audited approval lifecycle. Do not report “ledger updated” unless the server confirms commit. |
+| Account write policy | `base44/entities/Account.jsonc` denies direct client create/update/delete and scopes reads to owner plus named staff roles. | Repository policy present; deployed policy unverified | Compare exact deployed Base44 RLS with this schema; verify role claims are server-controlled. |
+| Client-side privilege helper | `src/lib/operationsAccess.js` contains a hard-coded super-administrator email and client-side role/capability helpers. | UI gating only; not an authorization boundary | Ensure all sensitive route, record and action authorization is independently enforced server-side. Never trust a client role or email check. |
+| Home wealth aggregation | `src/pages/Home.jsx` aggregates account and portfolio values in the browser. | Source behavior; authoritative data and currency handling unverified | Use server-authorized aggregation with explicit currency, freshness and valuation boundaries before presenting consolidated wealth. |
+| Investment mutations | `src/pages/Investment.jsx` contains a disabled server-investment-operations guard. | Fail-closed guard present | Preserve until provider, custody/legal authority, ledger, dual-control and reconciliation evidence is verified. |
+| Support lifecycle | Recovered Support implementation stores a note locally rather than proving a persistent server-side ticket lifecycle. | Incomplete source behavior; live exposure unverified | Implement durable ticket creation, assignment, status transitions, notification delivery and audit evidence. |
+| Discovery inventory | Recovered housing discovery contains hard-coded example listings and estimated values. | Not verified live inventory | Do not present these as real listings; require sourced inventory or an honest unavailable state. |
+| Provider status | Provider environment values and integration names exist in repository configuration. | Configuration is not proof of connectivity or entitlement | Verify credentials, contract, server integration, callbacks, reconciliation and operational ownership before claiming live service. |
+
+## CI configuration discrepancy
+
+The current `.github/workflows/recovery-build.yml` declares `pull_request` targets `main` and `recovery/merge-vantoris-live`, and also declares `workflow_dispatch`. Therefore a PR targeting the recovery branch is **configured** to trigger the workflow. The latest commit-associated PR workflow lookup returned no runs for this work-branch head; this is evidence of no returned run, not evidence that the workflow's branch filter excludes the PR. Investigate Actions enablement, workflow state, event delivery and run visibility. Do not describe the workflow as branch-filtered away.
+
+## Evidence and limitations
+
+- Route existence is verified from the router source in this branch only.
+- The full customer-visible behavior, actual Base44 deployment, RLS, provider contracts, live data, account continuity and production runtime have not been verified.
+- No customer data or production configuration was read or changed.
+- No install, lint, typecheck, build, automated test suite or browser viewport QA has been run in this environment.
+- The route list is a preservation baseline. Any proposed route consolidation or removal requires explicit founder approval and a verified migration plan.
