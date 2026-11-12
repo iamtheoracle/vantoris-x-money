@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import VantorisMonogram, { VANTORIS_COLORS } from '@/components/vantoris/brand/VantorisMonogram';
+import VantorisMonogram, { VANTAGE_COLORS } from '@/components/vantoris/brand/VantorisMonogram';
 import VantorisLogo from '@/components/vantoris/brand/VantorisLogo';
 import VantorisSeal from '@/components/vantoris/brand/VantorisSeal';
 import VantorisAppIcon from '@/components/vantoris/brand/VantorisAppIcon';
@@ -80,10 +80,10 @@ export default function BrandIdentity() {
         </Section>
 
         {/* Monogram Variants */}
-        <Section title="The Monogram" subtitle="02 — Custom Geometric V">
+        <Section title="The Monogram" subtitle="02 — Arch over River">
           <p className="text-slate-500 text-sm mb-6 max-w-2xl">
-            A custom "V" constructed from two engineered strokes converging at a precise apex —
-            communicating strength, stability, growth, security, and legacy without ornament.
+            An architectural arch rising above flowing river lines — communicating enduring structure,
+            continuity, movement and stewardship through a restrained, original mark.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
             {VARIANTS.map((v) => (
@@ -191,7 +191,7 @@ export default function BrandIdentity() {
         <Section title="Typography" subtitle="07 — Geometric · Legible · Premium">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card>
-              <p className="text-[#071A2D] font-heading" style={{ fontSize: 40, fontWeight: 800, letterSpacing: '0.24em' }}>VANTORIS</p>
+              <p className="text-[#071A2D] font-heading" style={{ fontSize: 40, fontWeight: 800, letterSpacing: '0.24em' }}>VANTAGE</p>
               <p className="text-slate-400 text-xs">Inter · 800 · 0.24em tracking · Heading</p>
             </Card>
             <Card>
@@ -237,7 +237,7 @@ export default function BrandIdentity() {
         {/* Footer */}
         <div className="text-center py-10">
           <VantorisMonogram size={36} variant="flat" theme="light" className="mx-auto" />
-          <p className="text-slate-400 text-xs mt-4 tracking-widest uppercase">Vantoris Brand Identity System</p>
+          <p className="text-slate-400 text-xs mt-4 tracking-widest uppercase">Vantage Private Investment · Brand Identity</p>
           <p className="text-slate-300 text-[10px] mt-1">Trust · Structure · Purpose</p>
         </div>
       </div>
