@@ -12,6 +12,11 @@ Deno.test("formats a verified zero balance as zero, not unavailable", () => {
 
 Deno.test("formats a valid numeric amount", () => {
   assertEqual(formatCurrency(1234.5), "$1,234.50", "valid amount");
+  assertEqual(formatCurrency(1234.5, "EUR"), "€1,234.50", "explicit currency");
+});
+
+Deno.test("does not assume a currency when the source omits it", () => {
+  assertEqual(formatCurrency(1234.5, null), "Currency not supplied", "missing currency");
 });
 
 Deno.test("does not turn missing or invalid financial values into zero", () => {
