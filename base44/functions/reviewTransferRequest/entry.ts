@@ -63,7 +63,7 @@ export default async function(req: Request): Promise<Response> {
         };
       } else if (request.rail === 'ACH') {
         update = {
-          status: 'approved_awaiting_bank_submission',
+          status: 'awaiting_dual_approval',
           reviewer_user_id: staff.id,
           reviewer_note: note,
           reviewed_at: new Date().toISOString(),
@@ -75,8 +75,8 @@ export default async function(req: Request): Promise<Response> {
       if (!APPROVER_ROLES.has(staff.role)) {
         return Response.json({ error: 'A treasury or finance approver is required.' }, { status: 403 });
       }
-      if (request.rail !== 'FEDWIRE' || request.status !== 'awaiting_dual_approval') {
-        return Response.json({ error: 'Only a wire awaiting its second approval can be approved here.' }, { status: 409 });
+      if (!['ACH', 'FEDWIRE'].includes(request.rail) || request.status !== 'awaiting_dual_approval') {
+        return Response.json({ error: 'Only an ACH or Fedwire request awaiting its second approval can be approved here.' }, { status: 409 });
       }
       if (!request.reviewer_user_id || request.reviewer_user_id === staff.id) {
         return Response.json({ error: 'The second approver must be a different staff member.' }, { status: 403 });
