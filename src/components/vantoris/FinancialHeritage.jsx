@@ -10,7 +10,7 @@ const FIGURES = [
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/Giovanni_di_Bicci_de%27_Medici_Portrait_by_Agnolo_Bronzino.jpg",
     imageAlt: "Renaissance portrait of Giovanni di Bicci de' Medici",
     imageCredit: "Portrait attributed to Cristofano dell'Altissimo · Wikimedia Commons",
-    source: "https://gwern.net/doc/history/medici/1963-deroover-theriseanddeclineofthemedicibank.pdf",
+    source: "https://www.fulcrum.org/concern/monographs/gh93gz54c",
     sourceLabel: "Raymond de Roover, The Rise and Decline of the Medici Bank",
   },
   {
