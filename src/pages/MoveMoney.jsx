@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { formatCurrency } from '@/lib/formatCurrency';
@@ -13,9 +13,16 @@ const SERVER_MONEY_OPERATIONS_ENABLED = false;
 const maskAccount = (value = '') => { const d = String(value).replace(/\D/g, ''); return d.length >= 4 ? `•••• ${d.slice(-4)}` : '••••'; };
 
 export default function MoveMoney() {
-  const [user, setUser] = useState(null), [accounts, setAccounts] = useState([]), [cards, setCards] = useState([]), [portfolios, setPortfolios] = useState([]), [loading, setLoading] = useState(true), [panel, setPanel] = useState(null);
+  const [user, setUser] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [cards, setCards] = useState([]);
+  const [portfolios, setPortfolios] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [panel, setPanel] = useState(null);
+  const [dataIssues, setDataIssues] = useState({ accounts: false, cards: false, investments: false });
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
+
   useEffect(() => {
     const action = searchParams.get('action');
     const to = searchParams.get('to');
@@ -26,30 +33,193 @@ export default function MoveMoney() {
       setPanel(SERVER_MONEY_OPERATIONS_ENABLED ? 'send' : null);
     }
   }, [searchParams]);
-  useEffect(() => { let cancelled = false; (async () => { try { const me = await base44.auth.me(); const [a,c,p] = await Promise.all([base44.entities.Account.filter({ user_id: me.id }, '-created_date').catch(() => []), base44.entities.PaymentCard.filter({ user_id: me.id, status: 'active' }, '-created_date').catch(() => []), base44.entities.InvestmentPortfolio.filter({ user_id: me.id }, '-created_date').catch(() => [])]); if (!cancelled) { setUser(me); setAccounts(a); setCards(c); setPortfolios(p); } } catch (e) { if (!cancelled) toast({ title: 'Money unavailable', description: e.message || 'Please try again.', variant: 'destructive' }); } finally { if (!cancelled) setLoading(false); } })(); return () => { cancelled = true; }; }, [toast]);
-  const totalBalance = useMemo(() => accounts.reduce((s,a) => s + (a.balance || 0), 0), [accounts]);
-  const portfolioValue = useMemo(() => portfolios.reduce((s,p) => s + (p.total_value || 0), 0), [portfolios]);
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" /></div>;
-  /** @type {[string, string, React.ComponentType<any>][]} */
-  const actionItems = [['send','Send',Send],['request','Request',ArrowDownToLine],['add','Add money',ArrowUpRight],['qr','QR',QrCode]];
-  return <div className="px-5 pt-6 pb-28 max-w-[430px] mx-auto">
-    <header className="mb-6"><p className="text-gray text-sm">AVCU member payments</p><h1 className="text-3xl font-bold mt-1">Pay</h1><p className="text-gray text-sm mt-1">View accounts and prepare payment requests.</p></header>
-    <section role="status" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950"><p className="font-semibold text-sm">Transfers are not enabled yet</p><p className="text-xs mt-1 leading-5">Sending and deposits are unavailable until an authorized server-side ledger and bank processing workflow is connected. Displayed balances are account records, not verified available funds or a live bank balance.</p></section>
-    <section className="mb-6 rounded-[28px] bg-[#0B2342] text-white p-5 shadow-xl relative overflow-hidden"><div className="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-brass/10"/><p className="text-white/55 text-xs uppercase tracking-[0.18em]">Recorded account balance</p><p className="text-4xl font-semibold mt-2">{formatCurrency(totalBalance)}</p><p className="text-white/55 text-xs mt-2">{accounts.length} account{accounts.length === 1 ? '' : 's'}</p>{portfolioValue > 0 && <div className="mt-5 pt-4 border-t border-white/10 flex justify-between"><span className="text-white/60 text-xs">Investment portfolio</span><span className="font-semibold">{formatCurrency(portfolioValue)}</span></div>}</section>
-    <section className="mb-6 rounded-2xl border border-border bg-white p-4">
-      <div className="flex items-center gap-3">
-        <span className="w-11 h-11 rounded-xl bg-navy/5 text-navy flex items-center justify-center"><Landmark size={20}/></span>
-        <div className="flex-1"><h2 className="font-semibold">U.S. bank transfer</h2><p className="text-xs text-gray mt-1">Prepare an ACH or domestic wire request</p></div>
+
+  useEffect(() => {
+    let cancelled = false;
+    const safeList = async (request) => {
+      try {
+        const result = await request;
+        return { items: Array.isArray(result) ? result : [], failed: !Array.isArray(result) };
+      } catch {
+        return { items: [], failed: true };
+      }
+    };
+
+    (async () => {
+      try {
+        const me = await base44.auth.me();
+        const [accountResult, cardResult, investmentResult] = await Promise.all([
+          safeList(base44.entities.Account.filter({ user_id: me.id }, '-created_date')),
+          safeList(base44.entities.PaymentCard.filter({ user_id: me.id, status: 'active' }, '-created_date')),
+          safeList(base44.entities.InvestmentPortfolio.filter({ user_id: me.id }, '-created_date')),
+        ]);
+        if (!cancelled) {
+          setUser(me);
+          setAccounts(accountResult.items);
+          setCards(cardResult.items);
+          setPortfolios(investmentResult.items);
+          setDataIssues({
+            accounts: accountResult.failed,
+            cards: cardResult.failed,
+            investments: investmentResult.failed,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setDataIssues({ accounts: true, cards: true, investments: true });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, []);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" /></div>;
+  }
+
+  const actionItems = [['send', 'Send', Send], ['request', 'Request', ArrowDownToLine], ['add', 'Add money', ArrowUpRight], ['qr', 'QR', QrCode]];
+
+  return (
+    <div className="px-5 pt-6 pb-28 max-w-[1440px] mx-auto">
+      <header className="mb-6">
+        <p className="text-gray text-sm">Vantoris Private Institution</p>
+        <h1 className="text-3xl font-bold mt-1">Payments</h1>
+        <p className="text-gray text-sm mt-1">Review account records and prepare authorized transfer requests.</p>
+      </header>
+
+      <section role="status" className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950">
+        <p className="font-semibold text-sm">Payment execution is not confirmed</p>
+        <p className="mt-1 text-xs leading-5">
+          ACH and domestic Fedwire requests can be recorded for operations review. A successfully recorded request may reserve funds from available balance while it is reviewed; no bank submission, settlement, or payment completion is confirmed here. Other send and deposit actions remain disabled until their authorized processing workflows are verified.
+        </p>
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-12">
+        <div className="space-y-6 lg:col-span-7">
+          <section className="relative overflow-hidden rounded-[28px] bg-[#0B2342] p-6 text-white shadow-xl">
+            <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-brass/10" />
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/55">Account overview</p>
+            {dataIssues.accounts ? (
+              <>
+                <h2 className="mt-3 text-2xl font-semibold">Account information unavailable</h2>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">We could not retrieve account records. This is a data-access error, not confirmation that no account exists.</p>
+              </>
+            ) : (
+              <>
+                <p className="mt-3 text-4xl font-semibold">{accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}</p>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-white/65">Individual recorded balances are shown below. A consolidated figure is withheld until currency and valuation sources are verified.</p>
+              </>
+            )}
+            {dataIssues.investments ? (
+              <p className="mt-5 border-t border-white/10 pt-4 text-sm text-white/65">Investment information is currently unavailable.</p>
+            ) : (
+              <button type="button" onClick={() => window.location.assign('/investment')} className="mt-5 inline-flex items-center gap-2 border-t border-white/10 pt-4 text-sm font-semibold text-brass">
+                Open investment workspace
+                {portfolios.length > 0 ? ' · ' + portfolios.length + (portfolios.length === 1 ? ' portfolio' : ' portfolios') : ''}
+                <ChevronRight size={16} />
+              </button>
+            )}
+          </section>
+
+          <section className="mb-7">
+            <div className="mb-3 flex items-center justify-between">
+              <h2 className="font-semibold text-navy">Accounts</h2>
+              <span className="text-xs text-gray">{dataIssues.accounts ? 'Unavailable' : accounts.length}</span>
+            </div>
+            {dataIssues.accounts ? (
+              <div role="status" className="rounded-[24px] border border-amber-200 bg-amber-50 p-6 text-sm text-amber-950">
+                Account records could not be loaded. Please try again later or contact support.
+              </div>
+            ) : accounts.length === 0 ? (
+              <div className="rounded-[24px] border border-dashed border-border bg-white p-6 text-center text-sm text-gray">
+                No account records were returned by the current account source.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {accounts.map((account) => (
+                  <button key={account.id} type="button" onClick={() => setPanel({ type: 'account', account })} className="flex w-full items-center gap-3 rounded-[24px] border border-border bg-white p-4 text-left shadow-sm transition-colors hover:border-brass/40">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-navy/5 text-navy"><Wallet size={20} /></span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate font-semibold">{account.account_name || account.account_type}</span>
+                      <span className="mt-0.5 block text-xs text-gray">{account.account_type || 'Account'} · {maskAccount(account.account_number)}</span>
+                    </span>
+                    <span className="text-right">
+                      <span className="block font-semibold tabular-nums">{formatCurrency(account.balance || 0)}</span>
+                      <span className="text-[11px] text-slate-500">{account.status ? String(account.status).replace(/_/g, ' ') : 'Status not supplied'}</span>
+                    </span>
+                    <ChevronRight size={17} className="shrink-0 text-gray/50" />
+                  </button>
+                ))}
+              </div>
+            )}
+          </section>
+        </div>
+
+        <div className="space-y-6 lg:col-span-5">
+          <section className="rounded-2xl border border-border bg-white p-5">
+            <div className="flex items-center gap-3">
+              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-navy/5 text-navy"><Landmark size={20} /></span>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-semibold">U.S. bank transfer request</h2>
+                <p className="mt-1 text-xs text-gray">Prepare an ACH or domestic wire request for operations review.</p>
+              </div>
+            </div>
+            <button onClick={() => setPanel('bank-transfer')} disabled={dataIssues.accounts || accounts.length === 0} className="mt-4 w-full rounded-xl bg-navy py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">
+              Start transfer request
+            </button>
+            <p className="mt-2 text-[11px] leading-5 text-gray">An accepted request may reserve funds while it is reviewed. It is not sent to a bank by this screen.</p>
+          </section>
+
+          <section className="grid grid-cols-4 gap-2">
+            {actionItems.map(([id, label, Icon]) => (
+              <button key={id} onClick={() => setPanel(id)} disabled={!SERVER_MONEY_OPERATIONS_ENABLED} title={!SERVER_MONEY_OPERATIONS_ENABLED ? 'Unavailable until secure payment processing is enabled' : undefined} className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-white py-3 shadow-sm disabled:cursor-not-allowed disabled:opacity-45">
+                <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brass/10 text-brass"><Icon size={19} /></span>
+                <span className="text-[11px] font-medium">{label}</span>
+              </button>
+            ))}
+          </section>
+
+          {dataIssues.cards ? (
+            <section role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+              <h2 className="font-semibold">Card information unavailable</h2>
+              <p className="mt-1 text-xs leading-5">We could not verify current card records. This does not mean a card has not been issued.</p>
+            </section>
+          ) : cards.length > 0 ? (
+            <section className="mb-7">
+              <div className="mb-3 flex justify-between"><h2 className="font-semibold">Cards</h2><span className="text-xs text-gray">{cards.length}</span></div>
+              <div className="space-y-3">{cards.map((card) => <PaymentCard key={card.id} card={card} />)}</div>
+            </section>
+          ) : (
+            <section className="rounded-2xl border border-slate-200 bg-white p-5">
+              <h2 className="font-semibold text-navy">Card services</h2>
+              <p className="mt-1 text-xs leading-5 text-gray">No card record was returned by the current source. Issuance and request availability have not been verified.</p>
+            </section>
+          )}
+
+          {dataIssues.investments ? (
+            <section role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-amber-950">
+              <h2 className="font-semibold">Investment information unavailable</h2>
+              <p className="mt-1 text-xs leading-5">The investment record source could not be reached. This is not confirmation that no portfolio exists.</p>
+            </section>
+          ) : (
+            <section className="rounded-[28px] border border-border bg-white p-5 shadow-sm">
+              <p className="text-xs uppercase tracking-[0.16em] text-gray">Invest</p>
+              <div className="mt-1 flex items-center justify-between gap-3">
+                <h2 className="text-xl font-semibold">Investment workspace</h2>
+                <button onClick={() => window.location.assign('/investment')} className="text-sm font-semibold text-brass">Open</button>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-gray">{portfolios.length} {portfolios.length === 1 ? 'portfolio record' : 'portfolio records'} returned. Investment values are not consolidated into cash-account balances.</p>
+            </section>
+          )}
+        </div>
       </div>
-      <button onClick={() => setPanel('bank-transfer')} className="mt-4 w-full rounded-xl bg-navy text-white py-3 text-sm font-semibold">Start transfer request</button>
-      <p className="mt-2 text-[11px] text-gray">Requests enter operations review. They are not transmitted to a bank or deducted from your account in this release.</p>
-    </section>
-    <section className="grid grid-cols-4 gap-2 mb-7">{actionItems.map(([id,label,Icon]) => <button key={id} onClick={() => setPanel(id)} disabled={!SERVER_MONEY_OPERATIONS_ENABLED} title={!SERVER_MONEY_OPERATIONS_ENABLED ? "Unavailable until secure payment processing is enabled" : undefined} className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-white border border-border shadow-sm disabled:opacity-45 disabled:cursor-not-allowed"><span className="w-11 h-11 rounded-full bg-brass/10 text-brass flex items-center justify-center"><Icon size={19}/></span><span className="text-[11px] font-medium">{label}</span></button>)}</section>
-    <section className="mb-7"><div className="flex justify-between mb-3"><h2 className="font-semibold">Accounts</h2><span className="text-xs text-gray">{accounts.length}</span></div><div className="space-y-3">{accounts.map(a => <button key={a.id} onClick={() => setPanel({type:'account',account:a})} className="w-full text-left bg-white border border-border rounded-[24px] p-4 shadow-sm flex items-center gap-3"><span className="w-11 h-11 rounded-2xl bg-navy/5 text-navy flex items-center justify-center"><Wallet size={20}/></span><span className="flex-1 min-w-0"><span className="block font-semibold truncate">{a.account_name || a.account_type}</span><span className="block text-xs text-gray mt-0.5">{a.account_type} · {maskAccount(a.account_number)}</span></span><span className="text-right"><span className="block font-semibold">{formatCurrency(a.balance || 0)}</span><span className="text-[11px] text-mint">{a.status || 'active'}</span></span><ChevronRight size={17} className="text-gray/50"/></button>)}{accounts.length === 0 && <div className="rounded-[24px] border border-dashed border-border p-6 text-center text-sm text-gray">No accounts yet.</div>}</div></section>
-    {cards.length > 0 && <section className="mb-7"><div className="flex justify-between mb-3"><h2 className="font-semibold">Cards</h2><span className="text-xs text-gray">{cards.length}</span></div><div className="space-y-3">{cards.map(card => <PaymentCard key={card.id} card={card}/>)}</div></section>}
-    {portfolioValue > 0 && <section className="mb-7 rounded-[28px] bg-white border border-border p-5 shadow-sm"><p className="text-xs uppercase tracking-[0.16em] text-gray">Wealth</p><div className="flex justify-between items-center mt-1"><h2 className="text-xl font-semibold">Portfolio</h2><button onClick={() => window.location.assign('/investment')} className="text-brass text-sm font-semibold">Open</button></div><p className="text-3xl font-semibold mt-5">{formatCurrency(portfolioValue)}</p><p className="text-xs text-gray mt-1">Across your investment portfolios</p></section>}
-    {panel === 'bank-transfer' ? <BankTransferPanel accounts={accounts} onClose={() => setPanel(null)} /> : panel && <MoneyPanel panel={panel} accounts={accounts} user={user} onClose={() => setPanel(null)}/ >} 
-  </div>;
+
+      {panel === 'bank-transfer' ? <BankTransferPanel accounts={accounts} onClose={() => setPanel(null)} /> : panel && <MoneyPanel panel={panel} accounts={accounts} user={user} onClose={() => setPanel(null)} />}
+    </div>
+  );
 }
 
 function BankTransferPanel({accounts,onClose}) {
@@ -80,7 +250,7 @@ function BankTransferPanel({accounts,onClose}) {
         beneficiary_routing_number:routing,beneficiary_account_last4:last4,
         memo,idempotency_key:crypto.randomUUID()
       });
-      toast({title:'Transfer request recorded',description:result?.data?.message||'Your request is awaiting operations review. No funds have moved.'});
+      toast({title:'Transfer request recorded',description:result?.data?.message||'Your request is recorded for review. A hold may reserve the amount while it is reviewed; no bank transfer has been sent.'});
       onClose();
     } catch(error) {
       toast({title:'Request not submitted',description:error?.message||'The server could not record this request.',variant:'destructive'});
@@ -89,7 +259,7 @@ function BankTransferPanel({accounts,onClose}) {
   return <Sheet title="U.S. bank transfer" subtitle="Secure transfer request intake" onClose={onClose}>
     <form onSubmit={submit} className="space-y-4">
       <div><label className="block text-xs text-gray mb-2">Transfer rail</label><select value={rail} onChange={e=>setRail(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"><option value="ACH">ACH transfer</option><option value="FEDWIRE">Domestic Fedwire</option></select></div>
-      <div><label className="block text-xs text-gray mb-2">From AVCU account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{accounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · •••• {String(a.account_number||'').slice(-4)}</option>)}</select></div>
+      <div><label className="block text-xs text-gray mb-2">From Vantoris account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{accounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · •••• {String(a.account_number||'').slice(-4)}</option>)}</select></div>
       <div><label className="block text-xs text-gray mb-2">Amount (USD)</label><input required inputMode="decimal" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
       <div><label className="block text-xs text-gray mb-2">Beneficiary full name</label><input required maxLength={120} value={beneficiary} onChange={e=>setBeneficiary(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
       <div><label className="block text-xs text-gray mb-2">Beneficiary bank</label><input required maxLength={120} value={bank} onChange={e=>setBank(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
@@ -110,7 +280,7 @@ function AddMoneyPanel({accounts,user,onClose}){const [accountId,setAccountId]=u
 const value=Number(amount);const account=accounts.find(a=>a.id===accountId);if(!account||!value||value<=0){toast({title:'Enter an amount',variant:'destructive'});return;}setLoading(true);try{const next=Math.round(((account.balance||0)+value)*100)/100;const txn=await base44.entities.Transaction.create({account_id:account.id,user_id:user?.id,type:'deposit',amount:value,description:note||'Add money',status:'pending'});await notifyOperators({title:'Deposit requested',message:`${user?.full_name||user?.email||'A member'} requested to add ${formatCurrency(value)} to ${account.account_name||account.account_type}. txn:${txn?.id||''}`,type:'warning'});toast({title:'Sent for approval',description:`${formatCurrency(value)} is pending. An operator must approve it before the balance changes.`});onClose();}catch(e){toast({title:'Deposit not posted',description:e.message||'The ledger rejected this deposit.',variant:'destructive'});}finally{setLoading(false);}}
   return <Sheet title="Add money" subtitle="Deposit requests are unavailable until an authorized payments workflow is connected" onClose={onClose}><div className="space-y-4"><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">To account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{accounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · {formatCurrency(a.balance||0)}</option>)}</select></div><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">Amount</label><input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">Note</label><input value={note} onChange={e=>setNote(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div><button type="button" disabled={loading || !SERVER_MONEY_OPERATIONS_ENABLED} onClick={post} className="w-full h-12 rounded-xl bg-navy text-white font-semibold">{loading?'Posting…':'Add money'}</button></div></Sheet>;
 }
-function MoneyPanel({panel,accounts,user,onClose}) { if(panel==='qr') return <QrPanel user={user} onClose={onClose}/>; if(panel==='send'||panel==='request') return <ZellePanel accounts={accounts} user={user} mode={panel} onClose={onClose}/>; if(panel==='add') return <AddMoneyPanel accounts={accounts} user={user} onClose={onClose}/>; if(panel?.type==='account') return <Sheet title={panel.account.account_name || panel.account.account_type} subtitle="Account details" onClose={onClose}><div className="rounded-2xl bg-slate-50 p-4 space-y-3 text-sm"><Detail label="Recorded balance (not live)" value={formatCurrency(panel.account.balance || 0)}/><Detail label="Account type" value={panel.account.account_type}/><Detail label="Account number" value={maskAccount(panel.account.account_number)}/><Detail label="Routing number" value={panel.account.routing_number || '—'}/><Detail label="Status" value={panel.account.status || 'active'}/></div></Sheet>; return null; }
+function MoneyPanel({panel,accounts,user,onClose}) { if(panel==='qr') return <QrPanel user={user} onClose={onClose}/>; if(panel==='send'||panel==='request') return <ZellePanel accounts={accounts} user={user} mode={panel} onClose={onClose}/>; if(panel==='add') return <AddMoneyPanel accounts={accounts} user={user} onClose={onClose}/>; if(panel?.type==='account') return <Sheet title={panel.account.account_name || panel.account.account_type} subtitle="Account details" onClose={onClose}><div className="rounded-2xl bg-slate-50 p-4 space-y-3 text-sm"><Detail label="Recorded balance (not live)" value={formatCurrency(panel.account.balance || 0)}/><Detail label="Account type" value={panel.account.account_type}/><Detail label="Account number" value={maskAccount(panel.account.account_number)}/><Detail label="Routing number" value={panel.account.routing_number || '—'}/><Detail label="Status" value={panel.account.status || 'Status not supplied'}/></div></Sheet>; return null; }
 
 function ZellePanel({accounts,user,mode,onClose}) { const [identifier,setIdentifier]=useState(''),[recipient,setRecipient]=useState(null),[amount,setAmount]=useState(''),[selectedAccountId,setSelectedAccountId]=useState(accounts[0]?.id||''),[searching,setSearching]=useState(false),[loading,setLoading]=useState(false),[showBank,setShowBank]=useState(false),[ownProfile,setOwnProfile]=useState(null); const {toast}=useToast();
   useEffect(()=>{base44.entities.ZelleProfile.filter({user_id:user?.id}).then(rows=>setOwnProfile(rows.find(p=>p.status==='enrolled')||null)).catch(()=>{});},[user?.id]);
