@@ -150,8 +150,8 @@ export default function SecurityComplianceDashboard() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white text-sm font-medium capitalize truncate">{log.action_type?.replace(/_/g, ' ') || 'Action'}</p>
-                    <p className="text-[#AAB4C3] text-xs truncate">{log.description}</p>
-                    <p className="text-[#AAB4C3]/50 text-[10px] mt-0.5">{log.admin_name || 'System'} · {new Date(log.created_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
+                    <p className="text-[#AAB4C3] text-xs truncate">{log.description || 'Description not supplied'}</p>
+                    <p className="text-[#AAB4C3]/50 text-[10px] mt-0.5">{log.admin_name || 'Actor not supplied'} · {new Date(log.created_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
                   </div>
                 </div>
               ))}
