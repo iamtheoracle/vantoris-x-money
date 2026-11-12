@@ -66,3 +66,12 @@ Keep source attribution available in the UI and in this document. Do not remove 
 ## Current scope of implementation
 
 This change adds the heritage collection to the public landing page, member dashboard and investment workspace; adds four vector card-art editions; and applies the warm ivory / navy / brass editorial system and print CSS. It does not change financial workflows, account records, provider configuration, permissions, operator approvals or deployment state.
+
+
+## Deferred verification and next dependency
+
+- `npm run lint`, `npm run typecheck` and `npm run build` have not been executed in this environment. The available container could not resolve `github.com`, so the repository could not be cloned and dependencies could not be installed.
+- The draft pull request targets `recovery/merge-vantoris-live`. The existing `.github/workflows/recovery-build.yml` listens to pushes on that recovery branch and pull requests targeting `main`; it will not automatically run for this draft PR.
+- Next verification step: use **Actions → Recovery build check → Run workflow** and select `feat/private-investment-heritage-design` as the branch. Review lint, typecheck, build and the workflow's existing security checks before changing the PR out of draft.
+- After a successful build, perform browser QA on public landing, member dashboard, investment workspace and Brand Identity. Confirm all four SVG card faces render, the four historical images load, compact cards remain legible, and print preview preserves the 3.375 × 2.125 inch card-face geometry. Verify image reproduction terms and resolution before large-format portrait printing.
+- No merge, provider activation, financial operation or production deployment has been performed.
