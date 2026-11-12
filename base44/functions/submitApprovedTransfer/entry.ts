@@ -141,7 +141,7 @@ export default async function(req: Request): Promise<Response> {
       } },
     );
     if (!committed?.success || committed.updated !== 1) {
-      return Response.json({ error: 'Provider returned a bank reference but AVCU could not finalize the record. Escalate for reconciliation; do not resubmit.', bank_reference: result.bankReference || result.providerTransferId }, { status: 500 });
+      return Response.json({ error: 'Provider returned a bank reference but the institution could not finalize the record. Escalate for reconciliation; do not resubmit.', bank_reference: result.bankReference || result.providerTransferId }, { status: 500 });
     }
     return Response.json({ submitted: true, provider_transfer_id: result.providerTransferId, bank_reference: result.bankReference || '', status: result.status });
   } catch (error) {
