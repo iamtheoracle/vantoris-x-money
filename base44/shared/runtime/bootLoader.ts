@@ -10,16 +10,18 @@ import { logger } from './logger.ts';
 
 function createServices(base44, request) {
   const authorization = request?.headers?.get?.('authorization') || '';
-  const gatewayUrl = Deno.env.get('AVCU_AI_GATEWAY_URL') || '';
-  const appUrl = Deno.env.get('AVCU_APP_URL') || '';
+  const gatewayUrl = Deno.env.get('VANTAGE_AI_GATEWAY_URL') || '';
+  const appUrl = Deno.env.get('VANTAGE_APP_URL') || '';
   let endpoint = '';
   try {
-    const candidate = gatewayUrl || (appUrl ? new URL('/.netlify/functions/ask', appUrl).toString() : '');
-    const parsed = candidate ? new URL(candidate) : null;
-    if (parsed?.protocol === 'https:') endpoint = parsed.toString();
-    else if (candidate) logger.error('AI gateway URL rejected: HTTPS is required');
-  } catch {
-    logger.error('AI gateway URL rejected: invalid URL');
+    const app = appUrl ? new URL(appUrl) : null;
+    if (app?.protocol !== 'https:') throw new Error('VANTAGE_APP_URL must be a valid HTTPS origin');
+    const candidate = gatewayUrl || new URL('/.netlify/functions/ask', app).toString();
+    const parsed = new URL(candidate);
+    if (parsed.protocol === 'https:' && parsed.origin === app.origin) endpoint = parsed.toString();
+    else throw new Error('AI gateway must use the configured Vantage application origin');
+  } catch (error) {
+    logger.error('AI gateway URL rejected', { reason: error.message });
   }
 
   return {
@@ -122,6 +124,6 @@ export async function boot(base44, request) {
   const oracle = createOracle(services, registries, guardian, nexus, spark, orbit);
   const runtime = { oracle, guardian, nexus, spark, orbit };
   const stages = ['services', 'registries', 'guardian', 'nexus', 'spark', 'orbit', 'oracle'];
-  logger.info('AVCU Oracle runtime initialized', { stages });
+  logger.info('Vantage Oracle runtime initialized', { stages });
   return { services, runtime, stages };
 }
