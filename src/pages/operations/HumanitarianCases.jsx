@@ -39,16 +39,8 @@ function dateLabel(value) {
   return Number.isNaN(date.getTime()) ? 'Date not supplied' : date.toLocaleDateString();
 }
 
-function amountLabel(item) {
-  const currency = item.currency || item.currency_code;
-  if (item.verification_status !== 'verified' || typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Estimate not verified';
-  const amount = Number(item.estimated_amount);
-  if (!Number.isFinite(amount) || amount <= 0) return 'Estimate not supplied';
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
-  } catch {
-    return 'Estimate not verified';
-  }
+function amountLabel() {
+  return 'Estimate withheld pending independent verification';
 }
 
 function parseArray(value) {
