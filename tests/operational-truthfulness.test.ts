@@ -145,3 +145,9 @@ Deno.test("external ACH and Fedwire submission remains disabled without explicit
   assert(submit.includes("No bank request was sent"), "disabled provider submission must state that no bank request was sent");
   assert(readiness.includes("processing disabled"), "rail readiness page must not imply live processing");
 });
+
+Deno.test("member bank transfer form only offers active accounts with verified USD currency", async () => {
+  const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
+  assert(source.includes("accounts.filter((account) => account.currency === 'USD' && account.status === 'active')"), "bank transfer form must filter to active verified USD accounts");
+  assert(source.includes("No active account with a verified USD currency record"), "member must see why no eligible account is available");
+});
