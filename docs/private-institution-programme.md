@@ -210,8 +210,8 @@ Financial presentation corrections:
 - Investment portfolio values use the same validated formatter and do not coerce missing values to zero.
 - New Deno tests cover currency provenance, heritage dates/sources, Hambros non-affiliation language and the four credential-free SVG assets. The recovery workflow runs these tests.
 
-Brand decision intentionally deferred:
-- The user has used “Vantage”, “Vantage Private” and “Vantage Private Investment” as preferred public wording, while the existing repository/product assets and current approved work still use Vantoris. The exact public-facing name has not yet been explicitly finalized. No global Vantage rename has been made in this branch; do not mix the two identities or perform a broad replacement without that decision.
+Brand decision:
+- The approved customer-facing identity for this repository is **Vantoris Private Institution**. “Vantoris X Money” remains only the historical repository/technical identifier, not customer-facing product branding. “Vantage” was discussed in an earlier wording exchange, but the subsequent clarification explicitly returned the product identity to Vantoris Private Institution. Do not introduce Vantage as a competing brand or perform a broad repository rename.
 
 Verification:
 - The previously completed GitHub Actions run #741 passed on commit `82b272df59af74c97fe42d27acba0e8dccc26fe1`, including install, runtime/security checks, entity/RLS validation, lint, typecheck and production build. That run predates the heritage/print and currency-provenance commits in this section.
