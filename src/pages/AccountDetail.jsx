@@ -125,7 +125,7 @@ export default function AccountDetail() {
           <ArrowLeft size={18} />
         </button>
         <div>
-          <p className="text-xs text-slate-500">Vantoris Private Institution · Accounts</p>
+          <p className="text-xs text-slate-500">Vantage Private Investment · Accounts</p>
           <h1 className="text-2xl font-semibold text-navy">{account.account_name || account.account_type || 'Account details'}</h1>
         </div>
       </div>
