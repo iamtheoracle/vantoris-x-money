@@ -92,3 +92,18 @@ Deno.test("member money screens do not coerce missing account balances to zero",
   assert(!source.includes("account.balance || 0") && !source.includes("a.balance||0"), "member money screens must preserve missing balances");
   assert(source.includes("account.currency || account.currency_code || null"), "member money screens must use source currency");
 });
+
+Deno.test("notification and approval inboxes cannot mutate financial records", async () => {
+  const notifications = await Deno.readTextFile("src/pages/operations/OperationsNotifications.jsx");
+  const approvals = await Deno.readTextFile("src/pages/operations/Approvals.jsx");
+  assert(!/entities\.(Account|Transaction)\.(create|update|delete)\s*\(/.test(notifications), "notification screen must not mutate account or transaction records");
+  assert(!/entities\.(Account|Transaction)\.(create|update|delete)\s*\(/.test(approvals), "approval inbox must remain read-only");
+  assert(notifications.includes("cannot approve, decline, or post"), "notification UI must disclose read-only behavior");
+});
+
+Deno.test("referral operations do not expose referred members' financial balances", async () => {
+  const source = await Deno.readTextFile("src/pages/operations/Referrals.jsx");
+  assert(!source.includes("base44.entities.Account.list"), "referral reporting must not query referred-member account balances");
+  assert(!source.includes("referredBalance"), "referral reporting must not aggregate referred-member assets");
+  assert(source.includes("account balances and private financial details are never exposed"), "privacy boundary must be explicit");
+});
