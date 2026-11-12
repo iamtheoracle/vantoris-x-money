@@ -9,7 +9,7 @@ const FIGURES = [
     story: "In 1397, Giovanni established the Medici Bank in Florence. Its later network of branches handled deposits, currency exchange, bills of exchange and merchant finance across major European trading centres.",
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/Giovanni_di_Bicci_de%27_Medici_Portrait_by_Agnolo_Bronzino.jpg",
     imageAlt: "Renaissance portrait of Giovanni di Bicci de' Medici",
-    imageCredit: "Portrait attributed to Cristofano dell'Altissimo · Wikimedia Commons",
+    imageCredit: "Agnolo Bronzino, after Cristofano dell'Altissimo · Wikimedia Commons · Public domain",
     source: "https://www.fulcrum.org/concern/monographs/gh93gz54c",
     sourceLabel: "Raymond de Roover, The Rise and Decline of the Medici Bank",
   },
@@ -84,7 +84,7 @@ export default function FinancialHeritage({ compact = false, className = "" }) {
               <p className="heritage-card__story">{figure.story}</p>
               <div className="heritage-card__footer">
                 <span>{figure.imageCredit}</span>
-                <a href={figure.source} target="_blank" rel="noreferrer" aria-label={`Read source for ${figure.name}`}>Source ↗</a>
+                <a href={figure.source} target="_blank" rel="noreferrer" aria-label={`Read source for ${figure.name}`} title={figure.sourceLabel}>Source ↗</a>
               </div>
             </div>
           </article>
