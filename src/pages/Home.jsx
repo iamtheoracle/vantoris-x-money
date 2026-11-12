@@ -181,8 +181,8 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] text-navy max-w-[430px] mx-auto relative">
-      <header className="sticky top-0 z-20 flex items-center justify-between px-4 pt-3 pb-2 bg-[#F4F6F9]/95 backdrop-blur-md">
+    <div className="min-h-screen w-full max-w-7xl mx-auto bg-[#F4F6F9] text-navy relative">
+      <header className="sticky top-0 z-20 flex items-center justify-between px-4 lg:px-8 pt-3 pb-2 bg-[#F4F6F9]/95 backdrop-blur-md">
         <div className="w-9" />
         <div className="text-center flex-1">
           <h1 className="text-[17px] font-bold leading-tight text-navy">Home</h1>
@@ -238,7 +238,7 @@ export default function Home() {
         ))}
       </div>
 
-      <main className="px-4 pb-28">
+      <main className="px-4 lg:px-8 pb-28 w-full max-w-5xl mx-auto">
         {tab === 'account' && (
           <section>
             <div className="rounded-[22px] bg-gradient-to-br from-navy via-[#0A2342] to-[#0E2A4A] text-white p-6 mb-5 shadow-[0_12px_32px_rgba(7,28,56,0.22)]">
@@ -367,7 +367,7 @@ export default function Home() {
               </span>
               <span className="flex-1 min-w-0">
                 <strong className="block text-[15px] text-navy">Set up direct deposit</strong>
-                <span className="text-[14px] text-slate-500 leading-snug">Get paid up to 2 days early</span>
+                <span className="text-[14px] text-slate-500 leading-snug">View direct deposit instructions and applicable eligibility.</span>
               </span>
               <ChevronRight size={18} className="text-slate-400 shrink-0" />
             </button>
@@ -382,7 +382,7 @@ export default function Home() {
                   <Gift size={16} />
                 </span>
                 <strong className="text-[15px] text-navy">Cash back</strong>
-                <p className="text-[13px] text-slate-500 leading-snug flex-1">Earn on everyday spending</p>
+                <p className="text-[13px] text-slate-500 leading-snug flex-1">View eligible offers when rewards are available for your account.</p>
               </button>
               <button
                 type="button"
@@ -393,7 +393,7 @@ export default function Home() {
                   <Percent size={16} />
                 </span>
                 <strong className="text-[15px] text-navy">Interest</strong>
-                <p className="text-[13px] text-slate-500 leading-snug flex-1">Competitive APY on cash</p>
+                <p className="text-[13px] text-slate-500 leading-snug flex-1">See applicable rates and terms when they have been confirmed.</p>
               </button>
             </div>
 
@@ -450,7 +450,7 @@ export default function Home() {
             </button>
 
             <p className="mt-4 text-[12px] text-slate-400 leading-relaxed text-center">
-              Banking services provided through Vantoris. Terms and limitations apply.
+              Account services and product availability are subject to applicable agreements and service-provider terms.
             </p>
           </section>
         )}
@@ -465,7 +465,7 @@ export default function Home() {
                 <div>
                   <h3 className="text-[17px] font-semibold text-navy">Cash back</h3>
                   <p className="text-[14px] text-slate-500 leading-snug mt-1">
-                    Earn cash back on everyday purchases with your Vantoris card.
+                    Eligible cash-back offers and their terms will be displayed here when confirmed for your account.
                   </p>
                 </div>
               </div>
@@ -486,7 +486,7 @@ export default function Home() {
                 <div>
                   <h3 className="text-[17px] font-semibold text-navy">Interest on cash</h3>
                   <p className="text-[14px] text-slate-500 leading-snug mt-1">
-                    Competitive rates on eligible balances. Rates subject to change.
+                    Applicable rates, eligibility and terms will be shown here once verified.
                   </p>
                 </div>
               </div>
@@ -500,7 +500,7 @@ export default function Home() {
                 <div>
                   <h3 className="text-[17px] font-semibold text-navy">Member perks</h3>
                   <p className="text-[14px] text-slate-500 leading-snug mt-1">
-                    Preferential FX, priority support, and curated offers for active members.
+                    Member benefits and preferential services will appear here when available and confirmed.
                   </p>
                 </div>
               </div>
