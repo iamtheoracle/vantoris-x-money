@@ -113,7 +113,7 @@ Deno.test("member-to-member transfer screen does not depend on an external payme
   const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
   assert(!source.includes("findZelleRecipient") && !source.includes("ZelleProfile"), "member transfers must not use an external-network recipient directory");
   assert(source.includes("Private member-to-member transfers are not enabled yet"), "member transfer availability must be explicit");
-  assert(source.includes("No recipient search, payment instruction, transfer request, or account change has been created"), "unavailable member transfers must not imply a request was recorded");
+  assert(source.replace(/\\s+/g, " ").includes("No recipient search, payment instruction, transfer request, or account change has been created from this screen."), "unavailable member transfers must not imply a request was recorded");
 });
 
 Deno.test("payment functions cannot read another product's clearing or database secrets", async () => {
