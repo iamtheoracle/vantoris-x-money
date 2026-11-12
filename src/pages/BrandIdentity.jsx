@@ -4,6 +4,7 @@ import VantorisMonogram, { VANTORIS_COLORS } from '@/components/vantoris/brand/V
 import VantorisLogo from '@/components/vantoris/brand/VantorisLogo';
 import VantorisSeal from '@/components/vantoris/brand/VantorisSeal';
 import VantorisAppIcon from '@/components/vantoris/brand/VantorisAppIcon';
+import PrivateInvestmentCardGallery from '@/components/vantoris/PrivateInvestmentCardGallery';
 
 const PALETTE = [
   { name: 'Midnight Navy', hex: '#071A2D', role: 'Primary', text: '#F8FAFC' },
@@ -204,18 +205,9 @@ export default function BrandIdentity() {
 
         {/* Applications */}
         <Section title="Brand Applications" subtitle="08 — Across Touchpoints" dark>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Debit Card */}
-            <div className="relative rounded-2xl p-5 h-44 overflow-hidden" style={{ background: 'linear-gradient(135deg, #071A2D 0%, #123A6E 100%)' }}>
-              <div className="flex justify-between items-start">
-                <VantorisMonogram size={32} variant="metallic" theme="dark" />
-                <div className="w-9 h-7 rounded-md" style={{ background: 'linear-gradient(135deg, #C7A34A, #D4AF37)' }} />
-              </div>
-              <p className="text-white/80 font-mono text-[11px] mt-8 tracking-widest">5421 88•• •••• 0937</p>
-              <p className="text-white/50 text-[9px] uppercase tracking-widest mt-2">Member · Vantoris Private</p>
-              <div className="absolute bottom-3 right-4">
-                <VantorisLogo layout="horizontal" size={16} variant="flat" theme="dark" />
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="sm:col-span-2 rounded-2xl bg-[#0C2438] p-4 sm:p-6">
+              <PrivateInvestmentCardGallery className="brand-card-gallery" />
             </div>
 
             {/* Statement Header */}
@@ -234,9 +226,9 @@ export default function BrandIdentity() {
             <div className="rounded-2xl bg-white p-5 h-44 border border-slate-200 flex flex-col justify-between">
               <VantorisMonogram size={28} variant="metallic" theme="light" />
               <div>
-                <p className="text-[#071A2D] font-semibold text-sm">Alexandra M. Whitmore</p>
-                <p className="text-slate-500 text-[10px] uppercase tracking-widest">Managing Director · Private Wealth</p>
-                <p className="text-slate-400 text-[10px] mt-1">alexandra.whitmore@vantoris.com</p>
+                <p className="text-[#071A2D] font-semibold text-sm">Client Services</p>
+                <p className="text-slate-500 text-[10px] uppercase tracking-widest">Private Client Office</p>
+                <p className="text-slate-400 text-[10px] mt-1">Verified contact details are provided through configured channels.</p>
               </div>
             </div>
           </div>
