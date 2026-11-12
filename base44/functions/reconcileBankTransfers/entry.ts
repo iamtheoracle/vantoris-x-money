@@ -24,8 +24,8 @@ export default async function(req: Request): Promise<Response> {
       return Response.json({ error: 'Plaid environment is not configured.' }, { status: 503 });
     }
     const clearingLedgerAccountIds = {
-      ACH: Deno.env.get('VANTORIS_ACH_CLEARING_LEDGER_ACCOUNT_ID') || '',
-      FEDWIRE: Deno.env.get('VANTORIS_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID') || '',
+      ACH: Deno.env.get('VANTAGE_ACH_CLEARING_LEDGER_ACCOUNT_ID') || '',
+      FEDWIRE: Deno.env.get('VANTAGE_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID') || '',
     };
     const body = await req.json().catch(() => null);
     const limit = Number.isInteger(body?.limit) ? Math.min(Math.max(body.limit,1),100) : 50;
