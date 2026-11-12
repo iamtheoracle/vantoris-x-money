@@ -67,8 +67,8 @@ export default function MemberSidebar() {
       <div className="flex items-center gap-3 border-b border-white/10 px-5 py-6">
         <ShieldLogo size={40} theme="dark" variant="metallic" />
         <div className="min-w-0">
-          <p className="truncate font-serif text-[19px] leading-tight tracking-wide text-white">Vantoris</p>
-          <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#D4AF37]">Private Institution</p>
+          <p className="truncate font-serif text-[19px] leading-tight tracking-wide text-white">Vantage</p>
+          <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#D4AF37]">Private Investment</p>
         </div>
       </div>
 
@@ -108,7 +108,7 @@ export default function MemberSidebar() {
 
       <div className="border-t border-white/10 px-5 py-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">Private client workspace</p>
-        <p className="mt-1 text-[10px] text-white/30">Vantoris Private Institution</p>
+        <p className="mt-1 text-[10px] text-white/30">Vantage Private Investment</p>
       </div>
     </aside>
   );
