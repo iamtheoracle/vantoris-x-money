@@ -12,7 +12,7 @@ const gates = [
   'Obtain written bank approval for ACH origination/receipt and Fedwire origination/receipt',
   'Confirm bank-approved instructions, limits, cutoffs, fees and return/recall procedures',
   'Approve member disclosures, fraud screening and sanctions controls',
-  'Set VANTORIS_PROVIDER_SUBMISSION_ENABLED only after written sponsor-bank authorization and compliance approval',
+  'Set VANTAGE_PROVIDER_SUBMISSION_ENABLED only after written sponsor-bank authorization and compliance approval',
   'Test role separation, dual approval, idempotency and immutable audit events',
   'Reconcile bank statements and bank-generated payment references before marking settled',
 ];
