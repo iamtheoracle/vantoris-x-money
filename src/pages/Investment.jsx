@@ -279,9 +279,9 @@ export default function Investment() {
                   <div key={r.id} className="vantoris-glass-flat p-3 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground">Withdrawal · {amountFor(r.amount, r.currency || r.currency_code)}</p>
-                      <p className="text-xs text-gray capitalize">{r.status.replace(/_/g, ' ')}</p>
+                      <p className="text-xs text-gray capitalize">{r.status ? String(r.status).replace(/_/g, ' ') : 'Status not supplied'}</p>
                     </div>
-                    <span className="text-xs text-brass font-medium">Pending</span>
+                    <span className="text-xs text-brass font-medium">Recorded</span>
                   </div>
                 ))}
               </div>
