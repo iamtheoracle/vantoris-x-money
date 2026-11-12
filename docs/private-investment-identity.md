@@ -33,7 +33,7 @@ The four short editorial entries are independent historical notes. They do not i
 
 - Milestone: 1397, Florence.
 - Note: the Medici Bank was established in 1397; its later branches handled deposits, exchange, bills of exchange and merchant finance.
-- Historical reference: Raymond de Roover, *The Rise and Decline of the Medici Bank, 1397–1494* — https://gwern.net/doc/history/medici/1963-deroover-theriseanddeclineofthemedicibank.pdf
+- Historical reference: Raymond de Roover, *The Rise and Decline of the Medici Bank, 1397–1494* — https://www.fulcrum.org/concern/monographs/gh93gz54c
 - Portrait: Agnolo Bronzino workshop portrait of Giovanni di Bicci de' Medici — Wikimedia Commons file page: https://commons.wikimedia.org/wiki/File:Giovanni_di_Bicci_de%27_Medici_Portrait_by_Agnolo_Bronzino.jpg
 
 ### Sir Francis Baring
