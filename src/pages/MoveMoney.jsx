@@ -218,8 +218,9 @@ export default function MoveMoney() {
 }
 
 function BankTransferPanel({accounts,onClose}) {
+  const eligibleAccounts = accounts.filter((account) => account.currency === 'USD' && account.status === 'active');
   const [rail,setRail]=useState('ACH');
-  const [accountId,setAccountId]=useState(accounts[0]?.id||'');
+  const [accountId,setAccountId]=useState(eligibleAccounts[0]?.id||'');
   const [amount,setAmount]=useState('');
   const [beneficiary,setBeneficiary]=useState('');
   const [bank,setBank]=useState('');
@@ -234,7 +235,7 @@ function BankTransferPanel({accounts,onClose}) {
     if(!Number.isFinite(dollars)||dollars<=0||Math.round(dollars*100)!==dollars*100) {
       toast({title:'Enter a valid amount',description:'Use dollars and cents, for example 125.00.',variant:'destructive'}); return;
     }
-    if(!accountId||!beneficiary.trim()||!bank.trim()||!/^\d{9}$/.test(routing)||!/^\d{4}$/.test(last4)) {
+    if(!eligibleAccounts.some((account) => account.id === accountId)||!beneficiary.trim()||!bank.trim()||!/^\d{9}$/.test(routing)||!/^\d{4}$/.test(last4)) {
       toast({title:'Complete the transfer details',description:'Check the beneficiary, bank, 9-digit routing number and account last four.',variant:'destructive'}); return;
     }
     setBusy(true);
@@ -253,8 +254,9 @@ function BankTransferPanel({accounts,onClose}) {
   }
   return <Sheet title="U.S. bank transfer" subtitle="Secure transfer request intake" onClose={onClose}>
     <form onSubmit={submit} className="space-y-4">
+      {!eligibleAccounts.length && <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">No active account with a verified USD currency record is available. No transfer request can be submitted from this screen.</p>}
       <div><label className="block text-xs text-gray mb-2">Transfer rail</label><select value={rail} onChange={e=>setRail(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"><option value="ACH">ACH transfer</option><option value="FEDWIRE">Domestic Fedwire</option></select></div>
-      <div><label className="block text-xs text-gray mb-2">From Vantoris account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{accounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · •••• {String(a.account_number||'').slice(-4)}</option>)}</select></div>
+      <div><label className="block text-xs text-gray mb-2">From Vantoris account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{eligibleAccounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · •••• {String(a.account_number||'').slice(-4)}</option>)}</select></div>
       <div><label className="block text-xs text-gray mb-2">Amount (USD)</label><input required inputMode="decimal" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
       <div><label className="block text-xs text-gray mb-2">Beneficiary full name</label><input required maxLength={120} value={beneficiary} onChange={e=>setBeneficiary(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
       <div><label className="block text-xs text-gray mb-2">Beneficiary bank</label><input required maxLength={120} value={bank} onChange={e=>setBank(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
@@ -262,7 +264,7 @@ function BankTransferPanel({accounts,onClose}) {
       <div><label className="block text-xs text-gray mb-2">Beneficiary account last four digits</label><input required inputMode="numeric" maxLength={4} value={last4} onChange={e=>setLast4(e.target.value.replace(/\D/g,'').slice(0,4))} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
       <div><label className="block text-xs text-gray mb-2">Memo (optional)</label><input maxLength={140} value={memo} onChange={e=>setMemo(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
       <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950">This records a request for review only. An accepted request may reserve funds from available balance; no bank submission, settlement, or transfer confirmation occurs here.</div>
-      <button disabled={busy||!accounts.length} className="w-full h-12 rounded-xl bg-navy text-white font-semibold disabled:opacity-50">{busy?'Submitting request…':'Submit transfer request'}</button>
+      <button disabled={busy||!eligibleAccounts.length} className="w-full h-12 rounded-xl bg-navy text-white font-semibold disabled:opacity-50">{busy?'Submitting request…':'Submit transfer request'}</button>
     </form>
   </Sheet>;
 }
