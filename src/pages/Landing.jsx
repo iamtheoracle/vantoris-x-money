@@ -493,7 +493,7 @@ export default function Landing() {
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">Provider connectivity</p>
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-navy">Services, backed by real connections</h2>
             <p className="mt-4 max-w-3xl text-slate-600 leading-relaxed">
-              AVCU displays a service as connected only when its production provider is configured and verified.
+              Vantoris displays a service as connected only when its production provider is configured and verified.
               Internal records, sample artwork, and design concepts are not presented as live banking or payment services.
             </p>
             <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -821,7 +821,7 @@ export default function Landing() {
                   authorized data providers. No sample listing or estimated payment is presented as live market data.
                 </p>
                 <Link to="/login?intent=housing" className="mt-5 block w-full text-center rounded-full bg-navy text-white py-2.5 text-sm font-bold hover:bg-navy/90">
-                  Sign in to AVCU
+                  Sign in to Vantoris
                 </Link>
               </div>
             </div>
