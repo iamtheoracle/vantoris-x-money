@@ -494,6 +494,17 @@ button, a, input, select { touch-action: manipulation; }
 .financial-heritage--compact .heritage-card__footer { display: none; }
 
 .private-card-gallery { width: 100%; }
+.private-card-gallery__actions { display: flex; justify-content: flex-end; margin-bottom: .65rem; }
+.private-card-gallery__print-action {
+  border: 1px solid #B89B62;
+  border-radius: 999px;
+  background: #102638;
+  color: #F7F5EF;
+  padding: .55rem 1rem;
+  font: 600 .72rem/1.2 Inter, sans-serif;
+  letter-spacing: .04em;
+}
+.private-card-gallery__print-action:hover { background: #18384E; }
 .private-card-gallery__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -561,5 +572,10 @@ button, a, input, select { touch-action: manipulation; }
   .heritage-card__story { min-height: 0; font-size: 8pt; }
   .private-card-gallery__grid { grid-template-columns: repeat(2, 3.375in); justify-content: center; gap: .22in; }
   .private-card-art img { width: 3.375in; height: 2.125in; border-radius: .12in; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-  .private-card-gallery__note, .private-card-art figcaption { display: none; }
+  .private-card-gallery__note, .private-card-art figcaption, .private-card-gallery__actions { display: none !important; }
+  body.print-private-card-art * { visibility: hidden !important; }
+  body.print-private-card-art .private-card-gallery,
+  body.print-private-card-art .private-card-gallery * { visibility: visible !important; }
+  body.print-private-card-art .private-card-gallery { position: fixed; inset: 0 auto auto 0; width: 100%; background: #fff; padding: .2in; }
+  body.print-private-card-art .private-card-gallery__grid { grid-template-columns: repeat(2, 3.375in); justify-content: center; gap: .22in; }
 }
