@@ -183,10 +183,10 @@ export default function Home() {
   return (
     <div className="min-h-screen w-full max-w-7xl mx-auto bg-[#F4F6F9] text-navy relative">
       <header className="sticky top-0 z-20 flex items-center justify-between px-4 lg:px-8 pt-3 pb-2 bg-[#F4F6F9]/95 backdrop-blur-md">
-        <div className="w-9" />
-        <div className="text-center flex-1">
+        <div className="w-9 lg:hidden" />
+        <div className="text-center flex-1 lg:text-left">
           <h1 className="text-[17px] font-bold leading-tight text-navy">Home</h1>
-          <p className="text-[13px] text-slate-500 flex items-center justify-center gap-1.5">
+          <p className="text-[13px] text-slate-500 flex items-center justify-center lg:justify-start gap-1.5">
             {firstName}
             <span className="inline-block w-1 h-1 rounded-full bg-brass" />
             Private client
