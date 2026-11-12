@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, RefreshCw, Search, Wallet, AlertTriangle, ArrowDownLeft, ArrowUpRight, FileText, Upload, LockKeyhole } from 'lucide-react';
+import { ArrowLeft, Search, AlertTriangle, ArrowDownLeft, ArrowUpRight, FileText, Upload, LockKeyhole } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
 
 function formatRecordedAmount(value, currency) {
