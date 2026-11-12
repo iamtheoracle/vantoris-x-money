@@ -13,7 +13,7 @@ const TIER_CONFIG = {
 
 export default function ProfileHeader({ user, application, profileCompletion, bankingTier }) {
   const whatsappNumber = useWhatsAppConfig();
-  const kycStatus = application?.kyc_status || 'not_started';
+  const kycStatus = application?.kyc_status || 'not_supplied';
   const isVerified = kycStatus === 'approved';
   const memberSince = user.created_date
     ? new Date(user.created_date).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })
@@ -61,6 +61,8 @@ export default function ProfileHeader({ user, application, profileCompletion, ba
                 </span>
               ) : kycStatus === 'pending' ? (
                 <span className="px-2 py-0.5 bg-brass/10 text-brass rounded-md text-[10px] font-bold uppercase tracking-wider">Pending KYC</span>
+              ) : kycStatus === 'not_supplied' ? (
+                <span className="px-2 py-0.5 bg-slate-100 text-gray rounded-md text-[10px] font-bold uppercase tracking-wider">Verification status not supplied</span>
               ) : (
                 <span className="px-2 py-0.5 bg-slate-100 text-gray rounded-md text-[10px] font-bold uppercase tracking-wider">Unverified</span>
               )}
