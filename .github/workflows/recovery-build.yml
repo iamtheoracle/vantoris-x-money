@@ -4,7 +4,7 @@ on:
   push:
     branches: [recovery/merge-vantoris-live]
   pull_request:
-    branches: [main]
+    branches: [main, recovery/merge-vantoris-live]
   workflow_dispatch:
 
 concurrency:
