@@ -9,7 +9,8 @@ const FIGURES = [
     story: "In 1397, Giovanni established the Medici Bank in Florence. Its later network of branches handled deposits, currency exchange, bills of exchange and merchant finance across major European trading centres.",
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/Giovanni_di_Bicci_de%27_Medici_Portrait_by_Agnolo_Bronzino.jpg",
     imageAlt: "Renaissance portrait of Giovanni di Bicci de' Medici",
-    imageCredit: "Agnolo Bronzino, after Cristofano dell'Altissimo · Wikimedia Commons · Public domain",
+    imageCredit: "Workshop of Bronzino · Wikimedia Commons · Public domain in the United States",
+    imageSource: "https://commons.wikimedia.org/wiki/File:Giovanni_di_Bicci_de%27_Medici_Portrait_by_Agnolo_Bronzino.jpg",
     source: "https://www.fulcrum.org/concern/monographs/gh93gz54c",
     sourceLabel: "Raymond de Roover, The Rise and Decline of the Medici Bank",
   },
@@ -21,7 +22,8 @@ const FIGURES = [
     story: "Francis Baring established a London trading house in 1762. It grew into a major merchant-banking firm, advising governments and helping finance international trade and public borrowing.",
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/Sir_Francis_Baring.jpg",
     imageAlt: "Portrait of Sir Francis Baring",
-    imageCredit: "Benjamin West · Wikimedia Commons · Public domain",
+    imageCredit: "Benjamin West · The Baring Archive / Wikimedia Commons · Public domain",
+    imageSource: "https://commons.wikimedia.org/wiki/File:Sir_Francis_Baring.jpg",
     source: "https://www.npg.org.uk/collections/search/person/mp00249/sir-francis-baring-1st-bt",
     sourceLabel: "National Portrait Gallery · Sir Francis Baring",
   },
@@ -33,7 +35,8 @@ const FIGURES = [
     story: "After trading in rare coins, Mayer Amschel received the title of Court Agent in 1769, marking the expansion of his business into financial services. In 1810, he formalised a partnership with his sons; the family later established banking houses in London, Paris, Vienna and Naples.",
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/The_visit_of_William_I%2C_Elector_of_Hesse_to_Amschel_Mayer_de_Rothschild_%281744-1812%29.jpg",
     imageAlt: "Historical painting depicting Mayer Amschel Rothschild receiving William I, Elector of Hesse",
-    imageCredit: "Moritz Daniel Oppenheim · Wikimedia Commons · Public domain",
+    imageCredit: "Moritz Daniel Oppenheim · Royal Collection Trust / Wikimedia Commons · Public domain",
+    imageSource: "https://commons.wikimedia.org/wiki/File:The_visit_of_William_I,_Elector_of_Hesse_to_Amschel_Mayer_de_Rothschild_(1744-1812).jpg",
     source: "https://www.rothschildarchive.org/exhibitions/timeline/",
     sourceLabel: "The Rothschild Archive · Timeline and partnership history",
   },
@@ -43,9 +46,10 @@ const FIGURES = [
     milestone: "1871 · New York",
     title: "Capital for an industrial age",
     story: "In 1871, Morgan and Anthony Drexel formed Drexel, Morgan & Co. The partnership was reorganised as J.P. Morgan & Co. in 1895 and became closely associated with the financing of railroads and major American enterprises.",
-    image: "https://upload.wikimedia.org/wikipedia/commons/8/8b/J.P._Morgan.jpg",
+    image: "https://commons.wikimedia.org/wiki/Special:FilePath/J.P._Morgan.jpg",
     imageAlt: "Black-and-white studio portrait of J. Pierpont Morgan",
-    imageCredit: "Historical studio portrait · Wikimedia Commons · Public domain",
+    imageCredit: "Pach Brothers, 1902 · The Henry Ford / Wikimedia Commons · Public domain in the United States",
+    imageSource: "https://commons.wikimedia.org/wiki/File:J.P._Morgan.jpg",
     source: "https://www.themorgan.org/morgan-syndicate-books",
     sourceLabel: "The Morgan Library & Museum · Syndicate records",
   },
@@ -86,6 +90,7 @@ export default function FinancialHeritage({ compact = false, className = "" }) {
               <p className="heritage-card__story">{figure.story}</p>
               <div className="heritage-card__footer">
                 <span>{figure.imageCredit}</span>
+                <a href={figure.imageSource} target="_blank" rel="noreferrer" aria-label={`Open portrait record for ${figure.name}`} title="Portrait source and rights">Image</a>
                 <a href={figure.source} target="_blank" rel="noreferrer" aria-label={`Read source for ${figure.name}`} title={figure.sourceLabel}>Source ↗</a>
               </div>
             </div>
