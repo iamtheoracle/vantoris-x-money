@@ -35,16 +35,16 @@ Deno.test('Vantoris provider idempotency key is stable and member-scoped',async(
   assertEquals(first.length,36);
 });
 
-const enabled = !!Deno.env.get('VANTORIS_LEDGER_TEST_DATABASE_URL');
+const enabled = !!Deno.env.get('VANTAGE_LEDGER_TEST_DATABASE_URL');
 Deno.test({
   name: 'Vantoris PostgreSQL payment store integration',
   ignore: !enabled,
   sanitizeOps: false,
   sanitizeResources: false,
   async fn() {
-    const testUrl=Deno.env.get('VANTORIS_LEDGER_TEST_DATABASE_URL');
-    if(!testUrl) throw new Error('VANTORIS_LEDGER_TEST_DATABASE_URL is required for integration tests.');
-    Deno.env.set('VANTORIS_LEDGER_DATABASE_URL',testUrl);
+    const testUrl=Deno.env.get('VANTAGE_LEDGER_TEST_DATABASE_URL');
+    if(!testUrl) throw new Error('VANTAGE_LEDGER_TEST_DATABASE_URL is required for integration tests.');
+    Deno.env.set('VANTAGE_LEDGER_DATABASE_URL',testUrl);
     const key = `test-${crypto.randomUUID()}`;
     try {
       const claims = await Promise.all(Array.from({length:20},()=>claimPaymentOperation({
@@ -82,7 +82,7 @@ Deno.test({
       const accountA=crypto.randomUUID(), accountB=crypto.randomUUID();
       // Test fixture accounts are intentionally unique and isolated.
       const postgres = (await import('npm:postgres@3.4.7')).default;
-      const db=postgres(Deno.env.get('VANTORIS_LEDGER_DATABASE_URL')!,{ssl:'require',prepare:false});
+      const db=postgres(Deno.env.get('VANTAGE_LEDGER_DATABASE_URL')!,{ssl:'require',prepare:false});
       await db`INSERT INTO avcu_payments.ledger_accounts(id,external_account_ref,account_type) VALUES
         (${accountA},${'test:'+accountA},'member_deposit'),
         (${accountB},${'test:'+accountB},'bank_clearing')`;
