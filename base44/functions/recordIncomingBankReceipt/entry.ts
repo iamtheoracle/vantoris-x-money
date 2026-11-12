@@ -33,6 +33,7 @@ export default async function(req: Request): Promise<Response> {
       }
       const account=await base44.asServiceRole.entities.Account.get(accountId);
       if(!account||account.user_id!==memberUserId||account.status!=='active') return Response.json({error:'Target member account is unavailable or does not belong to that member.'},{status:404});
+      if(account.currency!=='USD') return Response.json({error:'Target member account does not have a verified USD currency record. No receipt was recorded.'},{status:409});
 
       const transactional = await recordIncomingReceipt({
         rail:rail as 'ACH'|'FEDWIRE', bankReference,
