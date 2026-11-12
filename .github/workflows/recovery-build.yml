@@ -48,7 +48,7 @@ jobs:
           deno test --node-modules-dir=auto --allow-read=migrations,base44/entities,base44/functions/_shared tests/avcu-payment-migration.test.ts
           deno test --node-modules-dir=auto tests/financial-formatting.test.ts
           deno test --node-modules-dir=auto --allow-read=public/card-art,src/components/vantoris,src/pages,src/index.css tests/heritage-and-card-art.test.ts
-          deno test --node-modules-dir=auto --allow-read=base44/functions,src/pages,src/components/vantoris/widgets tests/operational-truthfulness.test.ts
+          deno test --node-modules-dir=auto --allow-read=base44/functions,src/pages,src/components/vantoris tests/operational-truthfulness.test.ts
       - name: Prevent direct browser AI execution paths
         run: |
           node --input-type=module <<'NODE'
