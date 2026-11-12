@@ -32,7 +32,7 @@ export default function HambrosTribute() {
 
           <div>
             <p className="font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[#8B6C35]">A separate corner of remembrance</p>
-            <h2 id="hambros-tribute-title" className="mt-3 font-heading text-4xl leading-tight text-[#102638] sm:text-5xl">In honour of Hambros Bank</h2>
+            <h2 id="hambros-tribute-title" className="mt-3 font-display text-4xl leading-tight text-[#102638] sm:text-5xl">In honour of Hambros Bank</h2>
             <p className="mt-5 max-w-2xl text-base leading-relaxed text-slate-700">
               This corner respectfully records Hambros Bank’s London roots, merchant-banking tradition and place in the history of the City. It is an independent historical tribute and makes no claim of succession, ownership, partnership, endorsement or affiliation.
             </p>
