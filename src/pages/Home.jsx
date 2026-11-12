@@ -185,11 +185,11 @@ export default function Home() {
       <header className="sticky top-0 z-20 flex items-center justify-between px-4 pt-3 pb-2 bg-[#F4F6F9]/95 backdrop-blur-md">
         <div className="w-9" />
         <div className="text-center flex-1">
-          <h1 className="text-[17px] font-bold leading-tight text-navy">Money</h1>
+          <h1 className="text-[17px] font-bold leading-tight text-navy">Home</h1>
           <p className="text-[13px] text-slate-500 flex items-center justify-center gap-1.5">
             {firstName}
             <span className="inline-block w-1 h-1 rounded-full bg-brass" />
-            Cash
+            Private client
           </p>
         </div>
         <div className="flex items-center gap-0.5">
@@ -242,24 +242,32 @@ export default function Home() {
         {tab === 'account' && (
           <section>
             <div className="rounded-[22px] bg-gradient-to-br from-navy via-[#0A2342] to-[#0E2A4A] text-white p-6 mb-5 shadow-[0_12px_32px_rgba(7,28,56,0.22)]">
-              <p className="text-[13px] text-white/65 mb-1 font-medium">Available balance</p>
-              <p className="text-[36px] font-bold tracking-tight tabular-nums leading-none">
-                {hidden ? '••••••' : formatCurrency(balance)}
-              </p>
-              {wealth > 0 && (
+              <p className="text-[11px] text-white/55 uppercase tracking-[0.16em] mb-2 font-semibold">Account overview</p>
+              {dataIssues.accounts ? (
+                <>
+                  <p className="text-xl font-semibold">Account information unavailable</p>
+                  <p className="mt-2 text-sm leading-6 text-white/65">We could not retrieve your account records. No balance or account status has been changed.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[30px] font-semibold tracking-tight tabular-nums leading-tight">
+                    {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-white/65">Individual recorded balances are shown by account below. A consolidated figure is withheld until currency and valuation sources are verified.</p>
+                </>
+              )}
+              {dataIssues.investments ? (
+                <p className="mt-4 pt-3 border-t border-white/10 text-sm text-white/65">Investment information is currently unavailable.</p>
+              ) : (
                 <button
                   type="button"
                   onClick={() => navigate('/investment')}
-                  className="mt-3 text-[13px] text-brass inline-flex items-center gap-1 font-medium"
+                  className="mt-4 pt-3 border-t border-white/10 w-full text-left text-[13px] text-brass inline-flex items-center gap-1 font-medium"
                 >
-                  + {hidden ? '••••' : formatCurrency(wealth)} invested
+                  Open investment workspace
+                  {portfolios.length > 0 ? ' · ' + portfolios.length + (portfolios.length === 1 ? ' portfolio' : ' portfolios') : ''}
                   <ChevronRight size={14} />
                 </button>
-              )}
-              {accounts.length > 0 && (
-                <p className="mt-3 text-[12px] text-white/50">
-                  {accounts.length} account{accounts.length === 1 ? '' : 's'} · Vantoris
-                </p>
               )}
             </div>
 
@@ -305,19 +313,17 @@ export default function Home() {
                 </button>
               </div>
 
-              {accounts.length === 0 ? (
+              {dataIssues.accounts ? (
+                <div role="status" className="rounded-[20px] bg-amber-50 border border-amber-200 p-5">
+                  <p className="text-[15px] font-semibold text-amber-950">Account information could not be loaded</p>
+                  <p className="text-[13px] text-amber-900/80 mt-1">This is a data-access error, not confirmation that you have no accounts. Please try again later or contact support.</p>
+                </div>
+              ) : accounts.length === 0 ? (
                 <div className="rounded-[20px] bg-white border border-slate-200/80 p-5 text-center">
-                  <p className="text-[15px] font-semibold text-navy">No accounts yet</p>
+                  <p className="text-[15px] font-semibold text-navy">No accounts linked</p>
                   <p className="text-[13px] text-slate-500 mt-1">
-                    Accounts linked to your membership will appear here.
+                    Account records will appear here once they are linked to your membership.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => openQuick('deposit')}
-                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-navy text-white px-5 py-2.5 text-[14px] font-semibold"
-                  >
-                    <Plus size={16} /> Make a deposit
-                  </button>
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -391,7 +397,13 @@ export default function Home() {
               </button>
             </div>
 
-            {cards.length > 0 ? (
+            {dataIssues.cards ? (
+              <div role="status" className="w-full rounded-[18px] bg-amber-50 border border-amber-200 p-5 text-left mb-3">
+                <p className="text-[12px] uppercase tracking-wider text-amber-800">Card services</p>
+                <h2 className="text-lg font-semibold text-amber-950 mt-1">Card information unavailable</h2>
+                <p className="text-[14px] text-amber-900/80 mt-1">We could not verify your current card status. This does not mean a card has not been issued.</p>
+              </div>
+            ) : cards.length > 0 ? (
               <button
                 type="button"
                 onClick={() => navigate('/services')}
@@ -499,7 +511,12 @@ export default function Home() {
         {tab === 'activity' && (
           <section>
             <h2 className="text-[15px] font-bold text-navy mb-3">Recent activity</h2>
-            {transactions.length === 0 ? (
+            {dataIssues.activity ? (
+              <div role="status" className="rounded-[20px] bg-amber-50 border border-amber-200 p-8 text-center">
+                <p className="text-[15px] font-semibold text-amber-950">Activity unavailable</p>
+                <p className="text-[13px] text-amber-900/80 mt-1">We could not retrieve recent activity. No transaction status has been changed.</p>
+              </div>
+            ) : transactions.length === 0 ? (
               <div className="rounded-[20px] bg-white border border-slate-200/70 p-8 text-center">
                 <p className="text-[15px] font-semibold text-navy">No recent transactions</p>
                 <p className="text-[13px] text-slate-500 mt-1">
