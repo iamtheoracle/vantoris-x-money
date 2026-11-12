@@ -11,6 +11,8 @@ import { getDefaultWorkspace, getDomainsForRole } from '@/lib/operationsAccess';
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authError, setAuthError] = useState(false);
   const [activeWorkspace, setActiveWorkspace] = useState(null);
   const location = useLocation();
 
@@ -19,18 +21,42 @@ export default function AdminLayout() {
     base44.auth.me()
       .then((authenticatedUser) => {
         if (cancelled) return;
-        setUser(authenticatedUser);
+        if (!authenticatedUser?.id) {
+          setAuthError(true);
+          return;
+        }
         const allowedWorkspaces = getDomainsForRole(authenticatedUser.role);
-        const saved = localStorage.getItem('vantoris_workspace');
+        if (!allowedWorkspaces.length) {
+          setAuthError(true);
+          return;
+        }
+        let saved = null;
+        try {
+          saved = localStorage.getItem('vantoris_workspace');
+        } catch {
+          // Workspace preference is optional and never grants access.
+        }
         const defaultWorkspace = getDefaultWorkspace(authenticatedUser.role);
         const initialWorkspace = allowedWorkspaces.includes(saved)
           ? saved
-          : (allowedWorkspaces.includes(defaultWorkspace) ? defaultWorkspace : allowedWorkspaces[0] || 'management');
+          : (allowedWorkspaces.includes(defaultWorkspace) ? defaultWorkspace : allowedWorkspaces[0]);
+        if (!initialWorkspace || !allowedWorkspaces.includes(initialWorkspace)) {
+          setAuthError(true);
+          return;
+        }
+        setUser(authenticatedUser);
         setActiveWorkspace(initialWorkspace);
-        if (saved !== initialWorkspace) localStorage.setItem('vantoris_workspace', initialWorkspace);
+        try {
+          if (saved !== initialWorkspace) localStorage.setItem('vantoris_workspace', initialWorkspace);
+        } catch {
+          // A storage failure must not change the server-derived access decision.
+        }
       })
       .catch(() => {
-        if (!cancelled) setActiveWorkspace('management');
+        if (!cancelled) setAuthError(true);
+      })
+      .finally(() => {
+        if (!cancelled) setAuthLoading(false);
       });
     return () => {
       cancelled = true;
@@ -48,10 +74,26 @@ export default function AdminLayout() {
     localStorage.setItem('vantoris_workspace', workspace);
   }
 
-  if (!user) {
+  if (authLoading) {
     return (
       <div className="flex items-center justify-center min-h-[100dvh] w-full vantoris-mesh-bg">
         <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (authError || !user || !activeWorkspace) {
+    return (
+      <div className="flex min-h-[100dvh] w-full items-center justify-center bg-[#F4F6F9] p-6">
+        <section role="alert" className="w-full max-w-md rounded-2xl border border-amber-200 bg-white p-7 shadow-sm">
+          <h1 className="text-lg font-semibold text-navy">Staff access could not be verified</h1>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            We could not verify an active staff session and an authorized operations workspace. No staff workspace was opened.
+          </p>
+          <a href="/login" className="mt-5 inline-flex rounded-full bg-navy px-5 py-2.5 text-sm font-semibold text-white">
+            Return to sign in
+          </a>
+        </section>
       </div>
     );
   }
