@@ -59,7 +59,7 @@ export default function BrandIdentity() {
           <div className="relative z-10 flex flex-col items-center gap-6">
             <VantorisLogo layout="vertical" size={88} variant="metallic" theme="dark" showTagline />
             <p className="text-white/60 text-sm max-w-md leading-relaxed">
-              A timeless brand identity for a world-class private financial institution —
+              A timeless brand identity for a world-class private investment institution —
               engineered with precision, restraint, and institutional confidence.
             </p>
           </div>
