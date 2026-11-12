@@ -47,7 +47,7 @@ The four short editorial entries are independent historical notes. They do not i
 
 - Milestone: 1769, Frankfurt; partnership formalised in 1810.
 - Note: a coin-trading business expanded into financial services; the partnership with his sons preceded the establishment of family banking houses in several European cities.
-- Historical reference: The Rothschild Archive — https://www.rothschildarchive.org/business/
+- Historical reference: The Rothschild Archive — https://www.rothschildarchive.org/exhibitions/timeline/
 - Image: Moritz Daniel Oppenheim, *The Visit of William I, Elector of Hesse to Amschel Mayer de Rothschild* — Wikimedia Commons file page: https://commons.wikimedia.org/wiki/File:The_visit_of_William_I,_Elector_of_Hesse_to_Amschel_Mayer_de_Rothschild_(1744-1812).jpg
 
 ### J. Pierpont Morgan
