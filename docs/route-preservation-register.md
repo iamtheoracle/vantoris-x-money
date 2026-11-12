@@ -183,3 +183,11 @@ The current `.github/workflows/recovery-build.yml` declares `pull_request` targe
 ## Current CI result
 
 The Recovery build check associated with the updated PR head started, completed the dependency installation and passed the JavaScript syntax check for `netlify/functions/ask.mjs`, then was **cancelled during Deno setup**. The Oracle runtime tests, entity/security validation, lint, typecheck and production build were skipped. This is neither a pass nor a code failure; a complete CI run remains outstanding.
+
+
+## CI investigation and correction
+
+- The first complete Deno run exposed a misplaced assertion: the migration test expected runtime SQL locking text inside the migration file, although `FOR UPDATE SKIP LOCKED` is correctly implemented in the worker source. The test now checks the migration's claimable-row index and separately checks the worker implementation.
+- The next run then exposed a workflow permission defect: the migration test reads `base44/functions/_shared/paymentStore.ts`, but the Deno command granted read access only to `migrations` and `base44/entities`.
+- The workflow permission was corrected on `recovery/merge-vantoris-live` (the PR base branch) to include `base44/functions/_shared`. A fresh PR-triggered run is required to verify this correction and continue through the AI-path checks, entity/RLS validation, lint, typecheck and build.
+- The PostgreSQL integration test was **ignored** because `AVCU_LEDGER_TEST_DATABASE_URL` was not present in the CI environment. This means no PostgreSQL concurrency/ledger integration result has been established by these runs.
