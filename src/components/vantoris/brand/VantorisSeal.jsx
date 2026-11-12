@@ -1,6 +1,5 @@
 import React, { useId } from 'react';
-import VantorisMonogram from './VantorisMonogram';
-import { VANTAGE_COLORS } from './VantorisMonogram';
+import VantorisMonogram, { VANTAGE_COLORS } from './VantorisMonogram';
 
 /**
  * Vantage Private Investment seal — circular institutional seal for official documents,
@@ -10,7 +9,7 @@ export default function VantorisSeal({ size = 160, theme = 'light', className = 
   const uid = useId().replace(/:/g, '');
   const gid = `seal-${uid}`;
   const isDark = theme === 'dark';
-  const ringColor = isDark ? VANTAGE_COLORS.champagneGold : VANTORIS_COLORS.executiveBlue;
+  const ringColor = isDark ? VANTAGE_COLORS.champagneGold : VANTAGE_COLORS.executiveBlue;
   const textColor = isDark ? 'rgba(248,250,252,0.7)' : 'rgba(18,58,110,0.8)';
 
   // circular text via textPath
