@@ -51,7 +51,7 @@ export default function InvestmentWithdrawals() {
           {requests.map((request) => (
             <article key={request.id} className="vantoris-glass p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-foreground">{formatCurrency(request.amount)}</p>
+                <p className="text-sm font-bold text-foreground">{formatCurrency(request.amount, request.currency || request.currency_code || null)}</p>
                 <p className="text-xs text-gray mt-0.5">
                   Submitted: {request.created_date?.substring(0, 10) || 'Date unavailable'} · Status: <span className="capitalize">{String(request.status || 'unknown').replace(/_/g, ' ')}</span>
                 </p>
