@@ -47,6 +47,7 @@ jobs:
           deno test --node-modules-dir=auto --allow-env --allow-net tests/avcu-payment-store.test.ts
           deno test --node-modules-dir=auto --allow-read=migrations,base44/entities,base44/functions/_shared tests/avcu-payment-migration.test.ts
           deno test --node-modules-dir=auto tests/financial-formatting.test.ts
+          deno test --node-modules-dir=auto tests/heritage-and-card-art.test.ts
       - name: Prevent direct browser AI execution paths
         run: |
           node --input-type=module <<'NODE'
