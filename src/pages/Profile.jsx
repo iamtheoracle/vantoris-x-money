@@ -24,21 +24,22 @@ export default function Profile() {
   const [showDelete, setShowDelete] = useState(false);
   const [referralLink, setReferralLink] = useState('');
   const [phase, setPhase] = useState(0);
+  const [loadError, setLoadError] = useState('');
 
-  useEffect(() => { loadProfile(); }, []);
+  useEffect(() => { loadProfile().catch(() => setLoadError('Some profile records are unavailable. Displayed sections may be incomplete.')); }, []);
 
   async function loadProfile() {
     // Phase 1: User + Application (immediate)
     const me = await base44.auth.me();
-    if (me && me.role === 'user' && !me.referral_code) {
-      const code = generateReferralCode(me.id);
-      await base44.auth.updateMe({ referral_code: code });
-      me.referral_code = code;
+    if (!me?.id) {
+      setLoadError('An authenticated profile could not be retrieved.');
+      return;
     }
     setUser(me);
-    setReferralLink(`${window.location.origin}/register?ref=${me.referral_code || ''}`);
+    setReferralLink(me.referral_code ? `${window.location.origin}/register?ref=${me.referral_code}` : '');
 
     const apps = await base44.entities.Application.filter({ user_id: me.id });
+    if (!Array.isArray(apps)) throw new Error('Application records returned an invalid response.');
     setApplication(apps[0] || null);
     setPhase(1);
 
@@ -48,6 +49,7 @@ export default function Profile() {
       base44.entities.HeroBoxProfile.filter({ user_id: me.id }),
       base44.entities.HeroBoxRequest.filter({ user_id: me.id }),
     ]);
+    if (![accts, heroProfs, heroReqs].every(Array.isArray)) throw new Error('Product records returned an invalid response.');
     setAccounts(accts);
     setHeroProfile(heroProfs[0] || null);
     setHeroRequests(heroReqs);
@@ -64,6 +66,7 @@ export default function Profile() {
       base44.entities.Notification.filter({ user_id: me.id }, '-created_date', 5),
       base44.entities.AuditLog.filter({ target_user_id: me.id }, '-created_date', 5).catch(() => []),
     ]);
+    if (!Array.isArray(txnResults) || !Array.isArray(heroActs) || !Array.isArray(notifs) || !Array.isArray(auditEntries)) throw new Error('Activity records returned an invalid response.');
     setTransactions(txnResults.flat());
     setHeroActivities(heroActs);
     setNotifications(notifs);
@@ -74,6 +77,10 @@ export default function Profile() {
     const docs = await base44.entities.Document.filter({ user_id: me.id }).catch(() => []);
     setDocuments(docs);
     setPhase(4);
+  }
+
+  if (!user && loadError) {
+    return <div role="alert" className="mx-auto max-w-xl p-6 text-center text-sm text-amber-900">{loadError}</div>;
   }
 
   if (!user) {
@@ -89,11 +96,7 @@ export default function Profile() {
   const hasHeroBox = !!heroProfile;
   const hasDocuments = documents.length > 0;
 
-  const totalAssets = accounts.reduce((s, a) => s + (a.balance || 0), 0);
-  const bankingTier = totalAssets >= 50000 ? 'Private Client'
-    : totalAssets >= 10000 ? 'Premier'
-    : totalAssets >= 1000 ? 'Preferred'
-    : 'Member';
+  const bankingTier = application?.banking_tier || user.banking_tier || 'Tier not assigned';
 
   const profileCompletion = [
     user.full_name ? 25 : 0,
@@ -104,6 +107,7 @@ export default function Profile() {
 
   return (
     <div className="px-5 pt-6 pb-8">
+      {loadError && <p role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">{loadError}</p>}
       {/* 1. Profile Header — loads immediately */}
       <ProfileHeader
         user={user}
@@ -171,11 +175,3 @@ export default function Profile() {
   );
 }
 
-function generateReferralCode(userId) {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  for (let i = 0; i < 8; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
