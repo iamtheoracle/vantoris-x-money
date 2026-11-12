@@ -34,3 +34,21 @@ Deno.test("card gallery exposes four editions and an issuance disclaimer", async
   }
   assert(/not represent an issued payment card/i.test(source), "gallery must distinguish artwork from an issued card");
 });
+
+Deno.test("print actions isolate the requested card and heritage collections", async () => {
+  const cardGallery = await Deno.readTextFile("src/components/vantoris/PrivateInvestmentCardGallery.jsx");
+  const heritage = await Deno.readTextFile("src/components/vantoris/FinancialHeritage.jsx");
+  const css = await Deno.readTextFile("src/index.css");
+  assert(cardGallery.includes("print-private-card-art"), "card gallery must enable its dedicated print layout");
+  assert(heritage.includes("print-financial-heritage"), "heritage collection must enable its dedicated print layout");
+  assert(css.includes("3.375in") && css.includes("2.125in"), "print CSS must preserve card-face dimensions");
+});
+
+Deno.test("public design surfaces do not publish fabricated staff or contact identities", async () => {
+  const brand = await Deno.readTextFile("src/pages/BrandIdentity.jsx");
+  const landing = await Deno.readTextFile("src/pages/Landing.jsx");
+  const marketing = await Deno.readTextFile("src/pages/DiscoverMarketing.jsx");
+  assert(!brand.includes("5421 88") && !brand.includes("Alexandra M. Whitmore"), "brand identity must not show fabricated card or staff details");
+  assert(!landing.includes("+447404767964") && !landing.includes("+12055688741"), "public landing must not publish unverified contact numbers");
+  assert(!marketing.includes("images.unsplash.com"), "brand communications page must use approved platform assets, not stock placeholders");
+});
