@@ -63,7 +63,6 @@ jobs:
             'src/pages/operations/HeroBoxAdminOrders.jsx',
             'src/pages/operations/HeroBoxAdminProducts.jsx',
           ];
-          const directWrite = /base44\.entities\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|Notification)\.(create|update|delete|updateMany)\s*\(/;
           for (const file of surfaces) {
             const source = readFileSync(file, 'utf8');
             if (source.includes('base44.agents.') || source.includes('/.netlify/functions/ask') || source.includes('/api/ask')) {
@@ -75,23 +74,31 @@ jobs:
           if (existsSync('server/llm-proxy.mjs')) throw new Error('Obsolete standalone private-model proxy still exists');
           console.log('Assistant entry points use the shared Oracle runtime.');
           NODE
-      - name: Prevent browser-side financial record mutations
+      - name: Prevent browser-side financial and privileged record mutations
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync } from 'node:fs';
           const surfaces = [
             'src/components/vantoris/FloatingCommandDock.jsx',
+            'src/pages/Home.jsx',
+            'src/pages/Accounts.jsx',
+            'src/pages/MoveMoney.jsx',
+            'src/pages/Investment.jsx',
+            'src/pages/HeroBox.jsx',
             'src/pages/operations/Approvals.jsx',
             'src/pages/operations/InvestmentDeposits.jsx',
             'src/pages/operations/InvestmentWithdrawals.jsx',
+            'src/pages/operations/HeroBoxFundsShipping.jsx',
+            'src/pages/operations/HeroBoxAdminOrders.jsx',
+            'src/pages/operations/HeroBoxAdminProducts.jsx',
           ];
-          const directWrite = /base44\.entities\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest)\.(create|update|delete|updateMany)\s*\(/;
+          const directWrite = /base44\.entities\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|HeroBoxProfile|Notification)\.(create|update|delete|updateMany)\s*\(/;
           for (const file of surfaces) {
             if (directWrite.test(readFileSync(file, 'utf8'))) {
-              throw new Error('Browser-side financial record mutation found in ' + file);
+              throw new Error('Browser-side financial or privileged record mutation found in ' + file);
             }
           }
-          console.log('Critical member and operator surfaces contain no direct financial record mutations.');
+          console.log('Critical member and operator surfaces contain no direct financial or privileged record mutations.');
           NODE
       - name: Keep unverified financial operations fail-closed
         run: |
