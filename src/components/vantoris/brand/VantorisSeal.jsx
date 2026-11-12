@@ -15,7 +15,7 @@ export default function VantorisSeal({ size = 160, theme = 'light', className = 
 
   // circular text via textPath
   const topText = 'VANTORIS PIP · PRIVATE INVESTMENT & PAYMENTS · ';
-  const bottomText = 'TRUST · STRUCTURE · PURPOSE · EST. MMXXV · ';
+  const bottomText = 'TRUST · STRUCTURE · PURPOSE · ARCH · RIVER · ';
 
   return (
     <svg
