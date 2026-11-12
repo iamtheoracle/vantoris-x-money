@@ -192,3 +192,28 @@ Verification notes:
 - Source-level checks confirm the old `Number(a.balance) || 0` and `Number(tx.amount) || 0` coercions are absent from Home.
 - GitHub Actions run #739 was created for commit `3bbce268bd7ca7f1605a0be59d6645490e56f8f9`, but was still pending at the last inspection; no passing result is claimed.
 - PR #4 remains draft and unmerged. Its head is one commit ahead of the recovery base in one direction but the refs are reported as diverged (104 commits ahead, 1 behind); GitHub currently reports the PR as not mergeable. Do not force-update or rebase the branch through a blind ref move. Resolve the single missing-base ancestry safely after identifying the exact commit and checking for conflicts.
+
+
+## Heritage collection and print artwork (12 November 2026)
+
+The current work branch now includes the following reviewable presentation work:
+- Four original 1050 × 660 SVG card-art editions: Obsidian, Ivory, Meridian and Atelier. The artwork contains no PAN, CVV, EMV credential or payment-network mark and is explicitly described as design artwork, not an issued card.
+- A responsive card-art gallery on the landing page, card workspace and brand identity page. A dedicated print action opens a print-only layout with two 3.375 × 2.125 inch card faces per row; vector SVGs remain scalable.
+- Four historical finance editorial cards with a short story, date/milestone, portrait credit and source link: Giovanni di Bicci de' Medici (1397), Sir Francis Baring (1762), Mayer Amschel Rothschild (1769/1810) and J. Pierpont Morgan (1871/1895).
+- A separate Hambros Bank remembrance corner with a 1839 / 1921 / 1926 / 1998 chronology, an original architectural illustration, and explicit no-succession/no-affiliation wording. It is a historical tribute only.
+- Heritage content appears on the public landing page, member Home and investment workspace. Remote portrait images have a graceful unavailable state; their external source resolution and reproduction terms remain subject to final print verification.
+- The Brand Identity page no longer displays a fabricated card number or fictional executive name/contact address. The landing page no longer publishes the unverified UK or US telephone numbers; client services directs authenticated users to verified in-account contact details.
+
+Financial presentation corrections:
+- Currency formatting accepts an explicit ISO currency code, distinguishes absent values from genuine zero, and refuses to infer a currency when a source field is missing.
+- Home account balances and transaction activity now use each record's stored currency field rather than assuming USD.
+- Investment portfolio values use the same validated formatter and do not coerce missing values to zero.
+- New Deno tests cover currency provenance, heritage dates/sources, Hambros non-affiliation language and the four credential-free SVG assets. The recovery workflow runs these tests.
+
+Brand decision intentionally deferred:
+- The user has used “Vantage”, “Vantage Private” and “Vantage Private Investment” as preferred public wording, while the existing repository/product assets and current approved work still use Vantoris. The exact public-facing name has not yet been explicitly finalized. No global Vantage rename has been made in this branch; do not mix the two identities or perform a broad replacement without that decision.
+
+Verification:
+- The previously completed GitHub Actions run #741 passed on commit `82b272df59af74c97fe42d27acba0e8dccc26fe1`, including install, runtime/security checks, entity/RLS validation, lint, typecheck and production build. That run predates the heritage/print and currency-provenance commits in this section.
+- A fresh CI run is required for the latest head before these changes can be called verified. Browser print-preview QA and live portrait-source checks remain outstanding.
+- No customer data, Base44 records, provider settings, production environment, deployment, or financial execution was changed.
