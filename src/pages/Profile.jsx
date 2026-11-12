@@ -64,7 +64,7 @@ export default function Profile() {
       Promise.all(txnPromises),
       base44.entities.HeroBoxActivity.filter({ user_id: me.id }, '-created_date', 10),
       base44.entities.Notification.filter({ user_id: me.id }, '-created_date', 5),
-      base44.entities.AuditLog.filter({ target_user_id: me.id }, '-created_date', 5).catch(() => []),
+      base44.entities.AuditLog.filter({ target_user_id: me.id }, '-created_date', 5),
     ]);
     if (!Array.isArray(txnResults) || !Array.isArray(heroActs) || !Array.isArray(notifs) || !Array.isArray(auditEntries)) throw new Error('Activity records returned an invalid response.');
     setTransactions(txnResults.flat());
@@ -74,7 +74,8 @@ export default function Profile() {
     setPhase(3);
 
     // Phase 4: Secondary (documents — lazy)
-    const docs = await base44.entities.Document.filter({ user_id: me.id }).catch(() => []);
+    const docs = await base44.entities.Document.filter({ user_id: me.id });
+    if (!Array.isArray(docs)) throw new Error('Document records returned an invalid response.');
     setDocuments(docs);
     setPhase(4);
   }
