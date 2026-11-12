@@ -30,7 +30,7 @@ const FIGURES = [
     years: "1744–1812",
     milestone: "1769 · Frankfurt",
     title: "A network across Europe",
-    story: "A coin-trading business grew into a financial house serving clients across borders. In 1810, Mayer Amschel formalised a partnership with his sons; the family later established banking houses in London, Paris, Vienna and Naples.",
+    story: "After trading in rare coins, Mayer Amschel received the title of Court Agent in 1769, marking the expansion of his business into financial services. In 1810, he formalised a partnership with his sons; the family later established banking houses in London, Paris, Vienna and Naples.",
     image: "https://commons.wikimedia.org/wiki/Special:FilePath/The_visit_of_William_I%2C_Elector_of_Hesse_to_Amschel_Mayer_de_Rothschild_%281744-1812%29.jpg",
     imageAlt: "Historical painting depicting Mayer Amschel Rothschild receiving William I, Elector of Hesse",
     imageCredit: "Moritz Daniel Oppenheim · Wikimedia Commons · Public domain",
