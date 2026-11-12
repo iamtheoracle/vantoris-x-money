@@ -2,7 +2,7 @@ import React from 'react';
 import VantorisMonogram from './VantorisMonogram';
 
 /**
- * Full VANTORIS logo lockups.
+ * Vantage Private Investment logo lockups.
  * layout: 'horizontal' | 'vertical' | 'standalone' | 'watermark' | 'stacked-mono'
  */
 /** @param {{ layout?: string, size?: number, variant?: string, theme?: string, color?: string, className?: string, showTagline?: boolean }} param0 */
@@ -30,7 +30,7 @@ export default function VantorisLogo({
         lineHeight: 1,
       }}
     >
-      VANTORIS
+      VANTAGE
     </span>
   );
 
@@ -46,7 +46,7 @@ export default function VantorisLogo({
         lineHeight: 1,
       }}
     >
-      Private&nbsp;Wealth&nbsp;·&nbsp;Capital&nbsp;·&nbsp;Trust
+      PRIVATE&nbsp;INVESTMENT&nbsp;·&nbsp;CAPITAL&nbsp;·&nbsp;TRUST
     </span>
   );
 
