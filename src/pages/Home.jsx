@@ -19,6 +19,8 @@ import {
   QrCode,
 } from 'lucide-react';
 
+const HOME_PAYMENT_ACTIONS_ENABLED = false;
+
 const TABS = [
   { id: 'account', label: 'Account' },
   { id: 'rewards', label: 'Rewards' },
@@ -281,7 +283,9 @@ export default function Home() {
                   key={mode}
                   type="button"
                   onClick={() => openQuick(mode)}
-                  className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy"
+                  disabled={!HOME_PAYMENT_ACTIONS_ENABLED}
+                  title={!HOME_PAYMENT_ACTIONS_ENABLED ? "Unavailable until authorized payment processing is enabled" : undefined}
+                  className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   <span className="w-14 h-14 rounded-full bg-navy text-white flex items-center justify-center shadow-md active:scale-95 transition-transform ring-2 ring-brass/30">
                     <Icon size={22} strokeWidth={2.5} />
@@ -292,7 +296,9 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => navigate('/qr')}
-                className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy"
+                disabled={!HOME_PAYMENT_ACTIONS_ENABLED}
+                title={!HOME_PAYMENT_ACTIONS_ENABLED ? "QR payments are unavailable" : undefined}
+                className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <span className="w-14 h-14 rounded-full bg-navy text-white flex items-center justify-center shadow-md active:scale-95 transition-transform ring-2 ring-brass/30">
                   <QrCode size={22} strokeWidth={2.5} />
@@ -300,6 +306,7 @@ export default function Home() {
                 QR Pay
               </button>
             </div>
+            <p className="mb-6 text-center text-[11px] leading-5 text-slate-500">Payment shortcuts are disabled. ACH and domestic Fedwire requests may be submitted for operations review from Accounts; no bank transfer is confirmed here.</p>
 
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2.5 px-0.5">
@@ -342,7 +349,7 @@ export default function Home() {
                           {accountLabel(a)}
                         </strong>
                         <span className="text-[13px] text-slate-500">
-                          {a.status ? String(a.status).replace(/_/g, ' ') : 'Active'}
+                          {a.status ? String(a.status).replace(/_/g, ' ') : 'Status not supplied'}
                         </span>
                       </span>
                       <span className="text-right shrink-0">
@@ -366,8 +373,8 @@ export default function Home() {
                 <Landmark size={20} />
               </span>
               <span className="flex-1 min-w-0">
-                <strong className="block text-[15px] text-navy">Set up direct deposit</strong>
-                <span className="text-[14px] text-slate-500 leading-snug">View direct deposit instructions and applicable eligibility.</span>
+                <strong className="block text-[15px] text-navy">Account services</strong>
+                <span className="text-[14px] text-slate-500 leading-snug">Review account records and available payment-request services.</span>
               </span>
               <ChevronRight size={18} className="text-slate-400 shrink-0" />
             </button>
@@ -414,13 +421,13 @@ export default function Home() {
                   <div>
                     <p className="text-[12px] uppercase tracking-wider text-white/60">Your card</p>
                     <h2 className="text-lg font-semibold mt-0.5">
-                      {cards[0].card_type || 'Debit'} ···
-                      {String(cards[0].last_four || cards[0].card_number || '').slice(-4)}
+                      {cards[0].card_type || 'Type not supplied'} ···
+                      {String(cards[0].last_four || cards[0].card_number || '').slice(-4) || '••••'}
                     </h2>
                   </div>
                 </div>
                 <span className="inline-flex items-center gap-1 text-[14px] font-semibold mt-3 text-brass">
-                  Manage card <ChevronRight size={16} />
+                  View card services <ChevronRight size={16} />
                 </span>
               </button>
             ) : (
@@ -430,9 +437,9 @@ export default function Home() {
                 className="w-full rounded-[18px] bg-white border border-slate-200/70 p-5 text-left mb-3 shadow-sm"
               >
                 <p className="text-[12px] uppercase tracking-wider text-slate-500">Card services</p>
-                <h2 className="text-lg font-semibold text-navy mt-1">Request a debit card</h2>
+                <h2 className="text-lg font-semibold text-navy mt-1">Card services</h2>
                 <p className="text-[14px] text-slate-500 mt-1">
-                  Eligible members can request and manage cards here.
+                  No card record was returned by the current source. Issuance and request availability have not been verified.
                 </p>
                 <span className="inline-flex items-center gap-1 text-[14px] font-semibold mt-3 text-navy">
                   View card services <ChevronRight size={16} />
@@ -524,10 +531,10 @@ export default function Home() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => openQuick('deposit')}
+                  onClick={() => navigate('/accounts')}
                   className="mt-5 inline-flex items-center gap-2 rounded-full bg-navy text-white px-5 py-2.5 text-[14px] font-semibold"
                 >
-                  <Plus size={16} /> Make a deposit
+                  <Plus size={16} /> View account services
                 </button>
               </div>
             ) : (
