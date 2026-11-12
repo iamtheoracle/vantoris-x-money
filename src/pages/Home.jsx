@@ -354,7 +354,7 @@ export default function Home() {
                       </span>
                       <span className="text-right shrink-0">
                         <span className="block text-[16px] font-bold tabular-nums text-navy">
-                          {hidden ? '••••••' : formatCurrency(Number(a.balance) || 0)}
+                          {hidden ? '••••••' : formatCurrency(a.balance)}
                         </span>
                         <ChevronRight size={16} className="text-slate-400 ml-auto mt-0.5" />
                       </span>
@@ -540,12 +540,12 @@ export default function Home() {
             ) : (
               <div className="rounded-[18px] bg-white border border-slate-200/70 divide-y divide-slate-100 shadow-sm overflow-hidden">
                 {transactions.map((tx) => {
-                  const amt = Number(tx.amount) || 0;
-                  const credit =
-                    amt > 0 ||
-                    ['deposit', 'interest', 'opening_balance', 'credit'].includes(
-                      String(tx.type || '').toLowerCase()
-                    );
+                  const rawAmount = tx.amount;
+                  const amt = rawAmount === null || rawAmount === undefined || rawAmount === '' ? NaN : Number(rawAmount);
+                  const hasAmount = Number.isFinite(amt);
+                  const credit = hasAmount
+                    ? amt > 0
+                    : ['deposit', 'interest', 'opening_balance', 'credit'].includes(String(tx.type || '').toLowerCase());
                   const label = tx.description || tx.type || 'Transaction';
                   return (
                     <button
@@ -572,8 +572,8 @@ export default function Home() {
                           credit ? 'text-emerald-600' : 'text-navy'
                         }`}
                       >
-                        {credit ? '+' : '−'}
-                        {formatCurrency(Math.abs(amt))}
+                        {hasAmount ? (credit ? '+' : '−') : ''}
+                        {formatCurrency(hasAmount ? Math.abs(amt) : null)}
                       </span>
                     </button>
                   );
