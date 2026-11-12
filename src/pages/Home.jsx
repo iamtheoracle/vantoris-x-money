@@ -157,15 +157,15 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F6F9]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F5EF]">
         <div className="w-8 h-8 border-2 border-navy/20 border-t-navy rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] text-navy max-w-[430px] mx-auto relative">
-      <header className="sticky top-0 z-20 flex items-center justify-between px-4 pt-3 pb-2 bg-[#F4F6F9]/95 backdrop-blur-md">
+    <div className="min-h-screen bg-[#F7F5EF] text-navy max-w-[430px] mx-auto relative">
+      <header className="sticky top-0 z-20 flex items-center justify-between px-4 pt-3 pb-2 bg-[#F7F5EF]/95 backdrop-blur-md">
         <div className="w-9" />
         <div className="text-center flex-1">
           <h1 className="text-[17px] font-bold leading-tight text-navy">Private Investment</h1>
