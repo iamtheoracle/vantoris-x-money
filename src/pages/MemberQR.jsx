@@ -33,12 +33,11 @@ export default function MemberQR() {
 
   const payload = useMemo(() => {
     if (!user) return '';
-    return `vantoris://pay?member=${encodeURIComponent(user.id || user.email || '')}&v=1`;
+    return user.id ? `vantage://pay?member=${encodeURIComponent(user.id)}&v=1` : '';
   }, [user]);
 
-  const qrImg = payload
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&margin=12&data=${encodeURIComponent(payload)}`
-    : '';
+  // Keep member identifiers inside this application; do not send them to an external QR image service.
+  const qrImg = '';
 
   function stopScan() {
     try { readerRef.current?.reset(); } catch { /* already stopped */ }
@@ -85,7 +84,7 @@ export default function MemberQR() {
       const reader = new BrowserQRCodeReader();
       readerRef.current = reader;
       setScanning(true);
-      setScanNote('Point the camera at a Vantoris member QR.');
+      setScanNote('Point the camera at a Vantage member code.');
       await reader.decodeFromVideoDevice(undefined, videoRef.current, (result, error, controls) => {
         if (result?.getText()) {
           controls.stop();
@@ -126,7 +125,7 @@ export default function MemberQR() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center">
           <p className="font-mono text-xs uppercase tracking-wider text-brass">Your receive code</p>
           <div className="mx-auto mt-4 flex h-[240px] w-[240px] items-center justify-center">
-            {qrImg ? <img src={qrImg} alt="Your member payment QR" width={240} height={240} /> : <QrCode size={64} className="text-slate-300" />}
+            {qrImg ? <img src={qrImg} alt="Your member payment QR" width={240} height={240} /> : <div className="flex flex-col items-center gap-3 px-5 text-center"><QrCode size={64} className="text-slate-300" /><p className="text-xs leading-5 text-slate-500">QR image generation is held until a local encoder is added. Your member identifier is not sent to a third-party QR service.</p></div>}
           </div>
           <button type="button" onClick={copyLink} className="mt-4 inline-flex items-center gap-2 rounded-full bg-navy px-4 py-2 text-sm font-semibold text-white">
             {copied ? <Check size={16} /> : <Copy size={16} />}{copied ? 'Copied' : 'Copy pay link'}
