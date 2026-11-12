@@ -90,6 +90,24 @@ jobs:
           }
           console.log('Critical member and operator surfaces contain no direct financial record mutations.');
           NODE
+      - name: Keep unverified financial operations fail-closed
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const requiredGuards = [
+            ['src/pages/MoveMoney.jsx', 'const SERVER_MONEY_OPERATIONS_ENABLED = false;'],
+            ['src/pages/AccountDetail.jsx', 'const SERVER_MONEY_OPERATIONS_ENABLED = false;'],
+            ['src/pages/Investment.jsx', 'const SERVER_INVESTMENT_OPERATIONS_ENABLED = false;'],
+            ['src/pages/admin/AdminAccounts.jsx', 'const SERVER_OPERATIONS_MUTATIONS_ENABLED = false;'],
+            ['src/pages/admin/AdminWithdrawals.jsx', 'const SERVER_OPERATIONS_MUTATIONS_ENABLED = false;'],
+          ];
+          for (const [file, marker] of requiredGuards) {
+            if (!readFileSync(file, 'utf8').includes(marker)) {
+              throw new Error('Unverified financial operations must remain disabled in ' + file);
+            }
+          }
+          console.log('Unverified member and operator financial operations remain fail-closed.');
+          NODE
       - name: Validate entity JSON and security rules
         run: |
           node --input-type=module <<'NODE'
