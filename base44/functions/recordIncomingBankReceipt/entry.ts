@@ -87,8 +87,8 @@ export default async function(req: Request): Promise<Response> {
     if(receipt.recorded_by_user_id===staff.id) return Response.json({error:'The verifier must be a different staff member from the person who recorded the receipt.'},{status:403});
 
     const clearingLedgerAccountId = receipt.rail==='ACH'
-      ? Deno.env.get('VANTORIS_ACH_CLEARING_LEDGER_ACCOUNT_ID') || ''
-      : Deno.env.get('VANTORIS_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID') || '';
+      ? Deno.env.get('VANTAGE_ACH_CLEARING_LEDGER_ACCOUNT_ID') || ''
+      : Deno.env.get('VANTAGE_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID') || '';
     if(action==='verify_received' && !clearingLedgerAccountId) {
       return Response.json({error:'The approved bank-clearing ledger account is not configured. No ledger posting was made.'},{status:503});
     }
