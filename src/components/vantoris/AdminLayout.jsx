@@ -8,8 +8,6 @@ import FloatingAIDock from './FloatingAIDock';
 import { base44 } from '@/api/base44Client';
 import { getDefaultWorkspace } from '@/lib/operationsAccess';
 
-const PHONE_SHELL = 'w-full max-w-[430px] mx-auto min-h-[100dvh] flex flex-col overflow-hidden bg-white lg:rounded-[28px] lg:shadow-2xl lg:ring-1 lg:ring-slate-200/80';
-
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState(null);
@@ -17,26 +15,29 @@ export default function AdminLayout() {
   const location = useLocation();
 
   useEffect(() => {
+    let cancelled = false;
     base44.auth.me()
-      .then(u => {
-        setUser(u);
+      .then((authenticatedUser) => {
+        if (cancelled) return;
+        setUser(authenticatedUser);
         const saved = localStorage.getItem('vantoris_workspace');
-        if (saved) {
-          setActiveWorkspace(saved);
-        } else {
-          setActiveWorkspace(getDefaultWorkspace(u.role) || 'operations');
-        }
+        setActiveWorkspace(saved || getDefaultWorkspace(authenticatedUser.role) || 'management');
       })
-      .catch(() => setActiveWorkspace('operations'));
+      .catch(() => {
+        if (!cancelled) setActiveWorkspace('management');
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  function handleWorkspaceChange(ws) {
-    setActiveWorkspace(ws);
-    localStorage.setItem('vantoris_workspace', ws);
+  function handleWorkspaceChange(workspace) {
+    setActiveWorkspace(workspace);
+    localStorage.setItem('vantoris_workspace', workspace);
   }
 
   if (!user) {
@@ -48,13 +49,20 @@ export default function AdminLayout() {
   }
 
   return (
-    <div className="min-h-[100dvh] w-full vantoris-mesh-bg flex justify-center overflow-x-hidden">
-      <div className={PHONE_SHELL}>
-        {/* Navigation stays available as a phone-style drawer at every viewport size. */}
+    <div className="min-h-[100dvh] w-full vantoris-mesh-bg flex overflow-x-hidden">
+      <aside className="hidden lg:block sticky top-0 h-[100dvh] flex-shrink-0 z-20">
+        <AdminSidebar
+          user={user}
+          activeWorkspace={activeWorkspace}
+          onWorkspaceChange={handleWorkspaceChange}
+        />
+      </aside>
+
+      <div className="flex-1 min-w-0 min-h-[100dvh] flex flex-col">
         <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
           <SheetContent
             side="left"
-            className="vantoris-glass-sidebar p-0 w-72 max-w-[85vw]"
+            className="vantoris-glass-sidebar p-0 w-72 max-w-[85vw] lg:hidden"
             style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
           >
             <AdminSidebar
@@ -66,15 +74,13 @@ export default function AdminLayout() {
           </SheetContent>
         </Sheet>
 
-        <div className="flex-1 flex flex-col min-h-[100dvh] min-w-0">
-          <AdminTopBar user={user} onMenuClick={() => setMobileOpen(true)} />
-          <main className="flex-1 min-w-0 p-3 sm:p-4 pb-6 vantoris-scroll overflow-x-hidden">
-            <PageTransition />
-          </main>
-        </div>
-
-        <FloatingAIDock />
+        <AdminTopBar user={user} onMenuClick={() => setMobileOpen(true)} />
+        <main className="flex-1 min-w-0 w-full max-w-[1600px] mx-auto p-3 sm:p-5 lg:p-8 pb-8 vantoris-scroll overflow-x-hidden">
+          <PageTransition />
+        </main>
       </div>
+
+      <FloatingAIDock />
     </div>
   );
 }
