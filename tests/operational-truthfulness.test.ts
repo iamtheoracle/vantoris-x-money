@@ -151,3 +151,23 @@ Deno.test("member bank transfer form only offers active accounts with verified U
   assert(source.includes("accounts.filter((account) => account.currency === 'USD' && account.status === 'active')"), "bank transfer form must filter to active verified USD accounts");
   assert(source.includes("No active account with a verified USD currency record"), "member must see why no eligible account is available");
 });
+
+Deno.test("public brand uses Vantage and the arch-over-river identity", async () => {
+  const landing = await Deno.readTextFile("src/pages/Landing.jsx");
+  const logo = await Deno.readTextFile("src/components/vantoris/brand/VantorisLogo.jsx");
+  const mark = await Deno.readTextFile("src/components/vantoris/brand/VantorisMonogram.jsx");
+  const tribute = await Deno.readTextFile("src/components/vantoris/HambrosTribute.jsx");
+  const html = await Deno.readTextFile("index.html");
+  assert(landing.includes("Vantage Private Investment"), "public landing page must use approved Vantage identity");
+  assert(logo.includes("VANTAGE") && logo.includes("PRIVATE"), "wordmark must use Vantage private investment identity");
+  assert(mark.includes("ARCH_PATH") && mark.includes("RIVER_PATH"), "logo mark must use arch-over-river direction");
+  assert(tribute.includes("Vantage Private Investment is focused on the United States"), "Hambros tribute must remain an independent historical corner");
+  assert(html.includes("Vantage Private Investment") && !html.includes("Vantoris Private Institution"), "document metadata must use Vantage identity");
+});
+
+Deno.test("member QR does not send member identifiers to third-party image services", async () => {
+  const source = await Deno.readTextFile("src/pages/MemberQR.jsx");
+  assert(source.includes("vantage://pay"), "new member pay links must use the Vantage scheme");
+  assert(!source.includes("api.qrserver.com"), "member identifiers must not be sent to external QR image services");
+  assert(source.includes("user.id") && !source.includes("user.id || user.email"), "QR payload must not fall back to personal email");
+});
