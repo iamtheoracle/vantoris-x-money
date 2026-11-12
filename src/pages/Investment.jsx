@@ -145,6 +145,8 @@ export default function Investment() {
         </div>
       </div>
 
+      <FinancialHeritage compact className="mb-6" />
+
       {!portfolio ? (
         <div className="vantoris-glass-premium mx-auto max-w-3xl p-8 text-center">
           <PieChart size={48} className="text-gray mx-auto mb-4" />
