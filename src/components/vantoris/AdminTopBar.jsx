@@ -23,18 +23,26 @@ export default function AdminTopBar({ user, onMenuClick }) {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
     base44.entities.Notification.filter({ read: false }, '-created_date', 50)
-      .then(items => setUnreadCount(items.length))
-      .catch(() => {});
+      .then((items) => {
+        if (!cancelled) setUnreadCount(items.length);
+      })
+      .catch(() => {
+        if (!cancelled) setUnreadCount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const pathSegments = location.pathname.replace('/operations/', '').split('/');
   const pageTitle = pathSegments[0] === 'operations' || location.pathname === '/operations'
     ? 'Dashboard'
-    : pathSegments[0].split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    : pathSegments[0].split('-').map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
 
-  function handleSearch(e) {
-    if (e.key === 'Enter' && searchQuery.trim()) {
+  function handleSearch(event) {
+    if (event.key === 'Enter' && searchQuery.trim()) {
       navigate(`/operations/members?q=${encodeURIComponent(searchQuery)}`);
       setSearchQuery('');
     }
@@ -46,13 +54,12 @@ export default function AdminTopBar({ user, onMenuClick }) {
 
   return (
     <header className="vantoris-glass-header sticky top-0 z-30 safe-top">
-      <div className="flex items-center justify-between h-14 px-3 sm:px-4">
-        {/* Left — navigation + page context */}
+      <div className="flex items-center justify-between h-14 px-3 sm:px-4 lg:px-7">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           {onMenuClick && (
             <button
               onClick={onMenuClick}
-              className="p-2 -ml-2 text-gray hover:text-foreground hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+              className="lg:hidden p-2 -ml-2 text-gray hover:text-foreground hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
               aria-label="Open navigation"
               title="Open navigation"
             >
@@ -64,28 +71,26 @@ export default function AdminTopBar({ user, onMenuClick }) {
             </button>
           )}
           <div className="min-w-0">
-            <p className="text-gray/60 text-[9px] uppercase tracking-[0.13em] font-semibold truncate">Vantoris Command</p>
+            <p className="text-gray/60 text-[9px] uppercase tracking-[0.13em] font-semibold truncate">Vantoris Private Institution</p>
             <h2 className="text-foreground font-semibold text-sm truncate">{pageTitle}</h2>
           </div>
         </div>
 
-        {/* Center — kept available on wider phone widths */}
-        <div className="hidden min-[390px]:flex flex-1 max-w-[150px] mx-2">
+        <div className="hidden min-[390px]:flex flex-1 max-w-[150px] mx-2 lg:max-w-md lg:mx-6">
           <div className="relative w-full">
             <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray/50" />
             <input
               type="text"
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               onKeyDown={handleSearch}
-              placeholder="Search"
+              placeholder="Search members"
               aria-label="Search members, accounts and transactions"
               className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-8 pr-2 py-1.5 text-foreground text-xs placeholder:text-gray/50 focus:border-navy/30 focus:bg-white focus:outline-none focus:ring-2 focus:ring-navy/8 transition-all"
             />
           </div>
         </div>
 
-        {/* Right — notifications + user menu */}
         <div className="flex items-center gap-0.5 flex-shrink-0">
           <button
             onClick={() => navigate('/operations/notifications')}
