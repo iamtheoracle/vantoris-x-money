@@ -55,17 +55,12 @@ export default function PendingApprovalsWidget() {
     return () => { active = false; };
   }, []);
 
-  const total = items.reduce((sum, item) => sum + item.count, 0);
 
   return (
     <section className="vantoris-glass-premium rounded-2xl p-5">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-foreground">Pending approvals snapshot</h3>
-        {status === 'ready' && (
-          <span className="rounded-full border border-crimson/20 bg-crimson/10 px-2.5 py-0.5 text-xs font-bold text-crimson">
-            {total} returned
-          </span>
-        )}
+        {status === 'ready' && <span className="text-[10px] text-gray">Counts shown by category</span>}
       </div>
       {status === 'loading' ? (
         <p className="py-5 text-center text-xs text-gray">Checking approval records…</p>
