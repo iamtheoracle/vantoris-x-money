@@ -82,11 +82,15 @@ jobs:
           import { readFileSync } from 'node:fs';
           const surfaces = [
             'src/components/vantoris/FloatingCommandDock.jsx',
+            'src/components/vantoris/HistoricalStatementImport.jsx',
             'src/pages/Home.jsx',
             'src/pages/Accounts.jsx',
+            'src/pages/AccountDetail.jsx',
             'src/pages/MoveMoney.jsx',
             'src/pages/Investment.jsx',
             'src/pages/HeroBox.jsx',
+            'src/pages/admin/AdminAccounts.jsx',
+            'src/pages/admin/AdminWithdrawals.jsx',
             'src/pages/operations/Approvals.jsx',
             'src/pages/operations/InvestmentDeposits.jsx',
             'src/pages/operations/InvestmentWithdrawals.jsx',
@@ -94,7 +98,7 @@ jobs:
             'src/pages/operations/HeroBoxAdminOrders.jsx',
             'src/pages/operations/HeroBoxAdminProducts.jsx',
           ];
-          const directWrite = /base44\.entities\.(Account|Transaction|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|HeroBoxProfile|Notification)\.(create|update|delete|updateMany)\s*\(/;
+          const directWrite = /base44\.entities\.(Account|Transaction|Document|WithdrawalRequest|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|HeroBoxProfile|Notification)\.(create|update|delete|updateMany|bulkCreate|createMany|bulkUpdate|upsert)\s*\(/;
           for (const file of surfaces) {
             if (directWrite.test(readFileSync(file, 'utf8'))) {
               throw new Error('Browser-side financial or privileged record mutation found in ' + file);
