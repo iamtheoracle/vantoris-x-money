@@ -42,7 +42,10 @@ export default function SecurityStatusWidget() {
       });
       setStatus('limited');
     })().catch(() => {
-      if (active) setStatus('unavailable');
+      if (active) {
+        setSourceErrors({ accounts: true, audit: true, applications: true, withdrawals: true });
+        setStatus('unavailable');
+      }
     });
     return () => { active = false; };
   }, []);
