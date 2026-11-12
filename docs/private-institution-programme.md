@@ -134,3 +134,26 @@ A successful static build is not proof of application availability, deployed aut
 ## Current work branch
 
 `work/private-institution-programme` is branched from `recovery/merge-vantoris-live` for review. It contains the programme register and the first responsive operations-workspace implementation. It does not alter `main`, production deployment, Base44 data, or customer records.
+
+
+## Additional live edge observations (12 November 2026)
+
+A read-only inspection of Netlify edge observability for site `d46e0386-ee5a-4a62-a519-6e393a025e97` covered the 24-hour window ending 12 November 2026 at approximately 22:07 UTC+1.
+
+- The available request-count result contained 10 HTTP 200 responses and one HTTP 404 response. It contained no HTTP 402 response in that sampled window. This does not disprove the earlier HTTP 402 response from the custom domain; it means the 402 was not present in this Netlify sample.
+- Recent requests to the `vantorispip.netlify.app` hostname successfully loaded the root document and JavaScript assets.
+- The same browser session requested `/api/apps/null/entities/User/me` and received HTTP 200, but Netlify recorded the response content type as `text/html`, not JSON. A request to `/api/apps/public/prod/public-settings/by-id/null` also returned HTTP 200, while `/api/apps/null/analytics/track/batch` returned HTTP 404.
+- None of these sampled requests reported a Netlify Function, Edge Function, or server invocation.
+
+### Interpretation and next verification
+
+The literal `null` application identifier and HTML content type on an endpoint expected to return user data are strong indicators of a client/API configuration or routing problem. They are not, by themselves, proof of the exact Base44 failure cause because Netlify edge logs do not expose the response body here.
+
+Before any release or source switch:
+1. Obtain the exact production source ZIP and compare its build output and runtime configuration with the published deployment.
+2. Identify the correct Base44 application identifier and environment without exposing or changing customer credentials.
+3. From an authorized, non-customer test session, inspect the actual response body and content type for the current user/session endpoint; verify that it returns the expected JSON or a truthful authentication error, never the SPA HTML document.
+4. Verify the custom domain and Netlify hostname independently, including redirects, DNS, TLS and Base44 availability.
+5. Preserve these observations as diagnostic evidence; do not alter the production app ID, environment variables, domain configuration or customer data until the correct app/backend mapping is confirmed.
+
+These edge observations are operational evidence only. They do not establish customer login success, data access, Base44 application identity, or backend authorization.
