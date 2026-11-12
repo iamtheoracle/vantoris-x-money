@@ -28,6 +28,9 @@ export default function Approvals() {
       base44.entities.Transaction.list('-created_date', 200),
       base44.entities.Notification.filter({ user_id: user.id }, '-created_date', 100),
     ]);
+    if (!user?.id || !Array.isArray(transactions) || !Array.isArray(notifications)) {
+      throw new Error('Review sources returned an invalid response.');
+    }
 
     const pendingTransactions = (Array.isArray(transactions) ? transactions : [])
       .filter(isPending)
@@ -82,7 +85,7 @@ export default function Approvals() {
       <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Operations · Review inbox</p>
       <h1 className="mt-1 text-3xl font-bold text-navy">Approvals</h1>
       <p className="mt-1 text-sm text-slate-500">
-        Pending legacy records and service requests. Financial decisions are handled only by their dedicated server-authorized workflows.
+        Read-only view of the 200 newest transaction records and 100 newest notification records. Financial decisions are handled only by dedicated server-authorized workflows.
       </p>
 
       <div role="status" className="mt-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
@@ -134,7 +137,7 @@ export default function Approvals() {
           ))
         ) : (
           <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center text-sm text-slate-500">
-            No pending review records were returned.
+            No pending review records were returned by the current bounded queries.
           </div>
         )}
       </div>
