@@ -1,10 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
-import { Heart, Loader2, CheckCircle, AlertCircle, Clock, ExternalLink, MapPin, Globe, ShieldCheck, FileText, Layers } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatCurrency';
-import { useToast } from '@/components/ui/use-toast';
-import { transitionCaseState, isCaseDonorVisible, getNextCaseStates } from '@/lib/discoveryPipeline';
+import { Heart, Loader2, Clock, ExternalLink, MapPin, FileText, AlertCircle, ShieldAlert } from 'lucide-react';
 
 const RECIPIENT_TYPE_LABELS = {
   individual: 'Individual',
@@ -32,231 +29,138 @@ const CATEGORY_LABELS = {
   other: 'Other',
 };
 
+function statusLabel(value) {
+  return value ? String(value).replace(/_/g, ' ') : 'Not supplied';
+}
+
+function dateLabel(value) {
+  if (!value) return 'Date not supplied';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Date not supplied' : date.toLocaleDateString();
+}
+
+function amountLabel(item) {
+  const currency = item.currency || item.currency_code;
+  if (item.verification_status !== 'verified' || typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Estimate not verified';
+  const amount = Number(item.estimated_amount);
+  if (!Number.isFinite(amount) || amount <= 0) return 'Estimate not supplied';
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
+  } catch {
+    return 'Estimate not verified';
+  }
+}
+
+function parseArray(value) {
+  if (Array.isArray(value)) return value;
+  try {
+    const parsed = JSON.parse(value || '[]');
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function HumanitarianCases() {
   const [cases, setCases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [filter, setFilter] = useState('all');
-  const { toast } = useToast();
 
-  const loadData = useCallback(async () => {
-    try {
-      const allCases = await base44.entities.HumanitarianCase.filter({}, '-date_discovered', 50).catch(() => []);
-      setCases(allCases);
-    } catch (err) {
-      // non-critical
-    } finally {
-      setLoading(false);
-    }
+  useEffect(() => {
+    let active = true;
+    base44.entities.HumanitarianCase.filter({}, '-date_discovered', 50)
+      .then((rows) => {
+        if (!Array.isArray(rows)) throw new Error('Humanitarian case query returned an invalid shape.');
+        if (active) setCases(rows);
+      })
+      .catch(() => { if (active) setLoadError(true); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  useEffect(() => { loadData(); }, [loadData]);
-
-  async function handleApprove(caseId) {
-    try {
-      // Use pipeline state machine: review_pending → approved → active
-      const result = await transitionCaseState(caseId, 'approved');
-      if (!result.success) {
-        toast({ title: 'Approval blocked', description: result.error, variant: 'destructive' });
-        return;
-      }
-      // Move to active so it becomes donor-visible
-      await transitionCaseState(caseId, 'active');
-      toast({ title: 'Case approved', description: 'This case is now donor-visible for donations.' });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Approval failed', description: err.message, variant: 'destructive' });
-    }
-  }
-
-  async function handleReject(caseId) {
-    try {
-      const result = await transitionCaseState(caseId, 'rejected');
-      if (!result.success) {
-        toast({ title: 'Rejection blocked', description: result.error, variant: 'destructive' });
-        return;
-      }
-      toast({ title: 'Case rejected', description: 'Case moved to rejected state.' });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Rejection failed', description: err.message, variant: 'destructive' });
-    }
-  }
-
-  const filteredCases = filter === 'all' ? cases : cases.filter((c) => c.case_status === filter);
-
-  if (loading) {
-    return (
-      <OperationsPageLayout title="Humanitarian Cases" icon={Heart}>
-        <div className="flex justify-center py-12"><Loader2 className="animate-spin text-brass" /></div>
-      </OperationsPageLayout>
-    );
-  }
+  const filteredCases = useMemo(() => filter === 'all' ? cases : cases.filter((item) => item.case_status === filter), [cases, filter]);
 
   return (
     <OperationsPageLayout
-      title="Humanitarian Cases"
-      description="Verified assistance needs discovered by the Discovery & Intelligence Network"
+      title="Humanitarian case records"
+      description="Read-only case records for source and verification review. Case status does not authorize publication, donations, or fulfilment."
       icon={Heart}
     >
-      {/* Filter tabs — pipeline states */}
-      <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+      <div role="status" className="mb-5 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <ShieldAlert size={18} className="mt-0.5 shrink-0 text-amber-800" />
+        <div>
+          <p className="text-sm font-semibold text-amber-950">Case approval and activation are unavailable</p>
+          <p className="mt-1 text-xs leading-5 text-amber-900/80">
+            Existing verification and case-status fields are displayed as recorded metadata only. They do not prove independent verification or authorize donor visibility. Approval requires source evidence, human review, dual control, and an immutable server-side audit trail. Donations and fulfilment are not enabled here.
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-4 flex gap-2 overflow-x-auto pb-1">
         {[
-          { id: 'all', label: 'All Cases' },
+          { id: 'all', label: 'All records' },
           { id: 'discovered', label: 'Discovered' },
-          { id: 'verification_pending', label: 'Verification Pending' },
-          { id: 'review_pending', label: 'Review Pending' },
-          { id: 'approved', label: 'Approved' },
-          { id: 'active', label: 'Active' },
+          { id: 'verification_pending', label: 'Verification pending' },
+          { id: 'review_pending', label: 'Review pending' },
+          { id: 'approved', label: 'Recorded as approved' },
+          { id: 'active', label: 'Recorded as active' },
           { id: 'stale', label: 'Stale' },
-          { id: 'rejected', label: 'Rejected' },
+          { id: 'rejected', label: 'Recorded as rejected' },
         ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setFilter(tab.id)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap ${filter === tab.id ? 'bg-navy text-white' : 'bg-slate-100 text-gray'}`}
-          >
+          <button key={tab.id} type="button" onClick={() => setFilter(tab.id)} className={'whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium ' + (filter === tab.id ? 'bg-navy text-white' : 'bg-slate-100 text-slate-600')}>
             {tab.label}
           </button>
         ))}
       </div>
 
-      {filteredCases.length === 0 ? (
+      <div className="mb-4 text-xs text-slate-500">{loadError ? 'Case records unavailable' : cases.length + ' case records returned · query limit 50'}</div>
+
+      {loading ? (
+        <div className="flex justify-center py-12"><Loader2 className="animate-spin text-brass" /></div>
+      ) : loadError ? (
+        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950">Humanitarian case records are unavailable. This is not confirmation that no cases exist.</p>
+      ) : filteredCases.length === 0 ? (
         <div className="vantoris-glass p-8 text-center">
-          <Heart size={28} className="text-gray mx-auto mb-2" />
-          <p className="text-sm font-medium text-foreground">No humanitarian cases {filter !== 'all' ? `with status "${filter.replace(/_/g, ' ')}"` : 'discovered yet'}</p>
-          <p className="text-xs text-gray mt-1">
-            Cases will appear here when the Discovery Network finds and verifies legitimate, publicly documented assistance needs. New cases start as "discovered" and must pass through the verification pipeline before becoming donor-visible. Vantoris never fabricates cases.
-          </p>
+          <Heart size={28} className="mx-auto mb-2 text-gray" />
+          <p className="text-sm font-medium text-foreground">No case records returned for this filter</p>
+          <p className="mt-1 text-xs text-gray">No humanitarian need is invented or inferred when the source returns no records.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {filteredCases.map((c) => {
-            const donorVisible = isCaseDonorVisible(c.case_status);
-            const nextStates = getNextCaseStates(c.case_status);
-            const canApprove = c.case_status === 'review_pending' || c.case_status === 'verification_pending';
-            const canReject = ['discovered', 'verification_pending', 'review_pending', 'verification_failed', 'source_unavailable', 'stale'].includes(c.case_status);
-
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          {filteredCases.map((item) => {
+            const evidence = parseArray(item.evidence);
+            const flags = parseArray(item.risk_flags);
             return (
-            <div key={c.id} className="vantoris-glass p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-bold text-foreground">{c.case_title}</p>
-                  <p className="text-xs text-gray mt-0.5">
-                    {RECIPIENT_TYPE_LABELS[c.recipient_type] || c.recipient_type} · {CATEGORY_LABELS[c.category] || c.category}
-                  </p>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    c.case_status === 'approved' || c.case_status === 'active' ? 'bg-mint/10 text-mint' :
-                    c.case_status === 'rejected' ? 'bg-crimson/10 text-crimson' :
-                    c.case_status === 'stale' || c.case_status === 'source_unavailable' ? 'bg-warning/10 text-warning' :
-                    c.case_status === 'verification_failed' ? 'bg-crimson/10 text-crimson' :
-                    'bg-champagne/10 text-champagne'
-                  }`}>
-                    {c.case_status.replace(/_/g, ' ')}
-                  </span>
-                  {donorVisible && (
-                    <span className="text-[9px] text-mint flex items-center gap-0.5">
-                      <CheckCircle size={9} /> Donor-visible
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {c.recipient_name && <p className="text-xs text-foreground font-medium">{c.recipient_name}</p>}
-              {c.location && (
-                <p className="text-[10px] text-gray flex items-center gap-1 mt-1">
-                  <MapPin size={10} /> {c.location}
-                </p>
-              )}
-              {c.stated_need && (
-                <p className="text-xs text-gray mt-2 line-clamp-3">{c.stated_need}</p>
-              )}
-
-              {/* Evidence / Provenance */}
-              {c.evidence && (() => {
-                let evidence = [];
-                try { evidence = JSON.parse(c.evidence || '[]'); } catch (e) {}
-                return evidence.length > 0 ? (
-                  <div className="mt-2 flex items-start gap-1.5 text-[10px] text-gray">
-                    <FileText size={11} className="mt-0.5 flex-shrink-0" />
-                    <span>{evidence.length} evidence item(s) on record</span>
+              <article key={item.id} className="vantoris-glass p-4">
+                <div className="mb-2 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-bold text-foreground">{item.case_title || 'Case title not supplied'}</p>
+                    <p className="mt-0.5 text-xs text-gray">{RECIPIENT_TYPE_LABELS[item.recipient_type] || item.recipient_type || 'Recipient type not supplied'} · {CATEGORY_LABELS[item.category] || item.category || 'Category not supplied'}</p>
                   </div>
-                ) : null;
-              })()}
-
-              <div className="flex items-center gap-2 mt-2 flex-wrap">
-                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                  c.verification_status === 'verified' ? 'bg-mint/10 text-mint' :
-                  c.verification_status === 'failed' ? 'bg-crimson/10 text-crimson' :
-                  c.verification_status === 'conflicting' ? 'bg-crimson/10 text-crimson' :
-                  'bg-warning/10 text-warning'
-                }`}>
-                  {c.verification_status.replace(/_/g, ' ')}
-                </span>
-                <span className="text-[10px] text-gray">Confidence: {c.confidence_level}</span>
-                {c.estimated_amount > 0 && (
-                  <span className="text-[10px] text-gray">Est: {formatCurrency(c.estimated_amount)}</span>
-                )}
-                {c.date_discovered && (
-                  <span className="text-[10px] text-gray flex items-center gap-0.5">
-                    <Clock size={9} /> {new Date(c.date_discovered).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-
-              {c.source_url && (
-                <a href={c.source_url} target="_blank" rel="noopener noreferrer" className="text-[10px] text-navy font-medium mt-2 inline-flex items-center gap-1">
-                  <ExternalLink size={10} /> View Source
-                </a>
-              )}
-              {c.source_name && (
-                <p className="text-[10px] text-gray mt-0.5">Source: {c.source_name}</p>
-              )}
-
-              {c.risk_flags && (() => {
-                let flags = [];
-                try { flags = JSON.parse(c.risk_flags || '[]'); } catch (e) {}
-                return flags.length > 0 ? (
-                  <div className="mt-2 flex items-center gap-1.5 text-[10px] text-warning">
-                    <AlertCircle size={12} /> {flags.length} risk flag(s): {flags.join(', ')}
-                  </div>
-                ) : null;
-              })()}
-
-              {/* Pipeline next states */}
-              {nextStates.length > 0 && (
-                <div className="mt-2 flex items-center gap-1.5 text-[9px] text-gray">
-                  <Layers size={10} /> Next: {nextStates.join(' → ')}
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium capitalize text-slate-600">{statusLabel(item.case_status)}</span>
                 </div>
-              )}
 
-              {/* Actions — only for pipeline states that allow transitions */}
-              {canApprove && (
-                <div className="flex gap-2 mt-3 pt-2 border-t border-slate-100">
-                  <button
-                    onClick={() => handleApprove(c.id)}
-                    className="flex-1 py-2 rounded-lg bg-mint/10 text-mint text-xs font-semibold flex items-center justify-center gap-1"
-                  >
-                    <ShieldCheck size={14} /> Approve
-                  </button>
-                  {canReject && (
-                    <button
-                      onClick={() => handleReject(c.id)}
-                      className="flex-1 py-2 rounded-lg bg-crimson/10 text-crimson text-xs font-semibold"
-                    >
-                      Reject
-                    </button>
-                  )}
-                </div>
-              )}
+                {item.recipient_name && <p className="text-xs font-medium text-foreground">{item.recipient_name}</p>}
+                {item.location && <p className="mt-1 flex items-center gap-1 text-[10px] text-gray"><MapPin size={10} /> {item.location}</p>}
+                {item.stated_need && <p className="mt-2 line-clamp-3 text-xs text-gray">{item.stated_need}</p>}
 
-              {c.case_status === 'matched' && c.matched_order_id && (
-                <div className="mt-2 flex items-center gap-1.5 text-[10px] text-mint">
-                  <CheckCircle size={12} /> Matched to order VAN-{c.matched_order_id.slice(-8).toUpperCase()}
+                <div className="mt-3 flex flex-wrap items-center gap-2">
+                  <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] capitalize text-slate-600">Recorded verification: {statusLabel(item.verification_status)}</span>
+                  <span className="text-[10px] text-gray">Confidence field: {statusLabel(item.confidence_level)}</span>
+                  <span className="text-[10px] text-gray">Estimated need: {amountLabel(item)}</span>
+                  <span className="flex items-center gap-0.5 text-[10px] text-gray"><Clock size={9} /> {dateLabel(item.date_discovered)}</span>
                 </div>
-              )}
-            </div>
+
+                {evidence.length > 0 && <p className="mt-2 flex items-center gap-1.5 text-[10px] text-gray"><FileText size={11} /> {evidence.length} evidence reference(s) stored; content not independently reviewed here.</p>}
+                {flags.length > 0 && <p className="mt-2 flex items-center gap-1.5 text-[10px] text-amber-700"><AlertCircle size={12} /> {flags.length} recorded risk flag(s): {flags.join(', ')}</p>}
+
+                {item.source_url && <a href={item.source_url} target="_blank" rel="noopener noreferrer" className="mt-2 inline-flex items-center gap-1 text-[10px] font-medium text-brass"><ExternalLink size={10} /> Open recorded source</a>}
+                {item.source_name && <p className="mt-0.5 text-[10px] text-gray">Source label: {item.source_name}</p>}
+
+                <button type="button" disabled title="Requires human review and server-side dual approval" className="mt-3 w-full cursor-not-allowed rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-400">Approval unavailable</button>
+                <p className="mt-2 text-[10px] text-gray">Recorded active status does not enable donations or confirm recipient delivery.</p>
+              </article>
             );
           })}
         </div>
