@@ -518,6 +518,10 @@ button, a, input, select { touch-action: manipulation; }
 .private-card-gallery--compact .private-card-gallery__grid { gap: .55rem; }
 .private-card-gallery--compact .private-card-art img { border-radius: 9px; }
 .private-card-gallery--compact .private-card-gallery__note { font-size: .58rem; }
+.brand-card-gallery .private-card-art figcaption { color: #E7D9B8; }
+.brand-card-gallery .private-card-gallery__note { color: rgba(247, 245, 239, .58); }
+.brand-card-gallery .private-card-art img { box-shadow: 0 16px 36px rgba(0, 0, 0, .22); }
+
 
 @media (max-width: 900px) {
   .financial-heritage__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
