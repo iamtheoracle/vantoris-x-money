@@ -50,7 +50,7 @@ export default function DiscoveryNetwork() {
       }
     };
     const [recordResult, runResult, alertResult, sourceResult, changeResult] = await Promise.all([
-      safeList(base44.entities.DiscoveryRecord.filter({ status: 'active' }, '-discovered_date', 50)),
+      safeList(base44.entities.DiscoveryRecord.filter({}, '-discovered_date', 50)),
       safeList(base44.entities.DiscoveryRun.filter({}, '-started_at', 10)),
       safeList(base44.entities.DiscoveryAlert.filter({ status: 'open' }, '-created_date', 10)),
       safeList(base44.entities.DiscoverySource.filter({}, '-last_checked', 20)),
@@ -131,7 +131,7 @@ export default function DiscoveryNetwork() {
 
       <section className="vantoris-glass rounded-2xl p-4">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-sm font-bold text-foreground">Discovery record history</h2>
+          <h2 className="text-sm font-bold text-foreground">Discovery records returned</h2>
           <div className="flex flex-wrap gap-1.5">
             <button type="button" onClick={() => setActiveDomain(null)} className={'rounded-full px-2.5 py-1 text-[10px] font-medium ' + (!activeDomain ? 'bg-navy text-white' : 'bg-slate-100 text-gray')}>All</button>
             {DISCOVERY_DOMAINS.slice(0, 4).map((domain) => <button key={domain.id} type="button" onClick={() => setActiveDomain(activeDomain === domain.id ? null : domain.id)} className={'rounded-full px-2.5 py-1 text-[10px] font-medium ' + (activeDomain === domain.id ? 'bg-navy text-white' : 'bg-slate-100 text-gray')}>{domain.label}</button>)}
@@ -149,6 +149,7 @@ export default function DiscoveryNetwork() {
                       <p className="mt-0.5 line-clamp-2 text-xs text-gray">{record.content_summary || record.description || 'Summary not supplied'}</p>
                       <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-gray">
                         <span>{label(record.discovery_domain)}</span>
+                        <span>Recorded status: {label(record.status)}</span>
                         <span>Recorded verification: {label(record.verification_status)}</span>
                         <span>Recorded freshness: {label(record.freshness_status)}</span>
                         <span>Confidence field: {label(record.confidence_level)}</span>
