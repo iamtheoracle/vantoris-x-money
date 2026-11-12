@@ -176,3 +176,19 @@ The recovery build workflow currently injects a Base44 app identifier, a Base44 
 - Verify the legacy-named test database secret points only to an isolated test database. Do not rename or repoint it until its consumers and database target are established.
 - The latest work-branch commit has no workflow run returned by the commit-associated PR-run lookup. This is not evidence of a successful build. The workflow supports manual dispatch, but no dispatch was initiated through the available GitHub actions tools.
 - No CI environment values, secrets, production variables or backend project settings were changed.
+
+
+## Financial display integrity correction (12 November 2026)
+
+The member Home previously coerced absent or invalid account balances and transaction amounts to numeric zero using `Number(value) || 0`. This could display a fabricated $0.00 for a missing, malformed, or unavailable source value.
+
+Changes committed on `work/private-institution-programme`:
+- `src/lib/formatCurrency.js` now formats verified zero as $0.00 but returns `Value unavailable` for null, undefined, empty, non-numeric, NaN, and infinite inputs.
+- `src/pages/Home.jsx` passes raw account balances to the formatter and does not coerce missing transaction amounts to zero or display an invented positive/negative sign.
+- `tests/financial-formatting.test.ts` covers verified zero, valid amounts, missing/invalid values, and the browser-side account-number issuance guard.
+- `.github/workflows/recovery-build.yml` runs the new Deno test.
+
+Verification notes:
+- Source-level checks confirm the old `Number(a.balance) || 0` and `Number(tx.amount) || 0` coercions are absent from Home.
+- GitHub Actions run #739 was created for commit `3bbce268bd7ca7f1605a0be59d6645490e56f8f9`, but was still pending at the last inspection; no passing result is claimed.
+- PR #4 remains draft and unmerged. Its head is one commit ahead of the recovery base in one direction but the refs are reported as diverged (104 commits ahead, 1 behind); GitHub currently reports the PR as not mergeable. Do not force-update or rebase the branch through a blind ref move. Resolve the single missing-base ancestry safely after identifying the exact commit and checking for conflicts.
