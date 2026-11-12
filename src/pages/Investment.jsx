@@ -151,7 +151,7 @@ export default function Investment() {
           <PieChart size={48} className="text-gray mx-auto mb-4" />
           <h2 className="text-lg font-bold text-foreground mb-2">No Investment Portfolio</h2>
           <p className="text-gray text-sm mb-6">
-            Create an investment portfolio to get started. This is a separate experience from your ordinary Vantoris banking.
+            Create an investment portfolio to get started. This is your dedicated private investment workspace, separate from everyday account activity.
           </p>
           <button
             onClick={handleCreatePortfolio}
