@@ -4,7 +4,7 @@ import { ArrowDownToLine, ArrowUpRight, ClipboardCheck, ShieldCheck, Landmark, A
 
 const rails = [
   { name: 'ACH', direction: 'Potential incoming and outgoing scope · not enabled', timing: 'Typically slower; settlement and return timing depend on the bank', control: 'Independent dual authorization, available-funds check, duplicate check and bank reconciliation' },
-  { name: 'Domestic Fedwire', direction: 'Incoming and outgoing', timing: 'Time-sensitive bank wire; cutoff and fees are set by the bank', control: 'Enhanced beneficiary review, dual authorization and bank-reference reconciliation' },
+  { name: 'Domestic Fedwire', direction: 'Potential incoming and outgoing scope · not enabled', timing: 'Time-sensitive bank wire; cutoff and fees are set by the bank', control: 'Enhanced beneficiary review, dual authorization and bank-reference reconciliation' },
 ];
 
 const gates = [
@@ -12,6 +12,7 @@ const gates = [
   'Obtain written bank approval for ACH origination/receipt and Fedwire origination/receipt',
   'Confirm bank-approved instructions, limits, cutoffs, fees and return/recall procedures',
   'Approve member disclosures, fraud screening and sanctions controls',
+  'Set VANTORIS_PROVIDER_SUBMISSION_ENABLED only after written sponsor-bank authorization and compliance approval',
   'Test role separation, dual approval, idempotency and immutable audit events',
   'Reconcile bank statements and bank-generated payment references before marking settled',
 ];
