@@ -1,128 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Plane, RefreshCw, MapPin } from 'lucide-react';
-
-function fmtAlt(m) {
-  if (m == null) return '—';
-  return `${Math.round(m * 3.28084).toLocaleString()} ft`;
-}
-function fmtSpd(ms) {
-  if (ms == null) return '—';
-  return `${Math.round(ms * 1.94384)} kt`;
-}
+import { ArrowLeft, Plane, ShieldAlert } from 'lucide-react';
 
 export default function DiscoverFlights() {
-  const [flights, setFlights] = useState([]);
-  const [source, setSource] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  async function load() {
-    setLoading(true);
-    setError('');
-    try {
-      // Bounding box roughly CONUS for a manageable sample
-      const url =
-        'https://opensky-network.org/api/states/all?lamin=24.5&lomin=-125&lamax=49.5&lomax=-66.5';
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('OpenSky unavailable');
-      const data = await res.json();
-      const rows = (data.states || [])
-        .filter((s) => s[1] && s[1].trim())
-        .slice(0, 12)
-        .map((s) => ({
-          callsign: String(s[1]).trim(),
-          origin_country: s[2],
-          baro_altitude: s[7],
-          velocity: s[9],
-          true_track: s[10],
-          lat: s[6],
-          lon: s[5],
-        }));
-      if (!rows.length) throw new Error('No airborne sample');
-      setFlights(rows);
-      setSource('OpenSky Network · live ADS-B sample (CONUS window)');
-    } catch (e) {
-      setFlights([]);
-      setSource('Live feed unavailable');
-      setError('Live flight data is unavailable right now. No sample or simulated aircraft are displayed.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  useEffect(() => {
-    load();
-  }, []);
-
   return (
     <div className="min-h-screen bg-[#F4F6F9] pb-28">
-      <div className="sticky top-0 z-10 bg-white/95 border-b border-slate-200 px-4 py-3 flex items-center gap-3 backdrop-blur-md">
-        <Link to="/discover" className="p-1.5 rounded-lg hover:bg-slate-100" aria-label="Back">
+      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur-md">
+        <Link to="/discover" className="rounded-lg p-1.5 hover:bg-slate-100" aria-label="Back to discovery">
           <ArrowLeft size={20} />
         </Link>
-        <div className="flex-1">
-          <h1 className="font-heading font-bold text-navy">Flight tracking</h1>
-          <p className="text-[10px] text-slate-500 font-mono truncate">{source || '…'}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400">Vantoris Private Institution</p>
+          <h1 className="font-heading font-bold text-navy">Flight information</h1>
+          <p className="truncate text-[10px] font-mono text-slate-500">Licensed provider not connected</p>
         </div>
-        <button type="button" onClick={load} className="p-2 rounded-full hover:bg-slate-100" aria-label="Refresh">
-          <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-        </button>
       </div>
 
-      <div className="relative h-40 overflow-hidden">
+      <div className="relative h-40 overflow-hidden bg-navy">
         <img
           src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1200&q=80"
           alt=""
-          className="w-full h-full object-cover"
+          className="h-full w-full object-cover opacity-45"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-navy to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/30 to-transparent" />
         <div className="absolute bottom-4 left-5 text-white">
-          <p className="font-mono text-[10px] text-brass uppercase tracking-wider">Air traffic</p>
-          <p className="font-heading font-bold text-xl">Live positions</p>
+          <p className="font-mono text-[10px] uppercase tracking-wider text-brass">Travel</p>
+          <p className="font-heading text-xl font-bold">Flight tracking</p>
         </div>
       </div>
 
-      <div className="p-4">
-        {error && (
-          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 mb-3">{error}</p>
-        )}
-        <div className="rounded-2xl bg-white border border-slate-200 divide-y divide-slate-50 overflow-hidden">
-          {loading && !flights.length ? (
-            <div className="py-12 flex justify-center">
-              <div className="w-8 h-8 border-2 border-navy/20 border-t-navy rounded-full animate-spin" />
+      <div className="mx-auto max-w-3xl space-y-4 p-4 sm:p-6">
+        <section role="status" className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+          <div className="flex items-start gap-3">
+            <ShieldAlert size={20} className="mt-0.5 flex-shrink-0 text-amber-800" />
+            <div>
+              <h2 className="font-semibold text-amber-950">Commercial flight-data provider not verified</h2>
+              <p className="mt-1 text-sm leading-6 text-amber-900/80">
+                OpenSky research data is not used in this commercial client workspace because commercial-use rights have not been verified. No sample or simulated aircraft are displayed.
+              </p>
             </div>
-          ) : flights.length ? (
-            flights.map((f) => (
-              <div key={f.callsign + String(f.lat)} className="px-4 py-3 flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-navy/5 flex items-center justify-center">
-                  <Plane size={18} className="text-brass" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-mono font-bold text-navy">{f.callsign}</p>
-                  <p className="text-[11px] text-slate-500 flex items-center gap-1">
-                    <MapPin size={10} /> {f.origin_country}
-                    {f.lat != null && (
-                      <span className="font-mono text-slate-400">
-                        · {Number(f.lat).toFixed(2)}, {Number(f.lon).toFixed(2)}
-                      </span>
-                    )}
-                  </p>
-                </div>
-                <div className="text-right text-[11px] font-mono text-slate-600">
-                  <p>{fmtAlt(f.baro_altitude)}</p>
-                  <p>{fmtSpd(f.velocity)}</p>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="px-5 py-10 text-center text-sm text-slate-500">No live aircraft data is currently available for this area.</div>
-          )}
-        </div>
-        <p className="text-[11px] text-slate-400 mt-4 leading-relaxed">
-          Tracking is informational. OpenSky data is typically for non-commercial research; commercial products
-          need licensed providers. Booking remains behind membership activation.
-        </p>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 text-center">
+          <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-navy/5 text-navy">
+            <Plane size={23} />
+          </span>
+          <h2 className="mt-4 font-semibold text-navy">Live flight tracking unavailable</h2>
+          <p className="mt-2 text-sm leading-6 text-slate-600">
+            Flight positions, schedules, fares, and booking status will appear only after the relevant licensed providers are connected and verified. Tracking data does not itself create a reservation or ticket.
+          </p>
+          <Link to="/travel" className="mt-5 inline-flex rounded-full bg-navy px-5 py-2.5 text-sm font-semibold text-white">
+            Open travel workspace
+          </Link>
+        </section>
       </div>
     </div>
   );
