@@ -122,32 +122,32 @@
 /* Standard institutional card */
 .vantoris-card,
 .vantoris-glass {
-  background: #FFFFFF;
-  border: 1px solid rgba(7, 28, 56, 0.07);
+  background: #FFFEFA;
+  border: 1px solid rgba(133, 112, 72, 0.14);
   border-radius: 16px;
-  box-shadow: 0 1px 3px rgba(7, 28, 56, 0.04), 0 4px 16px rgba(7, 28, 56, 0.04);
+  box-shadow: 0 1px 3px rgba(16, 38, 56, 0.035), 0 8px 24px rgba(16, 38, 56, 0.045);
 }
 
 /* Flat surface — lists, table rows, subtle containers */
 .vantoris-glass-flat {
-  background: #F8FAFC;
-  border: 1px solid rgba(7, 28, 56, 0.06);
+  background: #F6F3EA;
+  border: 1px solid rgba(133, 112, 72, 0.12);
   border-radius: 14px;
 }
 
 /* Sticky header — top bars, chat headers */
 .vantoris-glass-header {
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
-  border-bottom: 1px solid rgba(7, 28, 56, 0.06);
-  box-shadow: 0 1px 8px rgba(7, 28, 56, 0.03);
+  background: rgba(252, 250, 245, 0.94);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border-bottom: 1px solid rgba(133, 112, 72, 0.13);
+  box-shadow: 0 1px 8px rgba(16, 38, 56, 0.035);
 }
 
 /* Sidebar — navigation panels */
 .vantoris-glass-sidebar {
-  background: #FFFFFF;
-  border-right: 1px solid rgba(7, 28, 56, 0.06);
+  background: #FCFAF5;
+  border-right: 1px solid #E4DDCF;
 }
 
 /* Dropdowns — menus, popovers, action sheets */
@@ -162,10 +162,10 @@
 
 /* Premium card — featured content, KPI cards */
 .vantoris-glass-premium {
-  background: #FFFFFF;
-  border: 1px solid rgba(7, 28, 56, 0.06);
+  background: #FFFEFA;
+  border: 1px solid #E5DDCF;
   border-radius: 20px;
-  box-shadow: 0 8px 28px rgba(7, 28, 56, 0.05), 0 2px 8px rgba(7, 28, 56, 0.03);
+  box-shadow: 0 12px 34px rgba(16, 38, 56, 0.055), 0 2px 8px rgba(16, 38, 56, 0.025);
 }
 
 /* Dark premium surface — balance heroes, navy cards */
