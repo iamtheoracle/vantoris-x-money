@@ -71,7 +71,7 @@ export default function FinancialHeritage({ compact = false, className = "" }) {
                 className="heritage-card__image"
                 src={figure.image}
                 alt={figure.imageAlt}
-                loading="lazy"
+                loading={compact ? "lazy" : "eager"}
                 decoding="async"
               />
               <span className="heritage-card__index">{String(index + 1).padStart(2, "0")}</span>
