@@ -167,3 +167,19 @@ The current `.github/workflows/recovery-build.yml` declares `pull_request` targe
 - No customer data or production configuration was read or changed.
 - No install, lint, typecheck, build, automated test suite or browser viewport QA has been run in this environment.
 - The route list is a preservation baseline. Any proposed route consolidation or removal requires explicit founder approval and a verified migration plan.
+
+
+## Additional Home, Accounts and Investment findings
+
+| Area | Source evidence | Current classification | Required action |
+|---|---|---|---|
+| Home dashboard | `src/pages/Home.jsx` sums all Account balances in the browser and silently converts failed Account, PaymentCard, InvestmentPortfolio and Transaction queries to empty arrays. | Misleading empty/zero states possible; live exposure unverified | Distinguish a confirmed empty result from a failed/unavailable query. Do not show an available-balance or consolidated-wealth figure until currency, freshness and source authority are established. |
+| Currency model | `src/lib/formatCurrency.js` formats every amount as USD; the versioned `Account` schema has no currency field. | Currency metadata gap in the recovered source | Verify deployed account currency semantics. Add explicit currency and conversion/freshness metadata through a reviewed migration before multi-currency aggregation. Never add USD amounts to non-USD amounts. |
+| Investment entity contracts | The member and operations UI reference `InvestmentPortfolio`, `InvestmentTransaction`, `InvestmentDepositRequest`, `InvestmentWithdrawalRequest` and `InvestmentSignal`; none has a corresponding JSONC entity schema in the current 18-file versioned schema directory. | Versioned contract missing; live Base44 schema unknown | Recover the exact deployed entity definitions and RLS before modifying investment screens or claiming the repository fully describes the backend. |
+| Investment dashboard | `src/pages/operations/InvestmentDashboard.jsx` loads investment records with errors converted to empty arrays and computes AUM/cash/invested totals in the browser. | Unverified data source and potentially misleading zero totals | Move aggregate reporting to a server-authorized, currency-aware source with freshness and valuation timestamps. Show unavailable/error states separately from verified zero. |
+| Accounts workspace | `src/pages/Accounts.jsx` currently wraps `MoveMoney`; account detail is a separate route at `/accounts/:id`. | Route exists, but dedicated account overview capability is not yet evidenced | Design an account list/detail workspace without losing payment entry points, statements, account detail or existing routes. Keep disabled payment actions clearly unavailable. |
+| Payment controls | `src/pages/MoveMoney.jsx` explicitly disables payment/deposit operations and labels displayed values as recorded account balances rather than verified available funds. | Fail-closed guard and truthful warning present in source | Preserve the guard until a verified server-side ledger and approved processing workflow exist. Audit all other UI surfaces for inconsistent “available” or “sent” claims. |
+
+## Current CI result
+
+The Recovery build check associated with the updated PR head started, completed the dependency installation and passed the JavaScript syntax check for `netlify/functions/ask.mjs`, then was **cancelled during Deno setup**. The Oracle runtime tests, entity/security validation, lint, typecheck and production build were skipped. This is neither a pass nor a code failure; a complete CI run remains outstanding.
