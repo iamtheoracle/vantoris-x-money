@@ -360,7 +360,7 @@ export async function processPlaidProviderEvent(input: {
     if (!transfer) {
       await tx`UPDATE avcu_payments.provider_events SET processing_status='held'
         WHERE id=${event.id}`;
-      return { status:'held', reason:'No registered AVCU transfer mapping for provider transfer ID.' };
+      return { status:'held', reason:'No registered institution transfer mapping for provider transfer ID.' };
     }
     if (Number(transfer.amount_cents) !== Number(event.amount_cents) ||
         transfer.currency !== event.currency) {
