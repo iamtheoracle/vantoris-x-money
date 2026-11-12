@@ -6,7 +6,7 @@ import AdminTopBar from './AdminTopBar';
 import PageTransition from './PageTransition';
 import FloatingAIDock from './FloatingAIDock';
 import { base44 } from '@/api/base44Client';
-import { getDefaultWorkspace } from '@/lib/operationsAccess';
+import { getDefaultWorkspace, getDomainsForRole } from '@/lib/operationsAccess';
 
 export default function AdminLayout() {
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -20,8 +20,14 @@ export default function AdminLayout() {
       .then((authenticatedUser) => {
         if (cancelled) return;
         setUser(authenticatedUser);
+        const allowedWorkspaces = getDomainsForRole(authenticatedUser.role);
         const saved = localStorage.getItem('vantoris_workspace');
-        setActiveWorkspace(saved || getDefaultWorkspace(authenticatedUser.role) || 'management');
+        const defaultWorkspace = getDefaultWorkspace(authenticatedUser.role);
+        const initialWorkspace = allowedWorkspaces.includes(saved)
+          ? saved
+          : (allowedWorkspaces.includes(defaultWorkspace) ? defaultWorkspace : allowedWorkspaces[0] || 'management');
+        setActiveWorkspace(initialWorkspace);
+        if (saved !== initialWorkspace) localStorage.setItem('vantoris_workspace', initialWorkspace);
       })
       .catch(() => {
         if (!cancelled) setActiveWorkspace('management');
@@ -36,6 +42,8 @@ export default function AdminLayout() {
   }, [location.pathname]);
 
   function handleWorkspaceChange(workspace) {
+    const allowedWorkspaces = getDomainsForRole(user?.role);
+    if (!allowedWorkspaces.includes(workspace)) return;
     setActiveWorkspace(workspace);
     localStorage.setItem('vantoris_workspace', workspace);
   }
