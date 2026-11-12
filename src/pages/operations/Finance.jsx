@@ -1,18 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
+import { formatCurrency } from '@/lib/formatCurrency';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
 import { DollarSign, TrendingUp, TrendingDown, Activity, AlertTriangle } from 'lucide-react';
 
-function amountLabel(value, currency) {
-  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return 'Amount not supplied';
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount);
-  } catch {
-    return 'Amount not verified';
-  }
-}
 
 function dateLabel(value) {
   if (!value) return 'Date not supplied';
@@ -112,7 +103,7 @@ export default function Finance() {
                     <td className="py-3 pr-4 text-xs text-[#AAB4C3]">{dateLabel(transaction.transaction_date || transaction.created_date)}</td>
                     <td className="py-3 pr-4 text-xs capitalize text-white">{transaction.type ? String(transaction.type).replace(/_/g, ' ') : 'Type not supplied'}</td>
                     <td className="py-3 pr-4 text-xs text-white">{transaction.description || 'Description not supplied'}</td>
-                    <td className="py-3 pr-4 text-right text-xs font-semibold text-white">{amountLabel(transaction.amount, transaction.currency || transaction.currency_code)}</td>
+                    <td className="py-3 pr-4 text-right text-xs font-semibold text-white">{formatCurrency(transaction.amount, transaction.currency || transaction.currency_code || null)}</td>
                     <td className="py-3 text-right text-xs capitalize text-[#AAB4C3]">{transaction.status ? String(transaction.status).replace(/_/g, ' ') : 'Status not supplied'}</td>
                   </tr>
                 ))}
