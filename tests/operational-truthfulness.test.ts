@@ -54,3 +54,24 @@ Deno.test("withdrawal audit output masks account numbers", async () => {
   const source = await Deno.readTextFile("src/pages/operations/WithdrawalAuditLog.jsx");
   assert(source.includes("maskAccountNumber(acct?.account_number)"), "audit views and exports must mask account identifiers");
 });
+
+Deno.test("bulk transaction intake does not upload or import fabricated rows", async () => {
+  const source = await Deno.readTextFile("src/pages/operations/BulkTransactionImport.jsx");
+  assert(!source.includes("UploadFile") && !source.includes("ExtractDataFromUploadedFile"), "bulk intake must not upload records before its workflow is verified");
+  assert(!source.includes("bulkImportTransactions"), "no unverified import function may be called");
+  assert(!source.includes("1234567890") && !source.includes("9876543210"), "CSV template must not contain fabricated account records");
+  assert(source.includes("header-only"), "the template must be explicitly header-only");
+});
+
+Deno.test("transaction export is read-only until the export service is verified", async () => {
+  const source = await Deno.readTextFile("src/pages/operations/TransactionExportDashboard.jsx");
+  assert(!source.includes("functions.invoke('exportTransactionLedger'"), "missing export service must not be invoked");
+  assert(source.includes("Export unavailable"), "export action must remain disabled");
+  assert(source.includes("newest 20 records"), "bounded export history must disclose its limit");
+});
+
+Deno.test("investment signal errors are not presented as an empty signal list", async () => {
+  const source = await Deno.readTextFile("src/pages/operations/InvestmentSignals.jsx");
+  assert(source.includes("Investment signal records are unavailable"), "signal query errors must be visible");
+  assert(source.includes("No signal records were returned by the current query"), "empty state must describe the query, not all records");
+});
