@@ -52,3 +52,10 @@ Deno.test("public design surfaces do not publish fabricated staff or contact ide
   assert(!landing.includes("+447404767964") && !landing.includes("+12055688741"), "public landing must not publish unverified contact numbers");
   assert(!marketing.includes("images.unsplash.com"), "brand communications page must use approved platform assets, not stock placeholders");
 });
+
+Deno.test("founder field notes are dated, sourced, and clearly independent of Vantoris", async () => {
+  const source = await Deno.readTextFile("src/components/vantoris/FounderStories.jsx");
+  for (const marker of ["Madam C. J. Walker", "Sara Blakely", "James Dyson", "1905", "1910", "$5,000", "5,127 prototypes", "National Park Service", "National Inventors Hall of Fame", "James Dyson Foundation", "not Vantoris clients, partners or endorsements"]) {
+    assert(source.includes(marker), `founder story collection must include ${marker}`);
+  }
+});
