@@ -193,3 +193,17 @@ Deno.test("investment workspace imports its heritage panel and does not invent u
   assert(source.includes("return { sign: '', tone: 'text-gray' };"), "unknown activity types must not be presented as positive or negative");
   assert(source.includes("presentation.sign") && source.includes("presentation.tone"), "activity rows must render the classified sign and neutral fallback");
 });
+
+Deno.test("transaction history preserves source currency and does not invent missing status", async () => {
+  const source = await Deno.readTextFile("src/pages/Transactions.jsx");
+  assert(source.includes('import { formatCurrency } from "@/lib/formatCurrency";'), "transaction history must use the shared currency formatter");
+  assert(source.includes("formatCurrency(tx.amount, tx.currency || tx.currency_code || null)"), "transaction amounts must retain their source currency");
+  assert(source.includes('"Status not supplied"'), "missing transaction status must not be labelled recorded");
+  assert(source.includes('"Date not supplied"'), "missing transaction dates must remain explicit");
+  assert(!source.includes("`$${Number(tx.amount).toFixed(2)}`"), "transaction history must not hard-code USD");
+});
+Deno.test("member payment card uses the approved Vantoris wordmark", async () => {
+  const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
+  assert(source.includes(">VANTORIS</span>"), "member card face must use Vantoris identity");
+  assert(!source.includes(">VANTAGE</span>"), "legacy Vantage wordmark must not remain on member card face");
+});

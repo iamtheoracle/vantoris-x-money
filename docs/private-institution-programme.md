@@ -252,3 +252,8 @@ A deeper route-level source review found that the investment page rendered the f
 ## Member activity direction correction (13 November 2026)
 
 The Home activity list now classifies inflows/outflows only from a signed recorded amount or a recognized transaction type. Unknown types use a neutral tone and no sign; a missing amount remains unavailable rather than being inferred. This avoids presenting an unfamiliar record as a debit by default. A Deno regression test covers the fail-neutral behavior.
+
+
+## Transaction history currency and identity correction (13 November 2026)
+
+The standalone transaction history previously formatted every record with a hard-coded dollar sign and labelled a missing status as “recorded”. It now uses the shared formatter with the transaction's explicit currency field, and missing status/date values are stated as unavailable rather than inferred. The member payment-card face also contained a stale “VANTAGE” wordmark; it now uses the approved “VANTORIS” identity. Deno regression tests protect the currency, missing-status and identity behavior.
