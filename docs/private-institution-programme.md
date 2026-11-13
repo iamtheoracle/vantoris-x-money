@@ -214,3 +214,14 @@ The account-detail page had a local formatter that converted `null` and blank st
 ## CI test permission correction (13 November 2026)
 
 The new source-regression tests read the Home and Account Detail components, the route register, and the React Router declarations. The workflow now grants those tests only the required read paths (`src/pages`, `docs`, and `src/App.jsx`) instead of broad filesystem access. No application runtime permission or production secret was added.
+
+
+## Verification update and investment currency provenance (13 November 2026)
+
+The Investment workspace now distinguishes portfolio-level values from individual request/activity records. Portfolio summary components may use the portfolio's explicit currency; deposit, withdrawal and transaction rows must use their own record currency. When a record omits currency, the display reports that it was not supplied rather than inheriting the portfolio currency. This prevents an unverified currency assumption from entering member activity.
+
+The account-detail formatter also rejects null, undefined and blank amounts before numeric conversion; genuine numeric zero remains valid. The member Home activity classifier uses recorded signed amounts or recognized transaction types and remains neutral for unknown types. Transaction history uses the shared currency formatter and explicit missing-status/date labels. These corrections are covered by Deno regression tests.
+
+**Current CI evidence:** GitHub Actions run [#43428148993](https://github.com/iamtheoracle/vantoris-x-money/actions/runs/43428148993) completed successfully for commit `17fd5ece529d2c648545406971661292e906a25c`. It passed dependency installation, syntax checks, Oracle runtime checks, all enabled Deno suites, browser-AI and privileged-mutation guards, fail-closed financial-operation checks, entity/RLS validation, ESLint, TypeScript typecheck and Vite production build. The Deno suite totals were 52 passed and 1 ignored; the ignored test is the PostgreSQL integration test because its isolated database URL is not configured.
+
+This passing CI result supersedes the earlier note that a fresh run was still required for the heritage/print and currency-provenance work. It does **not** supersede the outstanding production-source, authenticated Base44, deployed RLS, PostgreSQL integration, customer-data continuity or browser visual QA gates. No production deployment or merge was performed.
