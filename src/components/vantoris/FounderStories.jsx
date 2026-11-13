@@ -24,7 +24,7 @@ const STORIES = [
     story: 'While working in sales, Blakely developed an idea for a footless undergarment that solved a problem she experienced herself. She founded Spanx with a $5,000 personal investment, secured a patent and built a consumer brand around a clear product insight.',
     lesson: 'Notice the friction people accept as normal. Test a practical solution before scaling the story.',
     source: 'https://www.gsb.stanford.edu/insights/sara-blakely-start-small-think-big-scale-fast',
-    sourceLabel: 'Stanford Graduate School of Business',
+    sourceLabel: 'Stanford Graduate School of Business · National Inventors Hall of Fame',
     icon: Lightbulb,
     motif: 'SPANX · 2000',
   },
