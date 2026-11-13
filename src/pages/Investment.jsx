@@ -130,6 +130,7 @@ export default function Investment() {
 
   const portfolioCurrency = portfolio?.currency || portfolio?.currency_code || null;
   const amountFor = (value, currency) => formatCurrency(value, currency || portfolioCurrency);
+  const amountForRecord = (value, currency) => formatCurrency(value, currency || null);
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-[1440px] px-5 pt-6 pb-8 vantoris-scroll bg-background">
@@ -228,7 +229,7 @@ export default function Investment() {
                 {depositRequests.filter(r => !['completed', 'rejected', 'failed'].includes(r.status)).map(r => (
                   <div key={r.id} className="vantoris-glass-flat p-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground">Deposit · {amountFor(r.amount, r.currency || r.currency_code)}</p>
+                      <p className="text-sm font-medium text-foreground">Deposit · {amountForRecord(r.amount, r.currency || r.currency_code)}</p>
                       <p className="text-xs text-gray capitalize">{r.status ? String(r.status).replace(/_/g, ' ') : 'Status not supplied'}</p>
                     </div>
                     <span className="text-xs text-brass font-medium">Recorded</span>
@@ -237,7 +238,7 @@ export default function Investment() {
                 {withdrawalRequests.filter(r => !['completed', 'rejected', 'failed'].includes(r.status)).map(r => (
                   <div key={r.id} className="vantoris-glass-flat p-3 flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-foreground">Withdrawal · {amountFor(r.amount, r.currency || r.currency_code)}</p>
+                      <p className="text-sm font-medium text-foreground">Withdrawal · {amountForRecord(r.amount, r.currency || r.currency_code)}</p>
                       <p className="text-xs text-gray capitalize">{r.status ? String(r.status).replace(/_/g, ' ') : 'Status not supplied'}</p>
                     </div>
                     <span className="text-xs text-brass font-medium">Recorded</span>
@@ -294,7 +295,7 @@ export default function Investment() {
                       <p className="text-xs text-gray">{t.description || ''}</p>
                     </div>
                     <p className={`text-sm font-semibold ${presentation.tone}`}>
-                      {presentation.sign}{amountFor(t.amount, t.currency || t.currency_code)}
+                      {presentation.sign}{amountForRecord(t.amount, t.currency || t.currency_code)}
                     </p>
                   </div>
                   );

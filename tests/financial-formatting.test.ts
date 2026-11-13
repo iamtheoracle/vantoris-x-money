@@ -52,3 +52,10 @@ Deno.test("account detail formatter does not coerce absent amounts to zero", asy
   assert(source.includes("value === null || value === undefined || (typeof value === 'string' && value.trim() === '')"), "account detail must reject null and blank values before numeric coercion");
   assert(source.includes("if (!Number.isFinite(amount)) return 'Amount not supplied';"), "invalid account detail amounts must remain unavailable");
 });
+
+Deno.test("investment activity and request rows never inherit an unverified portfolio currency", async () => {
+  const source = await Deno.readTextFile("src/pages/Investment.jsx");
+  assert(source.includes("const amountForRecord = (value, currency) => formatCurrency(value, currency || null);"), "record rows must require their own currency");
+  assert(source.includes("amountForRecord(r.amount, r.currency || r.currency_code)"), "deposit and withdrawal request rows must use their own currency");
+  assert(source.includes("amountForRecord(t.amount, t.currency || t.currency_code)"), "investment transaction rows must use their own currency");
+});
