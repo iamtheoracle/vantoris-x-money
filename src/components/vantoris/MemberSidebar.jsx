@@ -63,19 +63,19 @@ export default function MemberSidebar() {
   const location = useLocation();
 
   return (
-    <aside className="sticky top-0 flex h-[100dvh] w-[268px] shrink-0 flex-col border-r border-white/10 bg-[#071A2D] text-[#F4EBD8]">
-      <div className="flex items-center gap-3 border-b border-white/10 px-5 py-6">
+    <aside className="sticky top-0 flex h-[100dvh] w-[268px] shrink-0 flex-col border-r border-r border-[#E9E7E1] bg-[#FBFBF9] text-[#18212B]">
+      <div className="flex items-center gap-3 border-b border-[#E9E7E1] px-5 py-6">
         <ShieldLogo size={40} theme="dark" variant="metallic" />
         <div className="min-w-0">
-          <p className="truncate font-serif text-[19px] leading-tight tracking-wide text-white">Vantage</p>
-          <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#D4AF37]">Private Investment</p>
+          <p className="truncate font-serif text-[19px] leading-tight tracking-wide text-[#14202B]">Vantoris</p>
+          <p className="mt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-[#9A7841]">Private Institution</p>
         </div>
       </div>
 
       <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5" aria-label="Member navigation">
         {GROUPS.map((group) => (
           <section key={group.title} aria-label={group.title}>
-            <h2 className="mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-white/40">
+            <h2 className="mb-2 px-3 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#8A9096]">
               {group.title}
             </h2>
             <div className="space-y-1">
@@ -89,13 +89,13 @@ export default function MemberSidebar() {
                     aria-current={active ? 'page' : undefined}
                     className={[
                       'group flex min-h-10 items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#071A2D]',
+                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D4AF37] focus-visible:ring-offset-2 focus-visible:ring-offset-[#FBFBF9]',
                       active
-                        ? 'bg-white/10 font-semibold text-[#F3E6C6] ring-1 ring-inset ring-[#D4AF37]/30'
-                        : 'text-white/65 hover:bg-white/[0.06] hover:text-white',
+                        ? 'bg-[#EFEDE7] font-semibold text-[#14202B] ring-1 ring-inset ring-[#D4AF37]/35'
+                        : 'text-[#59636D] hover:bg-[#F0EFEA] hover:text-[#14202B]',
                     ].join(' ')}
                   >
-                    <Icon size={17} strokeWidth={active ? 2.2 : 1.7} className={active ? 'text-[#D4AF37]' : 'text-white/55 group-hover:text-[#D4AF37]'} />
+                    <Icon size={17} strokeWidth={active ? 2.2 : 1.7} className={active ? 'text-[#9A7841]' : 'text-[#8A9096] group-hover:text-[#9A7841]'} />
                     <span className="truncate">{item.label}</span>
                     {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-[#D4AF37]" aria-hidden="true" />}
                   </Link>
@@ -107,8 +107,8 @@ export default function MemberSidebar() {
       </nav>
 
       <div className="border-t border-white/10 px-5 py-4">
-        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-white/45">Private client workspace</p>
-        <p className="mt-1 text-[10px] text-white/30">Vantage Private Investment</p>
+        <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#14202B]/45">Private client workspace</p>
+        <p className="mt-1 text-[10px] text-[#9AA1A7]">Vantoris Private Institution</p>
       </div>
     </aside>
   );

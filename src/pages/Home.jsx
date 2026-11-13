@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { formatCurrency } from '@/lib/formatCurrency';
 import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
+import FounderStories from '@/components/vantoris/FounderStories';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowDownLeft,
@@ -177,7 +178,7 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F6F9]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F7F4]">
         <div className="w-8 h-8 border-2 border-navy/20 border-t-navy rounded-full animate-spin" />
       </div>
     );
@@ -232,7 +233,7 @@ export default function Home() {
             onClick={() => setTab(t.id)}
             className={`shrink-0 px-[18px] py-2.5 rounded-full text-[15px] font-semibold transition-colors ${
               tab === t.id
-                ? 'bg-navy text-white shadow-sm'
+                ? 'bg-[#111111] text-white shadow-sm'
                 : 'bg-white text-navy/70 border border-slate-200/80'
             }`}
           >
@@ -241,15 +242,15 @@ export default function Home() {
         ))}
       </div>
 
-      <main className="px-4 lg:px-8 pb-28 w-full max-w-5xl mx-auto">
+      <main className="px-4 lg:px-8 pb-28 w-full max-w-6xl mx-auto">
         {tab === 'account' && (
           <section>
-            <div className="rounded-[22px] bg-gradient-to-br from-navy via-[#0A2342] to-[#0E2A4A] text-white p-6 mb-5 shadow-[0_12px_32px_rgba(7,28,56,0.22)]">
-              <p className="text-[11px] text-white/55 uppercase tracking-[0.16em] mb-2 font-semibold">Account overview</p>
+            <div className="rounded-[24px] bg-white text-navy p-7 mb-5 border border-slate-200/80 shadow-[0_10px_34px_rgba(15,23,42,0.04)]">
+              <p className="text-[11px] text-slate-500 uppercase tracking-[0.16em] mb-2 font-semibold">Account overview</p>
               {dataIssues.accounts ? (
                 <>
                   <p className="text-xl font-semibold">Account information unavailable</p>
-                  <p className="mt-2 text-sm leading-6 text-white/65">We could not retrieve your account records. No balance or account status has been changed.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">We could not retrieve your account records. No balance or account status has been changed.</p>
                 </>
               ) : (
                 <>
@@ -260,12 +261,12 @@ export default function Home() {
                 </>
               )}
               {dataIssues.investments ? (
-                <p className="mt-4 pt-3 border-t border-white/10 text-sm text-white/65">Investment information is currently unavailable.</p>
+                <p className="mt-4 pt-3 border-t border-slate-200 text-sm text-white/65">Investment information is currently unavailable.</p>
               ) : (
                 <button
                   type="button"
                   onClick={() => navigate('/investment')}
-                  className="mt-4 pt-3 border-t border-white/10 w-full text-left text-[13px] text-brass inline-flex items-center gap-1 font-medium"
+                  className="mt-4 pt-3 border-t border-white/10 w-full text-left text-[13px] text-navy inline-flex items-center gap-1 font-medium"
                 >
                   Open investment workspace
                   {portfolios.length > 0 ? ' · ' + portfolios.length + (portfolios.length === 1 ? ' portfolio' : ' portfolios') : ''}
@@ -585,7 +586,8 @@ export default function Home() {
         )}
       </main>
 
-      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 pb-8">
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 pb-8 space-y-8">
+        <FounderStories />
         <FinancialHeritage compact />
       </div>
 

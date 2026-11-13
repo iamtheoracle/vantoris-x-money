@@ -217,3 +217,23 @@ Verification:
 - The previously completed GitHub Actions run #741 passed on commit `82b272df59af74c97fe42d27acba0e8dccc26fe1`, including install, runtime/security checks, entity/RLS validation, lint, typecheck and production build. That run predates the heritage/print and currency-provenance commits in this section.
 - A fresh CI run is required for the latest head before these changes can be called verified. Browser print-preview QA and live portrait-source checks remain outstanding.
 - No customer data, Base44 records, provider settings, production environment, deployment, or financial execution was changed.
+
+
+## Wealthsimple-inspired experience refinement (13 November 2026)
+
+The supplied reference was inspected at `https://my.wealthsimple.com`. The authenticated app route redirected to the sign-in shell, so the capture establishes the account-entry experience and extracted brand tokens, not authenticated dashboard behavior. The reference uses a restrained monochrome interface, Wealthsimple Sans, compact rounded controls, generous whitespace and a slim side navigation. Its published March 2026 web-experience notes describe a slimmer side menu, more information at a glance, flexible chart/table density and clearer holdings access. Vantoris adopts those usability principles without using Wealthsimple's logo, proprietary fonts, artwork, or exact screen composition.
+
+Implementation on this branch:
+- Rebalanced the member navigation toward a light, low-noise workspace with clear active states, retaining the existing routes and mobile navigation.
+- Corrected customer-facing sidebar and document metadata to the approved **Vantoris Private Institution** identity; repository and backend identifiers remain unchanged.
+- Refined the Home workspace with a warm-neutral canvas, wider content measure, white account overview surface, cleaner tab treatment and preserved data-integrity messaging. Account balances, activity, card status and payment controls remain sourced from existing records and fail-closed states; no sample data was added.
+- Added a separate editorial founder-story collection covering Madam C.J. Walker, Sara Blakely and James Dyson. Each story is date-anchored, source-linked and framed around product insight, persistence, distribution and team-building—not investment advice or a promise of financial results.
+- Kept the existing financial-history collection and Hambros remembrance separate; neither implies Vantoris succession, affiliation, partnership or endorsement.
+
+Reference evidence:
+- Wealthsimple web experience refresh (26 March 2026): https://www.wealthsimple.com/en-ca/learn/web-experience-refresh
+- Madam C.J. Walker: Smithsonian and National Park Service historical material: https://transcription.si.edu/initiatives/madam-c-j-walker-collection and https://www.nps.gov/articles/two-american-entrepreneurs-madam-c-j-walker-and-j-c-penney-teaching-with-historic-places.htm
+- Sara Blakely: National Inventors Hall of Fame: https://www.invent.org/inductees/sara-blakely
+- James Dyson: James Dyson Foundation: https://www.jamesdysonfoundation.co.uk/who-we-are/our-story
+
+Verification note: the Wealthsimple reference scrape was successful, but its screenshot capture represented the login flow only; no private authenticated account was accessed. Browser visual QA of Vantoris at mobile/tablet/desktop widths remains required. No merge or production deployment is authorized.
