@@ -233,7 +233,7 @@ Implementation on this branch:
 Reference evidence:
 - Wealthsimple web experience refresh (26 March 2026): https://www.wealthsimple.com/en-ca/learn/web-experience-refresh
 - Madam C.J. Walker: Smithsonian and National Park Service historical material: https://transcription.si.edu/initiatives/madam-c-j-walker-collection and https://www.nps.gov/articles/two-american-entrepreneurs-madam-c-j-walker-and-j-c-penney-teaching-with-historic-places.htm
-- Sara Blakely: National Inventors Hall of Fame: https://www.invent.org/inductees/sara-blakely
+- Sara Blakely: Stanford Graduate School of Business: https://www.gsb.stanford.edu/insights/sara-blakely-start-small-think-big-scale-fast; National Inventors Hall of Fame: https://www.invent.org/inductees/sara-blakely
 - James Dyson: James Dyson Foundation: https://www.jamesdysonfoundation.co.uk/who-we-are/our-story
 
 Verification note: the Wealthsimple reference scrape was successful, but its screenshot capture represented the login flow only; no private authenticated account was accessed. Browser visual QA of Vantoris at mobile/tablet/desktop widths remains required. No merge or production deployment is authorized.

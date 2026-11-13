@@ -33,6 +33,7 @@ import {
 import ShieldLogo from '@/components/vantoris/ShieldLogo';
 import HambrosTribute from '@/components/vantoris/HambrosTribute';
 import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
+import FounderStories from '@/components/vantoris/FounderStories';
 import PrivateInvestmentCardGallery from '@/components/vantoris/PrivateInvestmentCardGallery';
 import { PROVIDERS } from '@/lib/providers';
 
@@ -43,6 +44,7 @@ const NAV = [
   
   { label: 'About', href: '#about' },
   { label: 'Heritage', href: '#hambros-tribute' },
+  { label: 'Builders', href: '#builder-stories' },
   { label: 'Accounts', href: '#banking' },
   { label: 'Invest', href: '#invest' },
   { label: 'Travel', href: '#travel' },
@@ -670,6 +672,9 @@ export default function Landing() {
         <section className="max-w-6xl mx-auto px-4 sm:px-6 py-16">
           <FinancialHeritage />
         </section>
+        <section id="builder-stories" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 pb-16">
+          <FounderStories />
+        </section>
 
         {/* Pillars */}
         <section id="banking" className="scroll-mt-24 bg-white border-y border-slate-200/80 py-20">
@@ -1082,7 +1087,7 @@ export default function Landing() {
             </div>
             <div>
               <p className="font-bold text-navy text-sm">Vantoris</p>
-              <p className="text-[11px] text-slate-500">Private investment with impact</p>
+              <p className="text-[11px] text-slate-500">Private institution · Investment · Impact</p>
             </div>
           </div>
           <p className="text-[12px] text-slate-400 max-w-md">
