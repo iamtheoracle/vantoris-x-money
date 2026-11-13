@@ -23,8 +23,8 @@ const STORIES = [
     headline: 'A small frustration became a new category.',
     story: 'While working in sales, Blakely developed an idea for a footless undergarment that solved a problem she experienced herself. She founded Spanx with a $5,000 personal investment, secured a patent and built a consumer brand around a clear product insight.',
     lesson: 'Notice the friction people accept as normal. Test a practical solution before scaling the story.',
-    source: 'https://www.invent.org/inductees/sara-blakely',
-    sourceLabel: 'National Inventors Hall of Fame',
+    source: 'https://www.gsb.stanford.edu/insights/sara-blakely-start-small-think-big-scale-fast',
+    sourceLabel: 'Stanford Graduate School of Business',
     icon: Lightbulb,
     motif: 'SPANX · 2000',
   },
@@ -62,6 +62,10 @@ export default function FounderStories() {
               <div className="mb-5 flex items-center justify-between">
                 <span className="font-mono text-[10px] tracking-[0.18em] text-[#A18A63]">{story.number} / 03</span>
                 <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#F3F0E8] text-[#80683F]"><Icon size={18} strokeWidth={1.7} /></span>
+              </div>
+              <div className="mb-5 flex min-h-[76px] items-end justify-between overflow-hidden rounded-xl bg-[#142532] p-4 text-[#F8F6F0]">
+                <span className="font-serif text-xl tracking-wide">{story.motif}</span>
+                <span className="font-mono text-[9px] uppercase tracking-[0.16em] text-[#D8C49A]">Field note {story.number}</span>
               </div>
               <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.13em] text-[#A18A63]">{story.origin}</p>
               <h3 className="font-serif text-[26px] leading-tight text-[#152532]">{story.name}</h3>

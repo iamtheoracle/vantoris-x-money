@@ -63,7 +63,7 @@ export default function MemberSidebar() {
   const location = useLocation();
 
   return (
-    <aside className="sticky top-0 flex h-[100dvh] w-[268px] shrink-0 flex-col border-r border-r border-[#E9E7E1] bg-[#FBFBF9] text-[#18212B]">
+    <aside className="sticky top-0 flex h-[100dvh] w-[268px] shrink-0 flex-col border-r border-[#E9E7E1] bg-[#FBFBF9] text-[#18212B]">
       <div className="flex items-center gap-3 border-b border-[#E9E7E1] px-5 py-6">
         <ShieldLogo size={40} theme="dark" variant="metallic" />
         <div className="min-w-0">
@@ -106,7 +106,7 @@ export default function MemberSidebar() {
         ))}
       </nav>
 
-      <div className="border-t border-white/10 px-5 py-4">
+      <div className="border-t border-[#E9E7E1] px-5 py-4">
         <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#14202B]/45">Private client workspace</p>
         <p className="mt-1 text-[10px] text-[#9AA1A7]">Vantoris Private Institution</p>
       </div>

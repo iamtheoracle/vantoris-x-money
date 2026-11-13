@@ -261,7 +261,7 @@ export default function Home() {
                 </>
               )}
               {dataIssues.investments ? (
-                <p className="mt-4 pt-3 border-t border-slate-200 text-sm text-white/65">Investment information is currently unavailable.</p>
+                <p className="mt-4 pt-3 border-t border-slate-200 text-sm text-slate-600">Investment information is currently unavailable.</p>
               ) : (
                 <button
                   type="button"
