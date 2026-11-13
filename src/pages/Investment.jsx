@@ -4,10 +4,18 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, TrendingUp, ArrowDownToLine, ArrowUpRight, PieChart, Signal, AlertCircle, Loader2 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { formatCurrency } from '@/lib/formatCurrency';
+import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
 
 
 // Investment mutations stay disabled until an authorized provider workflow is integrated.
 const SERVER_INVESTMENT_OPERATIONS_ENABLED = false;
+
+function investmentActivityPresentation(type) {
+  const normalized = String(type || '').trim().toLowerCase();
+  if (['withdrawal', 'fee', 'debit'].includes(normalized)) return { sign: '-', tone: 'text-crimson' };
+  if (['deposit', 'credit', 'dividend', 'interest'].includes(normalized)) return { sign: '+', tone: 'text-mint' };
+  return { sign: '', tone: 'text-gray' };
+}
 
 
 export default function Investment() {
@@ -277,17 +285,20 @@ export default function Investment() {
             <div className="mb-5 lg:col-span-12">
               <h3 className="text-sm font-bold text-foreground mb-3">Recent Activity</h3>
               <div className="space-y-2">
-                {transactions.map(t => (
+                {transactions.map(t => {
+                  const presentation = investmentActivityPresentation(t.type);
+                  return (
                   <div key={t.id} className="vantoris-glass-flat p-3 flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-foreground capitalize">{t.type ? String(t.type).replace(/_/g, ' ') : 'Activity'}</p>
                       <p className="text-xs text-gray">{t.description || ''}</p>
                     </div>
-                    <p className={`text-sm font-semibold ${t.type === 'withdrawal' || t.type === 'fee' ? 'text-crimson' : 'text-mint'}`}>
-                      {t.type === 'withdrawal' || t.type === 'fee' ? '-' : '+'}{amountFor(t.amount, t.currency || t.currency_code)}
+                    <p className={`text-sm font-semibold ${presentation.tone}`}>
+                      {presentation.sign}{amountFor(t.amount, t.currency || t.currency_code)}
                     </p>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ) : (

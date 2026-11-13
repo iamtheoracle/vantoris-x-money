@@ -185,3 +185,11 @@ Deno.test("Vantage assistant uses only the configured private AI endpoint", asyn
   assert(boot.includes("VANTAGE_APP_URL") && boot.includes("parsed.origin === app.origin"), "AI gateway must be same-origin with the configured Vantage application");
   assert(chat.includes("Messages are saved in your assistant history") && !chat.includes("List the top 10 accounts by balance"), "assistant UI must disclose storage and avoid inviting private data queries");
 });
+
+Deno.test("investment workspace imports its heritage panel and does not invent unknown activity direction", async () => {
+  const source = await Deno.readTextFile("src/pages/Investment.jsx");
+  assert(source.includes("import FinancialHeritage from '@/components/vantoris/FinancialHeritage';"), "investment heritage panel must be imported before rendering");
+  assert(source.includes("function investmentActivityPresentation(type)"), "investment activity must use an explicit direction classifier");
+  assert(source.includes("return { sign: '', tone: 'text-gray' };"), "unknown activity types must not be presented as positive or negative");
+  assert(source.includes("presentation.sign") && source.includes("presentation.tone"), "activity rows must render the classified sign and neutral fallback");
+});

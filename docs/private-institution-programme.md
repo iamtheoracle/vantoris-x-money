@@ -242,3 +242,8 @@ Verification note: the Wealthsimple reference scrape was successful, but its scr
 ## Member Home contrast correction (13 November 2026)
 
 A source-level visual review found that the light account overview surface still used a translucent white paragraph and white divider, reducing contrast against the white card. The paragraph now uses slate text and the investment-workspace divider uses a slate border. A Deno regression test protects both details. This is a presentation-only correction; it does not change account data, balances, actions, or backend behavior.
+
+
+## Investment workspace runtime and activity-sign correction (13 November 2026)
+
+A deeper route-level source review found that the investment page rendered the financial heritage component without importing it, which could fail at runtime when the route was opened despite a successful Vite build. The missing import is now explicit. The activity list also previously treated every type other than withdrawal/fee as a positive inflow. It now assigns signs and color only to recognized inflow/outflow types; unknown types remain neutral and unsigned. A Deno regression test protects the import and classifier behavior. This is a display correction only; investment execution remains disabled pending verified backend, custody and provider workflows.
