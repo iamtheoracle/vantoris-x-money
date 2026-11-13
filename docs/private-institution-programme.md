@@ -204,3 +204,8 @@ The member transfer panel no longer performs recipient lookup against Zelle-spec
 ## Route preservation regression guard (13 November 2026)
 
 The route preservation register is now checked against the actual React Router declarations in CI. The regression test verifies that the documented public, member and operations route inventory remains present in `src/App.jsx`; it also checks that the inventory has not silently collapsed below its recorded breadth. This is a source-level preservation check, not proof that each route is deployed or accessible to a given role.
+
+
+## Account-detail missing-value correction (13 November 2026)
+
+The account-detail page had a local formatter that converted `null` and blank strings to numeric zero before formatting. It now rejects null, undefined and whitespace-only values before numeric coercion, while preserving a genuine numeric zero. The financial-formatting test suite includes a regression guard. This prevents missing account balances or transaction amounts from appearing as $0.00.

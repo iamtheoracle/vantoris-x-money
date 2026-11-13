@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 
 function formatRecordedAmount(value, currency) {
   if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
+  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return 'Amount not supplied';
   const amount = Number(value);
   if (!Number.isFinite(amount)) return 'Amount not supplied';
   try {

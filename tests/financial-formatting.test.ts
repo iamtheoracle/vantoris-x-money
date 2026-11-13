@@ -42,3 +42,9 @@ Deno.test("member Home transaction direction stays neutral when amount and type 
   assert(source.includes("presentation.sign") && source.includes("presentation.tone"), "activity rows must render the classifier output");
   assert(!source.includes("const credit = hasAmount"), "Home must not classify every unknown type as a debit");
 });
+
+Deno.test("account detail formatter does not coerce absent amounts to zero", async () => {
+  const source = await Deno.readTextFile("src/pages/AccountDetail.jsx");
+  assert(source.includes("value === null || value === undefined || (typeof value === 'string' && value.trim() === '')"), "account detail must reject null and blank values before numeric coercion");
+  assert(source.includes("if (!Number.isFinite(amount)) return 'Amount not supplied';"), "invalid account detail amounts must remain unavailable");
+});
