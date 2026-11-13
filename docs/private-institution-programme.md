@@ -209,3 +209,8 @@ The route preservation register is now checked against the actual React Router d
 ## Account-detail missing-value correction (13 November 2026)
 
 The account-detail page had a local formatter that converted `null` and blank strings to numeric zero before formatting. It now rejects null, undefined and whitespace-only values before numeric coercion, while preserving a genuine numeric zero. The financial-formatting test suite includes a regression guard. This prevents missing account balances or transaction amounts from appearing as $0.00.
+
+
+## CI test permission correction (13 November 2026)
+
+The new source-regression tests read the Home and Account Detail components, the route register, and the React Router declarations. The workflow now grants those tests only the required read paths (`src/pages`, `docs`, and `src/App.jsx`) instead of broad filesystem access. No application runtime permission or production secret was added.
