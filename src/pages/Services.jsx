@@ -6,15 +6,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { useToast } from '@/components/ui/use-toast';
 
 const services = [
-  { type: 'Joint Account', icon: Users, desc: 'Request a joint account with a co-applicant', color: 'bg-brass/15 text-brass', requiresApproval: true },
-  { type: 'Business Account', icon: Building2, desc: 'Request a business checking or savings account', color: 'bg-olive/20 text-emerald-400', requiresApproval: true },
-  { type: 'Savings Account', icon: Landmark, desc: 'Open a savings account to earn interest', color: 'bg-blue-500/15 text-blue-400' },
-  { type: 'Debit Card', icon: CreditCard, desc: 'Request a debit card for your account', color: 'bg-purple-500/15 text-purple-400' },
+  { type: 'Joint Account', icon: Users, desc: 'Request a joint account; co-applicant verification and approval are required.', color: 'bg-brass/15 text-brass', requiresApproval: true },
+  { type: 'Business Account', icon: Building2, desc: 'Request a business checking or savings account; eligibility and terms are subject to review.', color: 'bg-olive/20 text-emerald-400', requiresApproval: true },
+  { type: 'Savings Account', icon: Landmark, desc: 'Request a savings account; terms and availability are confirmed during review.', color: 'bg-blue-500/15 text-blue-400' },
+  { type: 'Debit Card', icon: CreditCard, desc: 'Request a debit card; issuance and card controls require an authorized issuer.', color: 'bg-purple-500/15 text-purple-400' },
 ];
 
 export default function Services() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [showRequest, setShowRequest] = useState(null);
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -22,61 +23,71 @@ export default function Services() {
   const { toast } = useToast();
 
   useEffect(() => {
+    let cancelled = false;
+    async function loadRequests() {
+      try {
+        const user = await base44.auth.me();
+        if (!user?.id) throw new Error('Your authenticated session could not be verified.');
+        const reqs = await base44.entities.ServiceRequest.filter({ user_id: user.id }, '-created_date');
+        if (!cancelled) {
+          setMe(user);
+          setRequests(Array.isArray(reqs) ? reqs : []);
+        }
+      } catch (error) {
+        if (!cancelled) setLoadError(error.message || 'Your service request history could not be loaded.');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
     loadRequests();
+    return () => { cancelled = true; };
   }, []);
 
-  async function loadRequests() {
-    const user = await base44.auth.me();
-    setMe(user);
-    const reqs = await base44.entities.ServiceRequest.filter({ user_id: user.id }, '-created_date');
-    setRequests(reqs);
-    setLoading(false);
-  }
-
   async function handleSubmit() {
+    if (!showRequest || submitting) return;
     setSubmitting(true);
     const serviceType = showRequest;
-    const reqDetails = details;
-    const tempId = `temp-${Date.now()}`;
-    // Optimistic: add to list immediately
-    setRequests(prev => [{
-      id: tempId,
-      user_id: me?.id,
-      service_type: serviceType,
-      details: reqDetails,
-      status: 'pending',
-      created_date: new Date().toISOString(),
-      _optimistic: true,
-    }, ...prev]);
-    setShowRequest(null);
-    setDetails('');
-    setSubmitting(false);
-
+    const reqDetails = details.trim();
     try {
       const user = me || await base44.auth.me();
+      if (!user?.id) throw new Error('Your authenticated session could not be verified.');
       const created = await base44.entities.ServiceRequest.create({
         user_id: user.id,
         service_type: serviceType,
         details: reqDetails,
         status: 'pending',
       });
-      setRequests(prev => prev.map(r => r.id === tempId ? created : r));
-      await base44.entities.Notification.create({
-        user_id: user.id,
-        title: 'Service Requested',
-        message: `Your request for ${serviceType} has been submitted for review.`,
-        type: 'info',
+      setRequests(prev => [created, ...prev]);
+      setShowRequest(null);
+      setDetails('');
+
+      let notificationCreated = false;
+      try {
+        await base44.entities.Notification.create({
+          user_id: user.id,
+          title: 'Service Requested',
+          message: `Your request for ${serviceType} has been recorded. Its status remains pending until reviewed.`,
+          type: 'info',
+        });
+        notificationCreated = true;
+      } catch (notificationError) {
+        console.warn('Service request was recorded, but its in-app notification was not confirmed.', notificationError);
+      }
+      toast({
+        title: 'Request recorded',
+        description: notificationCreated
+          ? 'Your request record was created. It is not an account opening, card issuance, approval, or money movement.'
+          : 'Your request record was created, but the in-app notification was not confirmed. Check My Requests for its status.',
       });
-      // Alert operations team
-      await base44.integrations.Core.SendEmail({
-        to: 'operations@vantoris.com',
-        subject: `New Service Request: ${serviceType}`,
-        body: `A new service request has been submitted.\n\nMember: ${user.full_name || '—'} (${user.email || '—'})\nService: ${serviceType}\nDetails: ${reqDetails || 'None provided'}\n\nReview it in the Operations Center under Service Requests.`,
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: 'Could not record request',
+        description: error.message || 'Please try again or contact support.',
+        variant: 'destructive',
       });
-    } catch (e) {
-      console.error(e);
-      setRequests(prev => prev.filter(r => r.id !== tempId));
-      toast({ title: 'Failed to submit request', description: 'Please try again.', variant: 'destructive' });
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -91,7 +102,16 @@ export default function Services() {
   return (
     <div className="px-5 pt-6">
       <h1 className="text-2xl font-bold text-white mb-1">Services</h1>
-      <p className="text-[#AAB4C3] text-sm mb-6">Request additional accounts and services</p>
+      <p className="text-[#AAB4C3] text-sm mb-3">Request additional accounts and services</p>
+      <div role="note" className="mb-6 rounded-xl border border-brass/25 bg-brass/10 p-3 text-xs leading-relaxed text-[#E8D9B8]">
+        A request is not an approval or completed service. It does not open an account, issue a card, or move funds. Eligibility, terms, provider availability and any required staff approval must be confirmed separately.
+      </div>
+
+      {loadError && (
+        <div role="alert" className="mb-5 rounded-xl border border-amber-300/30 bg-amber-500/10 p-3 text-xs leading-relaxed text-amber-100">
+          {loadError} This is not confirmation that you have no existing requests.
+        </div>
+      )}
 
       {/* Available Services */}
       <h3 className="text-white font-semibold text-sm mb-3">Available Services</h3>

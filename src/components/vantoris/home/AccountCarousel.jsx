@@ -1,9 +1,16 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { formatCurrency } from '@/lib/formatCurrency';
 import { ChevronRight } from 'lucide-react';
 import StatusBadge from '@/components/vantoris/StatusBadge';
+
+function formatRecordedAmount(value, currency) {
+  if (typeof currency !== 'string' || !/^[A-Z]{3}$/.test(currency)) return 'Currency not supplied';
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return 'Amount not supplied';
+  try { return new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(amount); }
+  catch { return 'Amount not verified'; }
+}
 
 const TYPE_GRADIENTS = {
   Personal: 'from-brass/8 to-brass/2',
@@ -54,8 +61,8 @@ export default function AccountCarousel({ accounts }) {
                 <p className="text-gray/60 text-[10px] font-mono mb-3">{maskNumber(account.account_number)}</p>
                 <div className="flex items-end justify-between">
                   <div>
-                    <p className="text-gray/70 text-[10px] uppercase tracking-wider">Balance</p>
-                    <p className="text-foreground font-bold text-lg">{formatCurrency(account.balance || 0)}</p>
+                    <p className="text-gray/70 text-[10px] uppercase tracking-wider">Recorded balance</p>
+                    <p className="text-foreground font-bold text-lg">{formatRecordedAmount(account.balance, account.currency || account.currency_code)}</p>
                   </div>
                   <ChevronRight size={16} className="text-gray mb-1" />
                 </div>

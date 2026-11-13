@@ -5,11 +5,11 @@ let client: Sql | null = null;
 
 function database(): Sql {
   if (client) return client;
-  const url = Deno.env.get('AVCU_LEDGER_DATABASE_URL');
-  if (!url) throw new Error('AVCU_LEDGER_DATABASE_URL is not configured; payment-critical storage is unavailable.');
+  const url = Deno.env.get('VANTAGE_LEDGER_DATABASE_URL');
+  if (!url) throw new Error('VANTAGE_LEDGER_DATABASE_URL is not configured; payment-critical storage is unavailable.');
   const parsed = new URL(url);
   if (parsed.protocol !== 'postgres:' && parsed.protocol !== 'postgresql:') {
-    throw new Error('AVCU_LEDGER_DATABASE_URL must use PostgreSQL.');
+    throw new Error('VANTAGE_LEDGER_DATABASE_URL must use PostgreSQL.');
   }
   client = postgres(url, {
     ssl: 'require',
@@ -360,7 +360,7 @@ export async function processPlaidProviderEvent(input: {
     if (!transfer) {
       await tx`UPDATE avcu_payments.provider_events SET processing_status='held'
         WHERE id=${event.id}`;
-      return { status:'held', reason:'No registered AVCU transfer mapping for provider transfer ID.' };
+      return { status:'held', reason:'No registered institution transfer mapping for provider transfer ID.' };
     }
     if (Number(transfer.amount_cents) !== Number(event.amount_cents) ||
         transfer.currency !== event.currency) {

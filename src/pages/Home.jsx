@@ -1,6 +1,8 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { formatCurrency } from '@/lib/formatCurrency';
+import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
+import FounderStories from '@/components/vantoris/FounderStories';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowDownLeft,
@@ -18,6 +20,8 @@ import {
   Sparkles,
   QrCode,
 } from 'lucide-react';
+
+const HOME_PAYMENT_ACTIONS_ENABLED = false;
 
 const TABS = [
   { id: 'account', label: 'Account' },
@@ -45,6 +49,21 @@ function relativeDay(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+
+function transactionPresentation(amount, type) {
+  const raw = amount === null || amount === undefined || amount === '' ? NaN : Number(amount);
+  if (Number.isFinite(raw) && raw > 0) return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
+  if (Number.isFinite(raw) && raw < 0) return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
+  const normalized = String(type || '').trim().toLowerCase();
+  if (['deposit', 'interest', 'opening_balance', 'credit', 'dividend'].includes(normalized)) {
+    return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-emerald-600' };
+  }
+  if (['withdrawal', 'fee', 'debit', 'payment'].includes(normalized)) {
+    return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-navy' };
+  }
+  return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-slate-500' };
+}
+
 function accountLabel(a) {
   const type = (a.account_type || a.type || 'Account').replace(/_/g, ' ');
   const last4 = String(a.account_number || a.mask || '').slice(-4);
@@ -58,6 +77,7 @@ export default function Home() {
   const [portfolios, setPortfolios] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataIssues, setDataIssues] = useState({ accounts: false, cards: false, investments: false, activity: false });
   const [hidden, setHidden] = useState(false);
   const [toast, setToast] = useState(null);
   const navigate = useNavigate();
@@ -73,40 +93,62 @@ export default function Home() {
 
   useEffect(() => {
     let cancelled = false;
+    const safeList = async (request) => {
+      try {
+        const result = await request;
+        return { items: Array.isArray(result) ? result : [], failed: !Array.isArray(result) };
+      } catch {
+        return { items: [], failed: true };
+      }
+    };
+
     (async () => {
       try {
         const me = await base44.auth.me();
-        const [a, c, p] = await Promise.all([
-          base44.entities.Account.filter({ user_id: me.id }, '-created_date').catch(() => []),
-          base44.entities.PaymentCard.filter({ user_id: me.id, status: 'active' }, '-created_date').catch(() => []),
-          base44.entities.InvestmentPortfolio.filter({ user_id: me.id }, '-created_date').catch(() => []),
+        const [accountResult, cardResult, investmentResult] = await Promise.all([
+          safeList(base44.entities.Account.filter({ user_id: me.id }, '-created_date')),
+          safeList(base44.entities.PaymentCard.filter({ user_id: me.id, status: 'active' }, '-created_date')),
+          safeList(base44.entities.InvestmentPortfolio.filter({ user_id: me.id }, '-created_date')),
         ]);
 
         let txs = [];
-        if (a.length) {
-          const accountIds = a.map((x) => x.id);
+        let activityFailed = false;
+        if (accountResult.items.length) {
+          const accountIds = accountResult.items.map((account) => account.id);
           const batches = await Promise.all(
             accountIds.slice(0, 6).map((id) =>
-              base44.entities.Transaction.filter({ account_id: id }, '-created_date', 20).catch(() => [])
+              safeList(base44.entities.Transaction.filter({ account_id: id }, '-created_date', 20))
             )
           );
+          activityFailed = batches.some((batch) => batch.failed);
           txs = batches
-            .flat()
+            .flatMap((batch) => batch.items)
             .sort((x, y) => new Date(y.created_date || 0).getTime() - new Date(x.created_date || 0).getTime())
             .slice(0, 40);
         }
 
         if (!cancelled) {
           setUser(me);
-          setAccounts(Array.isArray(a) ? a : []);
-          setCards(Array.isArray(c) ? c : []);
-          setPortfolios(Array.isArray(p) ? p : []);
+          setAccounts(accountResult.items);
+          setCards(cardResult.items);
+          setPortfolios(investmentResult.items);
           setTransactions(txs);
+          setDataIssues({
+            accounts: accountResult.failed,
+            cards: cardResult.failed,
+            investments: investmentResult.failed,
+            activity: activityFailed,
+          });
+        }
+      } catch {
+        if (!cancelled) {
+          setDataIssues({ accounts: true, cards: true, investments: true, activity: true });
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
+
     return () => {
       cancelled = true;
     };
@@ -118,11 +160,6 @@ export default function Home() {
     return () => window.clearTimeout(t);
   }, [toast]);
 
-  const balance = useMemo(() => accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0), [accounts]);
-  const wealth = useMemo(
-    () => portfolios.reduce((s, p) => s + (Number(p.total_value) || 0), 0),
-    [portfolios]
-  );
   const firstName = (() => {
     const raw =
       user?.first_name ||
@@ -156,22 +193,22 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F4F6F9]">
+      <div className="min-h-screen flex items-center justify-center bg-[#F7F7F4]">
         <div className="w-8 h-8 border-2 border-navy/20 border-t-navy rounded-full animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] text-navy max-w-[430px] mx-auto relative">
-      <header className="sticky top-0 z-20 flex items-center justify-between px-4 pt-3 pb-2 bg-[#F4F6F9]/95 backdrop-blur-md">
-        <div className="w-9" />
-        <div className="text-center flex-1">
-          <h1 className="text-[17px] font-bold leading-tight text-navy">Money</h1>
-          <p className="text-[13px] text-slate-500 flex items-center justify-center gap-1.5">
+    <div className="min-h-screen w-full max-w-7xl mx-auto bg-[#F4F6F9] text-navy relative">
+      <header className="sticky top-0 z-20 flex items-center justify-between px-4 lg:px-8 pt-3 pb-2 bg-[#F4F6F9]/95 backdrop-blur-md">
+        <div className="w-9 lg:hidden" />
+        <div className="text-center flex-1 lg:text-left">
+          <h1 className="text-[17px] font-bold leading-tight text-navy">Home</h1>
+          <p className="text-[13px] text-slate-500 flex items-center justify-center lg:justify-start gap-1.5">
             {firstName}
             <span className="inline-block w-1 h-1 rounded-full bg-brass" />
-            Cash
+            Private client
           </p>
         </div>
         <div className="flex items-center gap-0.5">
@@ -211,7 +248,7 @@ export default function Home() {
             onClick={() => setTab(t.id)}
             className={`shrink-0 px-[18px] py-2.5 rounded-full text-[15px] font-semibold transition-colors ${
               tab === t.id
-                ? 'bg-navy text-white shadow-sm'
+                ? 'bg-[#111111] text-white shadow-sm'
                 : 'bg-white text-navy/70 border border-slate-200/80'
             }`}
           >
@@ -220,28 +257,36 @@ export default function Home() {
         ))}
       </div>
 
-      <main className="px-4 pb-28">
+      <main className="px-4 lg:px-8 pb-28 w-full max-w-6xl mx-auto">
         {tab === 'account' && (
           <section>
-            <div className="rounded-[22px] bg-gradient-to-br from-navy via-[#0A2342] to-[#0E2A4A] text-white p-6 mb-5 shadow-[0_12px_32px_rgba(7,28,56,0.22)]">
-              <p className="text-[13px] text-white/65 mb-1 font-medium">Available balance</p>
-              <p className="text-[36px] font-bold tracking-tight tabular-nums leading-none">
-                {hidden ? '••••••' : formatCurrency(balance)}
-              </p>
-              {wealth > 0 && (
+            <div className="rounded-[24px] bg-white text-navy p-7 mb-5 border border-slate-200/80 shadow-[0_10px_34px_rgba(15,23,42,0.04)]">
+              <p className="text-[11px] text-slate-500 uppercase tracking-[0.16em] mb-2 font-semibold">Account overview</p>
+              {dataIssues.accounts ? (
+                <>
+                  <p className="text-xl font-semibold">Account information unavailable</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">We could not retrieve your account records. No balance or account status has been changed.</p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[30px] font-semibold tracking-tight tabular-nums leading-tight">
+                    {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}
+                  </p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Individual recorded balances are shown by account below. A consolidated figure is withheld until currency and valuation sources are verified.</p>
+                </>
+              )}
+              {dataIssues.investments ? (
+                <p className="mt-4 pt-3 border-t border-slate-200 text-sm text-slate-600">Investment information is currently unavailable.</p>
+              ) : (
                 <button
                   type="button"
                   onClick={() => navigate('/investment')}
-                  className="mt-3 text-[13px] text-brass inline-flex items-center gap-1 font-medium"
+                  className="mt-4 pt-3 border-t border-slate-200 w-full text-left text-[13px] text-navy inline-flex items-center gap-1 font-medium"
                 >
-                  + {hidden ? '••••' : formatCurrency(wealth)} invested
+                  Open investment workspace
+                  {portfolios.length > 0 ? ' · ' + portfolios.length + (portfolios.length === 1 ? ' portfolio' : ' portfolios') : ''}
                   <ChevronRight size={14} />
                 </button>
-              )}
-              {accounts.length > 0 && (
-                <p className="mt-3 text-[12px] text-white/50">
-                  {accounts.length} account{accounts.length === 1 ? '' : 's'} · Vantoris
-                </p>
               )}
             </div>
 
@@ -255,7 +300,9 @@ export default function Home() {
                   key={mode}
                   type="button"
                   onClick={() => openQuick(mode)}
-                  className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy"
+                  disabled={!HOME_PAYMENT_ACTIONS_ENABLED}
+                  title={!HOME_PAYMENT_ACTIONS_ENABLED ? "Unavailable until authorized payment processing is enabled" : undefined}
+                  className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   <span className="w-14 h-14 rounded-full bg-navy text-white flex items-center justify-center shadow-md active:scale-95 transition-transform ring-2 ring-brass/30">
                     <Icon size={22} strokeWidth={2.5} />
@@ -266,7 +313,9 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => navigate('/qr')}
-                className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy"
+                disabled={!HOME_PAYMENT_ACTIONS_ENABLED}
+                title={!HOME_PAYMENT_ACTIONS_ENABLED ? "QR payments are unavailable" : undefined}
+                className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-45"
               >
                 <span className="w-14 h-14 rounded-full bg-navy text-white flex items-center justify-center shadow-md active:scale-95 transition-transform ring-2 ring-brass/30">
                   <QrCode size={22} strokeWidth={2.5} />
@@ -274,6 +323,7 @@ export default function Home() {
                 QR Pay
               </button>
             </div>
+            <p className="mb-6 text-center text-[11px] leading-5 text-slate-500">Payment shortcuts are disabled. ACH and domestic Fedwire requests may be submitted for operations review from Accounts; no bank transfer is confirmed here.</p>
 
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2.5 px-0.5">
@@ -287,19 +337,17 @@ export default function Home() {
                 </button>
               </div>
 
-              {accounts.length === 0 ? (
+              {dataIssues.accounts ? (
+                <div role="status" className="rounded-[20px] bg-amber-50 border border-amber-200 p-5">
+                  <p className="text-[15px] font-semibold text-amber-950">Account information could not be loaded</p>
+                  <p className="text-[13px] text-amber-900/80 mt-1">This is a data-access error, not confirmation that you have no accounts. Please try again later or contact support.</p>
+                </div>
+              ) : accounts.length === 0 ? (
                 <div className="rounded-[20px] bg-white border border-slate-200/80 p-5 text-center">
-                  <p className="text-[15px] font-semibold text-navy">No accounts yet</p>
+                  <p className="text-[15px] font-semibold text-navy">No accounts linked</p>
                   <p className="text-[13px] text-slate-500 mt-1">
-                    Accounts linked to your membership will appear here.
+                    Account records will appear here once they are linked to your membership.
                   </p>
-                  <button
-                    type="button"
-                    onClick={() => openQuick('deposit')}
-                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-navy text-white px-5 py-2.5 text-[14px] font-semibold"
-                  >
-                    <Plus size={16} /> Make a deposit
-                  </button>
                 </div>
               ) : (
                 <div className="space-y-2.5">
@@ -318,12 +366,12 @@ export default function Home() {
                           {accountLabel(a)}
                         </strong>
                         <span className="text-[13px] text-slate-500">
-                          {a.status ? String(a.status).replace(/_/g, ' ') : 'Active'}
+                          {a.status ? String(a.status).replace(/_/g, ' ') : 'Status not supplied'}
                         </span>
                       </span>
                       <span className="text-right shrink-0">
                         <span className="block text-[16px] font-bold tabular-nums text-navy">
-                          {hidden ? '••••••' : formatCurrency(Number(a.balance) || 0)}
+                          {hidden ? '••••••' : formatCurrency(a.balance, a.currency || a.currency_code || null)}
                         </span>
                         <ChevronRight size={16} className="text-slate-400 ml-auto mt-0.5" />
                       </span>
@@ -342,8 +390,8 @@ export default function Home() {
                 <Landmark size={20} />
               </span>
               <span className="flex-1 min-w-0">
-                <strong className="block text-[15px] text-navy">Set up direct deposit</strong>
-                <span className="text-[14px] text-slate-500 leading-snug">Get paid up to 2 days early</span>
+                <strong className="block text-[15px] text-navy">Account services</strong>
+                <span className="text-[14px] text-slate-500 leading-snug">Review account records and available payment-request services.</span>
               </span>
               <ChevronRight size={18} className="text-slate-400 shrink-0" />
             </button>
@@ -358,7 +406,7 @@ export default function Home() {
                   <Gift size={16} />
                 </span>
                 <strong className="text-[15px] text-navy">Cash back</strong>
-                <p className="text-[13px] text-slate-500 leading-snug flex-1">Earn on everyday spending</p>
+                <p className="text-[13px] text-slate-500 leading-snug flex-1">View eligible offers when rewards are available for your account.</p>
               </button>
               <button
                 type="button"
@@ -369,11 +417,17 @@ export default function Home() {
                   <Percent size={16} />
                 </span>
                 <strong className="text-[15px] text-navy">Interest</strong>
-                <p className="text-[13px] text-slate-500 leading-snug flex-1">Competitive APY on cash</p>
+                <p className="text-[13px] text-slate-500 leading-snug flex-1">See applicable rates and terms when they have been confirmed.</p>
               </button>
             </div>
 
-            {cards.length > 0 ? (
+            {dataIssues.cards ? (
+              <div role="status" className="w-full rounded-[18px] bg-amber-50 border border-amber-200 p-5 text-left mb-3">
+                <p className="text-[12px] uppercase tracking-wider text-amber-800">Card services</p>
+                <h2 className="text-lg font-semibold text-amber-950 mt-1">Card information unavailable</h2>
+                <p className="text-[14px] text-amber-900/80 mt-1">We could not verify your current card status. This does not mean a card has not been issued.</p>
+              </div>
+            ) : cards.length > 0 ? (
               <button
                 type="button"
                 onClick={() => navigate('/services')}
@@ -384,13 +438,13 @@ export default function Home() {
                   <div>
                     <p className="text-[12px] uppercase tracking-wider text-white/60">Your card</p>
                     <h2 className="text-lg font-semibold mt-0.5">
-                      {cards[0].card_type || 'Debit'} ···
-                      {String(cards[0].last_four || cards[0].card_number || '').slice(-4)}
+                      {cards[0].card_type || 'Type not supplied'} ···
+                      {String(cards[0].last_four || cards[0].card_number || '').slice(-4) || '••••'}
                     </h2>
                   </div>
                 </div>
                 <span className="inline-flex items-center gap-1 text-[14px] font-semibold mt-3 text-brass">
-                  Manage card <ChevronRight size={16} />
+                  View card services <ChevronRight size={16} />
                 </span>
               </button>
             ) : (
@@ -400,9 +454,9 @@ export default function Home() {
                 className="w-full rounded-[18px] bg-white border border-slate-200/70 p-5 text-left mb-3 shadow-sm"
               >
                 <p className="text-[12px] uppercase tracking-wider text-slate-500">Card services</p>
-                <h2 className="text-lg font-semibold text-navy mt-1">Request a debit card</h2>
+                <h2 className="text-lg font-semibold text-navy mt-1">Card services</h2>
                 <p className="text-[14px] text-slate-500 mt-1">
-                  Eligible members can request and manage cards here.
+                  No card record was returned by the current source. Issuance and request availability have not been verified.
                 </p>
                 <span className="inline-flex items-center gap-1 text-[14px] font-semibold mt-3 text-navy">
                   View card services <ChevronRight size={16} />
@@ -420,7 +474,7 @@ export default function Home() {
             </button>
 
             <p className="mt-4 text-[12px] text-slate-400 leading-relaxed text-center">
-              Banking services provided through Vantoris. Terms and limitations apply.
+              Account services and product availability are subject to applicable agreements and service-provider terms.
             </p>
           </section>
         )}
@@ -435,7 +489,7 @@ export default function Home() {
                 <div>
                   <h3 className="text-[17px] font-semibold text-navy">Cash back</h3>
                   <p className="text-[14px] text-slate-500 leading-snug mt-1">
-                    Earn cash back on everyday purchases with your Vantoris card.
+                    Eligible cash-back offers and their terms will be displayed here when confirmed for your account.
                   </p>
                 </div>
               </div>
@@ -456,7 +510,7 @@ export default function Home() {
                 <div>
                   <h3 className="text-[17px] font-semibold text-navy">Interest on cash</h3>
                   <p className="text-[14px] text-slate-500 leading-snug mt-1">
-                    Competitive rates on eligible balances. Rates subject to change.
+                    Applicable rates, eligibility and terms will be shown here once verified.
                   </p>
                 </div>
               </div>
@@ -470,7 +524,7 @@ export default function Home() {
                 <div>
                   <h3 className="text-[17px] font-semibold text-navy">Member perks</h3>
                   <p className="text-[14px] text-slate-500 leading-snug mt-1">
-                    Preferential FX, priority support, and curated offers for active members.
+                    Member benefits and preferential services will appear here when available and confirmed.
                   </p>
                 </div>
               </div>
@@ -481,7 +535,12 @@ export default function Home() {
         {tab === 'activity' && (
           <section>
             <h2 className="text-[15px] font-bold text-navy mb-3">Recent activity</h2>
-            {transactions.length === 0 ? (
+            {dataIssues.activity ? (
+              <div role="status" className="rounded-[20px] bg-amber-50 border border-amber-200 p-8 text-center">
+                <p className="text-[15px] font-semibold text-amber-950">Activity unavailable</p>
+                <p className="text-[13px] text-amber-900/80 mt-1">We could not retrieve recent activity. No transaction status has been changed.</p>
+              </div>
+            ) : transactions.length === 0 ? (
               <div className="rounded-[20px] bg-white border border-slate-200/70 p-8 text-center">
                 <p className="text-[15px] font-semibold text-navy">No recent transactions</p>
                 <p className="text-[13px] text-slate-500 mt-1">
@@ -489,29 +548,25 @@ export default function Home() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => openQuick('deposit')}
+                  onClick={() => navigate('/accounts')}
                   className="mt-5 inline-flex items-center gap-2 rounded-full bg-navy text-white px-5 py-2.5 text-[14px] font-semibold"
                 >
-                  <Plus size={16} /> Make a deposit
+                  <Plus size={16} /> View account services
                 </button>
               </div>
             ) : (
               <div className="rounded-[18px] bg-white border border-slate-200/70 divide-y divide-slate-100 shadow-sm overflow-hidden">
                 {transactions.map((tx) => {
-                  const amt = Number(tx.amount) || 0;
-                  const credit =
-                    amt > 0 ||
-                    ['deposit', 'interest', 'opening_balance', 'credit'].includes(
-                      String(tx.type || '').toLowerCase()
-                    );
+                  const presentation = transactionPresentation(tx.amount, tx.type);
                   const label = tx.description || tx.type || 'Transaction';
                   return (
                     <button
                       key={tx.id}
                       type="button"
-                      onClick={() =>
-                        primaryAccount ? navigate(`/accounts/${primaryAccount.id}`) : navigate('/accounts')
-                      }
+                      onClick={() => {
+                        const transactionAccount = accounts.find((account) => account.id === tx.account_id);
+                        navigate(transactionAccount ? `/accounts/${transactionAccount.id}` : '/accounts');
+                      }}
                       className="w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-slate-50/80"
                     >
                       <span className="w-10 h-10 rounded-full bg-navy/5 flex items-center justify-center text-[13px] font-bold text-navy shrink-0">
@@ -525,12 +580,10 @@ export default function Home() {
                         </span>
                       </span>
                       <span
-                        className={`text-[15px] font-semibold tabular-nums shrink-0 ${
-                          credit ? 'text-emerald-600' : 'text-navy'
-                        }`}
+                        className={`text-[15px] font-semibold tabular-nums shrink-0 ${presentation.tone}`}
                       >
-                        {credit ? '+' : '−'}
-                        {formatCurrency(Math.abs(amt))}
+                        {presentation.sign}
+                        {formatCurrency(presentation.amount, tx.currency || tx.currency_code || null)}
                       </span>
                     </button>
                   );
@@ -540,6 +593,11 @@ export default function Home() {
           </section>
         )}
       </main>
+
+      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6 pb-8 space-y-8">
+        <FounderStories />
+        <FinancialHeritage compact />
+      </div>
 
       {toast && (
         <div className="fixed left-1/2 -translate-x-1/2 bottom-28 z-[70] bg-navy text-white px-4 py-3 rounded-full text-[14px] font-semibold max-w-[90%] shadow-lg">

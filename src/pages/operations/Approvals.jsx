@@ -1,118 +1,145 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { formatCurrency } from '@/lib/formatCurrency';
-import { useToast } from '@/components/ui/use-toast';
+import { ArrowDownToLine, ArrowLeftRight, ArrowUpRight, ShieldAlert } from 'lucide-react';
 
-const PENDING = new Set(['pending', 'requested', 'review', '']);
+const PENDING = new Set(['pending', 'requested', 'review']);
 
 function isPending(item) {
-  return PENDING.has(String(item?.status || 'pending').toLowerCase());
+  return PENDING.has(String(item?.status || '').toLowerCase());
 }
 
-function txnIdFrom(text) {
-  return (String(text || '').match(/txn:([A-Za-z0-9_-]+)/) || [])[1] || '';
+function destinationForTransaction(transaction) {
+  if (transaction.type === 'deposit') return '/operations/deposits';
+  if (transaction.type === 'withdrawal') return '/operations/withdrawals';
+  return '/operations/transfers';
 }
 
 export default function Approvals() {
   const [items, setItems] = useState([]);
-  const [busy, setBusy] = useState('');
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { toast } = useToast();
 
   async function load() {
-    const user = await base44.auth.me().catch(() => null);
-    const [txns, notes] = await Promise.all([
-      base44.entities.Transaction.list('-created_date', 200).catch(() => []),
-      user ? base44.entities.Notification.filter({ user_id: user.id }, '-created_date', 100).catch(() => []) : [],
-    ]);
-    const money = (Array.isArray(txns) ? txns : [])
-      .filter((t) => isPending(t))
-      .map((t) => ({
-        kind: 'money',
-        id: t.id,
-        title: t.type || 'transaction',
-        detail: t.description || 'No description',
-        amount: t.amount,
-        user_id: t.user_id,
-        raw: t,
-      }));
-    const requests = (Array.isArray(notes) ? notes : [])
-      .filter((n) => /request/i.test(`${n.title || ''} ${n.message || ''}`) && isPending(n) && !txnIdFrom(n.message))
-      .map((n) => ({
-        kind: 'request',
-        id: n.id,
-        title: n.title,
-        detail: n.message,
-        amount: null,
-        user_id: n.user_id,
-        raw: n,
-      }));
-    setItems([...money, ...requests]);
-  }
-
-  useEffect(() => { load().catch((e) => setError(e.message || 'Could not load approvals.')); }, []);
-
-  async function decide(item, approved) {
-    setBusy(item.id);
     setError('');
-    try {
-      const txn = item.kind === 'money'
-        ? item.raw
-        : await base44.entities.Transaction.get(txnIdFrom(item.detail)).catch(() => null);
-      if (txn?.id) {
-        if (approved) {
-          const account = txn.account_id ? await base44.entities.Account.get(txn.account_id).catch(() => null) : null;
-          const value = Math.abs(Number(txn.amount) || 0);
-          const credit = txn.type === 'deposit' || Number(txn.amount) > 0;
-          const next = account ? Math.round(((Number(account.balance) || 0) + (credit ? value : -value)) * 100) / 100 : null;
-          if (account && next != null) await base44.entities.Account.update(account.id, { balance: next });
-          await base44.entities.Transaction.update(txn.id, { status: 'approved', balance_after: next });
-        } else {
-          await base44.entities.Transaction.update(txn.id, { status: 'declined' });
-        }
-        if (txn.user_id) {
-          await base44.entities.Notification.create({
-            user_id: txn.user_id,
-            title: approved ? 'Transaction approved' : 'Transaction declined',
-            message: `${approved ? 'Approved' : 'Declined'}: ${txn.description || txn.type}.`,
-            type: approved ? 'info' : 'warning',
-            status: approved ? 'approved' : 'declined',
-          }).catch(() => {});
-        }
-      }
-      if (item.kind === 'request') {
-        await base44.entities.Notification.update(item.id, { status: approved ? 'approved' : 'declined' }).catch(() => {});
-      }
-      toast({ title: approved ? 'Approved' : 'Declined', description: txn?.id ? 'The ledger was updated.' : 'The request was marked.' });
-      await load();
-    } catch (e) {
-      const message = e.message || 'The backend rejected this decision.';
-      setError(message);
-      toast({ title: 'Action failed', description: message, variant: 'destructive' });
-    } finally {
-      setBusy('');
+    const user = await base44.auth.me();
+    const [transactions, notifications] = await Promise.all([
+      base44.entities.Transaction.list('-created_date', 200),
+      base44.entities.Notification.filter({ user_id: user.id }, '-created_date', 100),
+    ]);
+    if (!user?.id || !Array.isArray(transactions) || !Array.isArray(notifications)) {
+      throw new Error('Review sources returned an invalid response.');
     }
+
+    const pendingTransactions = (Array.isArray(transactions) ? transactions : [])
+      .filter(isPending)
+      .map((transaction) => ({
+        kind: 'transaction',
+        id: transaction.id,
+        title: transaction.type || 'Transaction',
+        detail: transaction.description || 'No description supplied',
+        amount: transaction.amount,
+        status: transaction.status || 'Status not supplied',
+        currency: transaction.currency || transaction.currency_code || null,
+        createdDate: transaction.created_date,
+        destination: destinationForTransaction(transaction),
+      }));
+
+    const pendingRequests = (Array.isArray(notifications) ? notifications : [])
+      .filter((notification) =>
+        /request/i.test(`${notification.title || ''} ${notification.message || ''}`) &&
+        isPending(notification)
+      )
+      .map((notification) => ({
+        kind: 'request',
+        id: notification.id,
+        title: notification.title || 'Service request',
+        detail: notification.message || 'No request details supplied',
+        amount: null,
+        status: notification.status || 'Status not supplied',
+        currency: null,
+        createdDate: notification.created_date,
+        destination: '/operations/service-requests',
+      }));
+
+    setItems([...pendingTransactions, ...pendingRequests]);
   }
+
+  useEffect(() => {
+    let cancelled = false;
+    load()
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError.message || 'Could not load the read-only approvals inbox.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] px-5 pb-28 pt-6">
-      <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Operators and administrators</p>
+    <div className="min-h-screen bg-[#F7F5EF] px-5 pb-12 pt-6 lg:px-8">
+      <p className="text-xs uppercase tracking-[0.16em] text-slate-400">Operations · Review inbox</p>
       <h1 className="mt-1 text-3xl font-bold text-navy">Approvals</h1>
-      <p className="mt-1 text-sm text-slate-500">Approve posts the money. Decline leaves the balance unchanged.</p>
-      {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+      <p className="mt-1 text-sm text-slate-500">
+        Read-only view of the 200 newest transaction records and 100 newest notification records. Financial decisions are handled only by dedicated server-authorized workflows.
+      </p>
+
+      <div role="status" className="mt-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <ShieldAlert size={19} className="mt-0.5 shrink-0" />
+        <div>
+          <p className="font-semibold">Read-only review inbox</p>
+          <p className="mt-1">
+            This screen cannot approve, reject, post, or change an account balance. Legacy transaction mutations have been removed from the browser. Open the relevant operational queue to check whether a verified workflow is available.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <Link to="/operations/deposits" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy">
+          <ArrowDownToLine size={15} /> Deposits
+        </Link>
+        <Link to="/operations/withdrawals" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy">
+          <ArrowUpRight size={15} /> Withdrawals
+        </Link>
+        <Link to="/operations/transfers" className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-navy">
+          <ArrowLeftRight size={15} /> Transfers
+        </Link>
+      </div>
+
+      {error && <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+
       <div className="mt-6 space-y-3">
-        {items.map((item) => (
-          <div key={`${item.kind}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-4">
-            <p className="text-xs uppercase tracking-wider text-brass">{item.title}</p>
-            <p className="mt-1 font-semibold text-navy">{item.detail}</p>
-            {item.amount != null && <p className="mt-1 text-sm">{formatCurrency(item.amount)}</p>}
-            <div className="mt-4 grid grid-cols-2 gap-2">
-              <button type="button" disabled={busy === item.id} onClick={() => decide(item, true)} className="h-12 rounded-xl bg-emerald-700 text-sm font-semibold text-white disabled:opacity-50">{busy === item.id ? 'Working…' : 'Approve'}</button>
-              <button type="button" disabled={busy === item.id} onClick={() => decide(item, false)} className="h-12 rounded-xl border border-red-200 bg-red-50 text-sm font-semibold text-red-700 disabled:opacity-50">{busy === item.id ? 'Working…' : 'Decline'}</button>
-            </div>
+        {loading ? (
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-sm text-slate-500">Loading review records…</div>
+        ) : items.length ? (
+          items.map((item) => (
+            <article key={`${item.kind}-${item.id}`} className="rounded-2xl border border-slate-200 bg-white p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs uppercase tracking-wider text-brass">{item.title}</p>
+                  <p className="mt-1 break-words font-semibold text-navy">{item.detail}</p>
+                  <p className="mt-2 text-xs text-slate-500">
+                    {item.createdDate ? new Date(item.createdDate).toLocaleString() : 'Date unavailable'} · {item.status}
+                  </p>
+                </div>
+                {item.amount != null && <p className="shrink-0 text-sm font-semibold tabular-nums text-navy">{formatCurrency(item.amount, item.currency)}</p>}
+              </div>
+              <div className="mt-3 flex justify-end">
+                <Link to={item.destination} className="text-sm font-semibold text-navy underline underline-offset-4">
+                  Open relevant queue
+                </Link>
+              </div>
+            </article>
+          ))
+        ) : (
+          <div className="rounded-2xl border border-dashed border-slate-300 bg-white/70 p-8 text-center text-sm text-slate-500">
+            No pending review records were returned by the current bounded queries.
           </div>
-        ))}
-        {!items.length && <div className="rounded-2xl border border-dashed border-slate-300 p-6 text-center text-sm text-slate-500">No pending requests. New Pay and Add money requests appear here.</div>}
+        )}
       </div>
     </div>
   );

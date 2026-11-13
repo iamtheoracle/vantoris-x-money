@@ -57,6 +57,7 @@ export default function SettingsSection({ user, referralLink, onDeleteAccount })
                 <p className="text-gray text-xs">Share your invite link</p>
               </div>
             </div>
+            {referralLink ? (
             <div className="flex items-center gap-2 bg-slate-50 rounded-xl px-3 py-2.5 border border-slate-200">
               <span className="text-gray text-xs flex-1 truncate selectable-content">{referralLink}</span>
               <button
@@ -71,6 +72,7 @@ export default function SettingsSection({ user, referralLink, onDeleteAccount })
                 {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
+          ) : <p className="rounded-xl border border-dashed border-slate-200 p-3 text-xs text-gray">Referral link unavailable until a trusted server workflow assigns a unique code.</p>}
           </div>
         </ProfileSection>
       )}

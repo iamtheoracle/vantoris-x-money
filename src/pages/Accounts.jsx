@@ -9,10 +9,10 @@ export default function Accounts() {
         .accounts-combined-page .accounts-money-content > div { padding-top: 0; }
       `}</style>
 
-      <header className="px-5 pt-6 pb-1 max-w-[430px] mx-auto">
-        <p className="text-gray text-sm">Your banking relationship</p>
+      <header className="px-5 pt-6 pb-1 max-w-[1440px] mx-auto">
+        <p className="text-gray text-sm">Private client accounts</p>
         <h1 className="text-3xl font-bold mt-1">Accounts</h1>
-        <p className="text-gray text-sm mt-1">Accounts, cards, payments and transfers in one place.</p>
+        <p className="text-gray text-sm mt-1">Account records, card information and approved payment-request services in one place.</p>
       </header>
 
       <div className="accounts-money-content">

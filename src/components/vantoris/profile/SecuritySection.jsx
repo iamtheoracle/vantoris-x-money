@@ -5,12 +5,12 @@ import { ShieldCheck, History, ChevronRight, AlertTriangle } from 'lucide-react'
 import SectionTitle from './SectionTitle';
 
 export default function SecuritySection({ application, auditLogs, notifications }) {
-  const kycStatus = application?.kyc_status || 'not_started';
+  const kycStatus = application?.kyc_status || 'not_supplied';
   const isVerified = kycStatus === 'approved';
   const securityAlerts = (notifications || []).filter(n => n.type === 'warning').slice(0, 2);
   const recentAudits = (auditLogs || []).slice(0, 3);
 
-  if (!isVerified && kycStatus === 'not_started' && recentAudits.length === 0 && securityAlerts.length === 0) {
+  if (!isVerified && kycStatus === 'not_supplied' && recentAudits.length === 0 && securityAlerts.length === 0) {
     return null;
   }
 
@@ -29,10 +29,10 @@ export default function SecuritySection({ application, auditLogs, notifications 
             <div className="flex-1 min-w-0">
               <p className="text-gray text-[10px] uppercase tracking-wider font-medium">Identity Verification</p>
               <p className="text-foreground font-bold text-sm">
-                {isVerified ? 'Verified' : kycStatus === 'pending' ? 'Pending Review' : 'Not Started'}
+                {isVerified ? 'Verified' : kycStatus === 'pending' ? 'Pending Review' : kycStatus === 'not_supplied' ? 'Status not supplied' : 'Not Started'}
               </p>
               <p className="text-gray text-[10px] mt-0.5">
-                {isVerified ? 'Your identity has been confirmed' : kycStatus === 'pending' ? 'Verification under review' : 'Complete verification to unlock features'}
+                {isVerified ? 'Your identity has been confirmed' : kycStatus === 'pending' ? 'Verification under review' : kycStatus === 'not_supplied' ? 'Verification status could not be confirmed' : 'Complete verification to unlock features'}
               </p>
             </div>
           </div>

@@ -1,21 +1,33 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
-import { Search, Loader2, RefreshCw, Globe, AlertTriangle, CheckCircle, Clock, ExternalLink, Activity, Database, ShieldAlert } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatCurrency';
-import { executeDiscoveryRun, checkFreshness, refreshProductCatalog, verifyDiscoveryRecord, refreshStaleRecords, detectProductChanges } from '@/lib/discoveryEngine';
-import { useToast } from '@/components/ui/use-toast';
+import { Search, RefreshCw, Globe, AlertTriangle, ExternalLink, Activity, Database, ShieldAlert, Clock } from 'lucide-react';
 
 const DISCOVERY_DOMAINS = [
-  { id: 'humanitarian', label: 'Humanitarian', icon: Globe, color: 'text-brass' },
-  { id: 'commerce', label: 'Commerce', icon: Activity, color: 'text-champagne' },
-  { id: 'news', label: 'News', icon: Globe, color: 'text-navy' },
-  { id: 'legal_regulatory', label: 'Legal & Regulatory', icon: ShieldAlert, color: 'text-crimson' },
-  { id: 'market', label: 'Market', icon: Activity, color: 'text-mint' },
-  { id: 'organization', label: 'Organizations', icon: Globe, color: 'text-brass' },
-  { id: 'risk', label: 'Risk & Fraud', icon: AlertTriangle, color: 'text-warning' },
-  { id: 'internal', label: 'Internal', icon: Database, color: 'text-gray' },
+  { id: 'humanitarian', label: 'Humanitarian', icon: Globe },
+  { id: 'commerce', label: 'Commerce', icon: Activity },
+  { id: 'news', label: 'News', icon: Globe },
+  { id: 'legal_regulatory', label: 'Legal & Regulatory', icon: ShieldAlert },
+  { id: 'market', label: 'Market', icon: Activity },
+  { id: 'organization', label: 'Organizations', icon: Globe },
+  { id: 'risk', label: 'Risk & Fraud', icon: AlertTriangle },
+  { id: 'internal', label: 'Internal', icon: Database },
 ];
+
+function dateLabel(value) {
+  if (!value) return 'Date not supplied';
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Date not supplied' : date.toLocaleString();
+}
+
+function label(value) {
+  return value ? String(value).replace(/_/g, ' ') : 'Not supplied';
+}
+
+function parseMetadata(value) {
+  if (value && typeof value === 'object') return value;
+  try { return JSON.parse(value || '{}'); } catch { return {}; }
+}
 
 export default function DiscoveryNetwork() {
   const [records, setRecords] = useState([]);
@@ -24,382 +36,136 @@ export default function DiscoveryNetwork() {
   const [sources, setSources] = useState([]);
   const [changes, setChanges] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errors, setErrors] = useState({ records: false, runs: false, alerts: false, sources: false, changes: false });
   const [activeDomain, setActiveDomain] = useState(null);
-  const [running, setRunning] = useState(false);
-  const { toast } = useToast();
 
   const loadData = useCallback(async () => {
-    try {
-      const [recs, recentRuns, openAlerts, srcs, recentChanges] = await Promise.all([
-        base44.entities.DiscoveryRecord.filter({ status: 'active' }, '-discovered_date', 50).catch(() => []),
-        base44.entities.DiscoveryRun.filter({}, '-started_at', 10).catch(() => []),
-        base44.entities.DiscoveryAlert.filter({ status: 'open' }, '-created_date', 10).catch(() => []),
-        base44.entities.DiscoverySource.filter({}, '-last_checked', 20).catch(() => []),
-        base44.entities.DiscoveryChange.filter({ requires_review: true }, '-detected_at', 10).catch(() => []),
-      ]);
-      setRecords(recs);
-      setRuns(recentRuns);
-      setAlerts(openAlerts);
-      setSources(srcs);
-      setChanges(recentChanges);
-    } catch (err) {
-      // non-critical
-    } finally {
-      setLoading(false);
-    }
+    setLoading(true);
+    const safeList = async (request) => {
+      try {
+        const rows = await request;
+        return { rows: Array.isArray(rows) ? rows : [], failed: !Array.isArray(rows) };
+      } catch {
+        return { rows: [], failed: true };
+      }
+    };
+    const [recordResult, runResult, alertResult, sourceResult, changeResult] = await Promise.all([
+      safeList(base44.entities.DiscoveryRecord.filter({}, '-discovered_date', 50)),
+      safeList(base44.entities.DiscoveryRun.filter({}, '-started_at', 10)),
+      safeList(base44.entities.DiscoveryAlert.filter({ status: 'open' }, '-created_date', 10)),
+      safeList(base44.entities.DiscoverySource.filter({}, '-last_checked', 20)),
+      safeList(base44.entities.DiscoveryChange.filter({ requires_review: true }, '-detected_at', 10)),
+    ]);
+    setRecords(recordResult.rows);
+    setRuns(runResult.rows);
+    setAlerts(alertResult.rows);
+    setSources(sourceResult.rows);
+    setChanges(changeResult.rows);
+    setErrors({
+      records: recordResult.failed,
+      runs: runResult.failed,
+      alerts: alertResult.failed,
+      sources: sourceResult.failed,
+      changes: changeResult.failed,
+    });
+    setLoading(false);
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  async function handleRunDiscovery(domain) {
-    setRunning(true);
-    toast({ title: 'Discovery started', description: `Running ${DISCOVERY_DOMAINS.find(d => d.id === domain)?.label} discovery...` });
-    try {
-      const result = await executeDiscoveryRun(domain, { triggered_by: 'manual' });
-      toast({
-        title: 'Discovery completed',
-        description: `Discovered ${result.recordsDiscovered} new, updated ${result.recordsUpdated} records.`,
-      });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Discovery failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setRunning(false);
-    }
-  }
-
-  async function handleFreshnessCheck() {
-    setRunning(true);
-    try {
-      const result = await checkFreshness();
-      toast({ title: 'Freshness check complete', description: `${result.staleCount} stale records marked.` });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Check failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setRunning(false);
-    }
-  }
-
-  async function handleProductRefresh() {
-    setRunning(true);
-    try {
-      const result = await refreshProductCatalog();
-      toast({
-        title: 'Product refresh complete',
-        description: result.reason || `Refreshed ${result.refreshed} products from ${result.sources} sources.`,
-      });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Refresh failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setRunning(false);
-    }
-  }
-
-  async function handleVerify(recordId) {
-    toast({ title: 'Verifying record...', description: 'Cross-checking with additional sources.' });
-    try {
-      const result = await verifyDiscoveryRecord(recordId);
-      toast({
-        title: result.verified ? 'Verified' : 'Verification result',
-        description: `Result: ${result.result || 'failed'}, Confidence: ${result.confidence || 'low'}`,
-      });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Verification failed', description: err.message, variant: 'destructive' });
-    }
-  }
-
-  async function handleStaleRefresh() {
-    setRunning(true);
-    toast({ title: 'Refreshing stale records...', description: 'Re-verifying stale discovery records.' });
-    try {
-      const result = await refreshStaleRecords();
-      toast({
-        title: 'Stale refresh complete',
-        description: `${result.refreshed} refreshed, ${result.stillStale} still stale, ${result.unavailable} unavailable.`,
-      });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Refresh failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setRunning(false);
-    }
-  }
-
-  async function handleProductChangeDetection() {
-    setRunning(true);
-    try {
-      const result = await detectProductChanges();
-      toast({
-        title: 'Product change detection complete',
-        description: `${result.changesDetected} changes detected across ${result.totalProducts} products.`,
-      });
-      loadData();
-    } catch (err) {
-      toast({ title: 'Detection failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setRunning(false);
-    }
-  }
-
-  const filteredRecords = activeDomain ? records.filter((r) => r.discovery_domain === activeDomain) : records;
-
-  if (loading) {
-    return (
-      <OperationsPageLayout title="Discovery & Intelligence Network" icon={Search}>
-        <div className="flex justify-center py-12"><Loader2 className="animate-spin text-brass" /></div>
-      </OperationsPageLayout>
-    );
-  }
+  const filteredRecords = useMemo(() => activeDomain ? records.filter((record) => record.discovery_domain === activeDomain) : records, [records, activeDomain]);
 
   return (
     <OperationsPageLayout
       title="Discovery & Intelligence Network"
-      description="Autonomous research, discovery, verification, and monitoring"
+      description="Read-only discovery records, sources, and review history. Discovery ingestion and verification actions are disabled."
       icon={Search}
-      actions={
-        <div className="flex gap-2">
-          <button
-            onClick={handleStaleRefresh}
-            disabled={running}
-            className="px-3 py-2 rounded-lg bg-champagne/10 text-champagne text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={running ? 'animate-spin' : ''} /> Refresh Stale
-          </button>
-          <button
-            onClick={handleFreshnessCheck}
-            disabled={running}
-            className="px-3 py-2 rounded-lg bg-navy/10 text-navy text-xs font-semibold flex items-center gap-1.5 disabled:opacity-50"
-          >
-            <RefreshCw size={14} className={running ? 'animate-spin' : ''} /> Check Freshness
-          </button>
-        </div>
-      }
+      actions={<button type="button" onClick={loadData} disabled={loading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-navy disabled:opacity-50"><RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Reload records</button>}
     >
-      {/* Discovery Domain Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+      <div role="status" className="mb-6 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <ShieldAlert size={18} className="mt-0.5 shrink-0 text-amber-800" />
+        <div>
+          <p className="text-sm font-semibold text-amber-950">Discovery automation and verification are disabled</p>
+          <p className="mt-1 text-xs leading-5 text-amber-900/80">
+            No discovery run, source refresh, verification, stale-record update, product change detection, or approval is initiated from this page. These actions require server-side source validation, human review, dual approval where applicable, and immutable audit evidence.
+          </p>
+        </div>
+      </div>
+
+      <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         {DISCOVERY_DOMAINS.map((domain) => {
           const Icon = domain.icon;
-          const count = records.filter((r) => r.discovery_domain === domain.id).length;
+          const count = records.filter((record) => record.discovery_domain === domain.id).length;
           return (
-            <button
-              key={domain.id}
-              onClick={() => handleRunDiscovery(domain.id)}
-              disabled={running}
-              className="vantoris-glass p-3 text-left hover:ring-2 hover:ring-brass/30 transition disabled:opacity-50"
-            >
-              <Icon size={18} className={domain.color} />
-              <p className="text-xs font-bold text-foreground mt-2">{domain.label}</p>
-              <p className="text-[10px] text-gray">{count} records</p>
+            <button key={domain.id} type="button" onClick={() => setActiveDomain(activeDomain === domain.id ? null : domain.id)} className={'rounded-xl border p-3 text-left ' + (activeDomain === domain.id ? 'border-brass bg-brass/10' : 'border-slate-200 bg-white')}>
+              <Icon size={17} className="text-brass" />
+              <p className="mt-2 text-xs font-bold text-navy">{domain.label}</p>
+              <p className="mt-1 text-[10px] text-slate-500">{errors.records ? 'Count unavailable' : count + ' records returned'}</p>
             </button>
           );
         })}
       </div>
 
-      {/* Alerts */}
-      {alerts.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            <AlertTriangle size={16} className="text-warning" /> Active Alerts ({alerts.length})
-          </h3>
-          <div className="space-y-2">
-            {alerts.slice(0, 5).map((alert) => (
-              <div key={alert.id} className="vantoris-glass-flat p-3 flex items-start gap-3">
-                <AlertTriangle size={16} className={`mt-0.5 ${alert.severity === 'critical' ? 'text-crimson' : alert.severity === 'high' ? 'text-warning' : 'text-gray'}`} />
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-foreground">{alert.description}</p>
-                  <p className="text-[10px] text-gray mt-0.5 capitalize">{alert.alert_type.replace(/_/g, ' ')} · {alert.severity}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="mb-6 grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <section className="vantoris-glass rounded-2xl p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground"><AlertTriangle size={16} className="text-warning" /> Open alert records</h2>
+          {loading ? <p className="py-4 text-xs text-gray">Loading alert records…</p> : errors.alerts ? <p role="status" className="text-xs text-amber-700">Alert records unavailable; zero alerts must not be inferred.</p> : alerts.length === 0 ? <p className="py-4 text-xs text-gray">No open alert records were returned.</p> : alerts.slice(0, 5).map((alert) => <div key={alert.id} className="border-b border-slate-100 py-2 last:border-0"><p className="text-xs font-medium text-foreground">{alert.description || 'Alert description not supplied'}</p><p className="mt-0.5 text-[10px] text-gray">{label(alert.alert_type)} · recorded severity: {label(alert.severity)}</p></div>)}
+        </section>
 
-      {/* Change Detection */}
-      {changes.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
-            <Activity size={16} className="text-champagne" /> Changes Requiring Review ({changes.length})
-          </h3>
-          <div className="space-y-2">
-            {changes.slice(0, 5).map((change) => (
-              <div key={change.id} className="vantoris-glass-flat p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-foreground">{change.change_summary}</p>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-champagne/10 text-champagne font-medium capitalize">
-                    {change.change_type.replace(/_/g, ' ')}
-                  </span>
-                </div>
-                {change.previous_value && change.new_value && (
-                  <div className="mt-1.5 grid grid-cols-2 gap-2 text-[10px]">
-                    <div className="bg-crimson/5 p-1.5 rounded">
-                      <p className="text-gray font-medium mb-0.5">Previous:</p>
-                      <p className="text-gray break-all">{change.previous_value}</p>
-                    </div>
-                    <div className="bg-mint/5 p-1.5 rounded">
-                      <p className="text-gray font-medium mb-0.5">New:</p>
-                      <p className="text-gray break-all">{change.new_value}</p>
-                    </div>
-                  </div>
-                )}
-                <p className="text-[10px] text-gray mt-1">
-                  {change.detected_at ? new Date(change.detected_at).toLocaleString() : ''}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Runs */}
-      {runs.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-bold text-foreground mb-3">Recent Discovery Runs</h3>
-          <div className="space-y-2">
-            {runs.slice(0, 5).map((run) => (
-              <div key={run.id} className="vantoris-glass-flat p-3 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-foreground capitalize">{run.run_type.replace(/_/g, ' ')}</p>
-                  <p className="text-[10px] text-gray">{run.summary || run.status}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    run.status === 'completed' ? 'bg-mint/10 text-mint' :
-                    run.status === 'failed' ? 'bg-crimson/10 text-crimson' :
-                    run.status === 'running' ? 'bg-champagne/10 text-champagne' :
-                    'bg-slate-100 text-gray'
-                  }`}>
-                    {run.status}
-                  </span>
-                  {run.records_discovered > 0 && <span className="text-[10px] text-gray">+{run.records_discovered} new</span>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Sources */}
-      {sources.length > 0 && (
-        <div className="mb-6">
-          <h3 className="text-sm font-bold text-foreground mb-3">Discovery Sources</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {sources.map((source) => (
-              <div key={source.id} className="vantoris-glass-flat p-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-semibold text-foreground">{source.name}</p>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                    source.status === 'active' ? 'bg-mint/10 text-mint' :
-                    source.status === 'unavailable' ? 'bg-crimson/10 text-crimson' :
-                    'bg-slate-100 text-gray'
-                  }`}>
-                    {source.status}
-                  </span>
-                </div>
-                <p className="text-[10px] text-gray mt-0.5 capitalize">{source.source_type} · {source.discovery_domain}</p>
-                <div className="flex items-center gap-2 mt-1">
-                  {source.api_available ? (
-                    <span className="text-[10px] text-mint font-medium">API Connected</span>
-                  ) : (
-                    <span className="text-[10px] text-warning">No API — Web Search Only</span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Discovery Records */}
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="text-sm font-bold text-foreground">Discovery Records</h3>
-        <div className="flex gap-1.5">
-          <button
-            onClick={() => setActiveDomain(null)}
-            className={`px-2.5 py-1 rounded-full text-[10px] font-medium ${!activeDomain ? 'bg-navy text-white' : 'bg-slate-100 text-gray'}`}
-          >
-            All
-          </button>
-          {DISCOVERY_DOMAINS.slice(0, 4).map((d) => (
-            <button
-              key={d.id}
-              onClick={() => setActiveDomain(activeDomain === d.id ? null : d.id)}
-              className={`px-2.5 py-1 rounded-full text-[10px] font-medium ${activeDomain === d.id ? 'bg-navy text-white' : 'bg-slate-100 text-gray'}`}
-            >
-              {d.label}
-            </button>
-          ))}
-        </div>
+        <section className="vantoris-glass rounded-2xl p-4">
+          <h2 className="mb-3 flex items-center gap-2 text-sm font-bold text-foreground"><Activity size={16} className="text-champagne" /> Change records requiring review</h2>
+          {loading ? <p className="py-4 text-xs text-gray">Loading change records…</p> : errors.changes ? <p role="status" className="text-xs text-amber-700">Change records unavailable; no empty-queue conclusion is drawn.</p> : changes.length === 0 ? <p className="py-4 text-xs text-gray">No change records were returned for this filter.</p> : changes.slice(0, 5).map((change) => <div key={change.id} className="border-b border-slate-100 py-2 last:border-0"><p className="text-xs font-medium text-foreground">{change.change_summary || 'Change summary not supplied'}</p><p className="mt-0.5 text-[10px] text-gray">{label(change.change_type)} · {dateLabel(change.detected_at)}</p></div>)}
+        </section>
       </div>
 
-      {filteredRecords.length === 0 ? (
-        <div className="vantoris-glass p-8 text-center">
-          <Database size={28} className="text-gray mx-auto mb-2" />
-          <p className="text-sm font-medium text-foreground">No discovery records yet</p>
-          <p className="text-xs text-gray mt-1">Run a discovery domain above to start discovering and verifying information.</p>
+      <section className="mb-6 vantoris-glass rounded-2xl p-4">
+        <h2 className="mb-3 text-sm font-bold text-foreground">Recorded discovery runs</h2>
+        {loading ? <p className="py-4 text-xs text-gray">Loading run records…</p> : errors.runs ? <p role="status" className="text-xs text-amber-700">Discovery run history unavailable.</p> : runs.length === 0 ? <p className="py-4 text-xs text-gray">No discovery run records were returned.</p> : runs.slice(0, 5).map((run) => <div key={run.id} className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 py-2 last:border-0"><div><p className="text-xs font-medium capitalize text-foreground">{label(run.run_type)}</p><p className="text-[10px] text-gray">{run.summary || 'Summary not supplied'} · {dateLabel(run.started_at)}</p></div><span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] capitalize text-slate-600">Recorded status: {label(run.status)}</span></div>)}
+        <p className="mt-2 text-[10px] text-gray">Historical run records are not proof that sources were independently verified or that records remain current.</p>
+      </section>
+
+      <section className="mb-6 vantoris-glass rounded-2xl p-4">
+        <h2 className="mb-3 text-sm font-bold text-foreground">Recorded discovery sources</h2>
+        {loading ? <p className="py-4 text-xs text-gray">Loading source records…</p> : errors.sources ? <p role="status" className="text-xs text-amber-700">Discovery source records unavailable.</p> : sources.length === 0 ? <p className="py-4 text-xs text-gray">No discovery source records were returned.</p> : <div className="grid grid-cols-1 gap-2 md:grid-cols-2">{sources.map((source) => <div key={source.id} className="rounded-xl border border-slate-100 p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs font-semibold text-foreground">{source.name || 'Source name not supplied'}</p><span className="text-[10px] capitalize text-gray">Recorded status: {label(source.status)}</span></div><p className="mt-1 text-[10px] text-gray">{label(source.source_type)} · {label(source.discovery_domain)}</p><p className="mt-1 text-[10px] text-gray">API availability field: {source.api_available === true ? 'reported true' : source.api_available === false ? 'reported false' : 'not supplied'} · Last checked: {dateLabel(source.last_checked)}</p></div>)}</div>}
+      </section>
+
+      <section className="vantoris-glass rounded-2xl p-4">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-bold text-foreground">Discovery records returned</h2>
+          <div className="flex flex-wrap gap-1.5">
+            <button type="button" onClick={() => setActiveDomain(null)} className={'rounded-full px-2.5 py-1 text-[10px] font-medium ' + (!activeDomain ? 'bg-navy text-white' : 'bg-slate-100 text-gray')}>All</button>
+            {DISCOVERY_DOMAINS.slice(0, 4).map((domain) => <button key={domain.id} type="button" onClick={() => setActiveDomain(activeDomain === domain.id ? null : domain.id)} className={'rounded-full px-2.5 py-1 text-[10px] font-medium ' + (activeDomain === domain.id ? 'bg-navy text-white' : 'bg-slate-100 text-gray')}>{domain.label}</button>)}
+          </div>
         </div>
-      ) : (
-        <div className="space-y-2">
-          {filteredRecords.slice(0, 20).map((record) => (
-            <div key={record.id} className="vantoris-glass p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{record.title}</p>
-                  <p className="text-xs text-gray mt-0.5 line-clamp-2">{record.content_summary || record.description}</p>
-                  <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-gray capitalize">{record.discovery_domain.replace(/_/g, ' ')}</span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      record.verification_status === 'verified' ? 'bg-mint/10 text-mint' :
-                      record.verification_status === 'conflicting' ? 'bg-crimson/10 text-crimson' :
-                      record.verification_status === 'failed' ? 'bg-crimson/10 text-crimson' :
-                      'bg-warning/10 text-warning'
-                    }`}>
-                      {record.verification_status}
-                    </span>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                      record.freshness_status === 'current' ? 'bg-mint/10 text-mint' :
-                      record.freshness_status === 'stale' ? 'bg-warning/10 text-warning' :
-                      'bg-slate-100 text-gray'
-                    }`}>
-                      {record.freshness_status}
-                    </span>
-                    <span className="text-[10px] text-gray">Confidence: {record.confidence_level}</span>
-                    {record.metadata && (() => {
-                      let meta = {};
-                      try { meta = JSON.parse(record.metadata || '{}'); } catch (e) {}
-                      return meta._reliability_tier ? (
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
-                          meta._reliability_tier === 'high' ? 'bg-mint/10 text-mint' :
-                          meta._reliability_tier === 'medium' ? 'bg-champagne/10 text-champagne' :
-                          'bg-crimson/10 text-crimson'
-                        }`}>
-                          Reliability: {meta._reliability_tier} ({meta._reliability_score})
-                        </span>
-                      ) : null;
-                    })()}
+        {loading ? <p className="py-8 text-center text-xs text-gray">Loading discovery records…</p> : errors.records ? <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-950">Discovery records unavailable. No empty-record conclusion is drawn.</p> : filteredRecords.length === 0 ? <p className="py-8 text-center text-xs text-gray">No discovery records were returned for this filter.</p> : (
+          <div className="space-y-2">
+            {filteredRecords.slice(0, 20).map((record) => {
+              const metadata = parseMetadata(record.metadata);
+              return (
+                <article key={record.id} className="rounded-xl border border-slate-100 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-foreground">{record.title || 'Title not supplied'}</p>
+                      <p className="mt-0.5 line-clamp-2 text-xs text-gray">{record.content_summary || record.description || 'Summary not supplied'}</p>
+                      <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-gray">
+                        <span>{label(record.discovery_domain)}</span>
+                        <span>Recorded status: {label(record.status)}</span>
+                        <span>Recorded verification: {label(record.verification_status)}</span>
+                        <span>Recorded freshness: {label(record.freshness_status)}</span>
+                        <span>Confidence field: {label(record.confidence_level)}</span>
+                        {metadata._reliability_tier && <span>Recorded reliability: {label(metadata._reliability_tier)}</span>}
+                        <span>Discovered: {dateLabel(record.discovered_date)}</span>
+                      </div>
+                    </div>
+                    {record.source_url && <a href={record.source_url} target="_blank" rel="noopener noreferrer" aria-label="Open recorded source" className="text-gray hover:text-navy"><ExternalLink size={14} /></a>}
                   </div>
-                </div>
-                <div className="flex flex-col gap-1 items-end">
-                  {record.source_url && (
-                    <a href={record.source_url} target="_blank" rel="noopener noreferrer" className="text-gray hover:text-navy">
-                      <ExternalLink size={14} />
-                    </a>
-                  )}
-                  <button
-                    onClick={() => handleVerify(record.id)}
-                    className="text-[10px] text-navy font-medium px-2 py-1 rounded bg-navy/10 hover:bg-navy/20"
-                  >
-                    Verify
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+                </article>
+              );
+            })}
+          </div>
+        )}
+        <p className="mt-3 text-[10px] text-gray">Records and verification fields are displayed as stored metadata. No source validation or state transition is performed here.</p>
+      </section>
     </OperationsPageLayout>
   );
 }

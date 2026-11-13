@@ -44,7 +44,10 @@ export default function UnifiedTimeline({ transactions, heroActivities, notifica
         icon: cfg.icon, iconColor: cfg.color, iconBg: cfg.bg,
         title: t.description || t.type,
         subtitle: new Date(effDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        amount: (t.type === 'withdrawal' || t.type === 'fee') ? -Math.abs(t.amount) : t.amount,
+        amount: t.amount == null || (typeof t.amount === 'string' && t.amount.trim() === '') || !Number.isFinite(Number(t.amount))
+          ? null
+          : (t.type === 'withdrawal' || t.type === 'fee') ? -Math.abs(Number(t.amount)) : Number(t.amount),
+        currency: t.currency || t.currency_code || null,
         isCurrency: true,
       };
     }),
@@ -54,7 +57,7 @@ export default function UnifiedTimeline({ transactions, heroActivities, notifica
       icon: Heart, iconColor: 'text-brass', iconBg: 'bg-brass/10',
       title: a.title,
       subtitle: new Date(a.created_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      amount: a.amount > 0 ? formatCurrency(a.amount) : null,
+      amount: a.amount > 0 ? formatCurrency(a.amount, a.currency || a.currency_code || null) : null,
       isCurrency: false,
     })),
     ...(auditLogs || []).map(log => {
@@ -102,8 +105,8 @@ export default function UnifiedTimeline({ transactions, heroActivities, notifica
                 <p className="text-gray text-[10px]">{item.subtitle}</p>
               </div>
               {item.isCurrency ? (
-                <span className={`text-sm font-bold whitespace-nowrap ${item.amount < 0 ? 'text-crimson' : 'text-mint'}`}>
-                  {item.amount < 0 ? '-' : '+'}{formatCurrency(Math.abs(item.amount))}
+                <span className={`text-sm font-bold whitespace-nowrap ${item.amount == null ? 'text-gray' : item.amount < 0 ? 'text-crimson' : 'text-mint'}`}>
+                  {item.amount == null ? 'Value unavailable' : (item.amount < 0 ? '-' : '+') + formatCurrency(Math.abs(item.amount), item.currency)}
                 </span>
               ) : item.amount ? (
                 <span className="text-sm font-bold text-brass whitespace-nowrap">{item.amount}</span>

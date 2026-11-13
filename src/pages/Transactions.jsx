@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { ArrowLeft } from "lucide-react";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export default function Transactions() {
   const [rows, setRows] = useState([]);
@@ -27,9 +28,9 @@ export default function Transactions() {
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="font-semibold text-navy">{tx.description || tx.type || "Transaction"}</p>
-                <p className="mt-1 text-xs text-slate-500">{tx.status || "recorded"} · {tx.created_date || tx.date || ""}</p>
+                <p className="mt-1 text-xs text-slate-500">{tx.status ? String(tx.status).replace(/_/g, " ") : "Status not supplied"} · {tx.created_date || tx.date || "Date not supplied"}</p>
               </div>
-              <p className="font-mono text-sm font-semibold">{tx.amount != null ? `$${Number(tx.amount).toFixed(2)}` : "—"}</p>
+              <p className="font-mono text-sm font-semibold">{formatCurrency(tx.amount, tx.currency || tx.currency_code || null)}</p>
             </div>
           </article>
         ))}

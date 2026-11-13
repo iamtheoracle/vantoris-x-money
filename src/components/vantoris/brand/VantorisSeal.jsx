@@ -1,21 +1,20 @@
 import React, { useId } from 'react';
-import VantorisMonogram from './VantorisMonogram';
-import { VANTORIS_COLORS } from './VantorisMonogram';
+import VantorisMonogram, { VANTAGE_COLORS } from './VantorisMonogram';
 
 /**
- * VANTORIS Executive Seal — circular institutional seal for official documents,
+ * Vantage Private Investment seal — circular institutional seal for official documents,
  * statements, certificates, member cards, and executive correspondence.
  */
 export default function VantorisSeal({ size = 160, theme = 'light', className = '' }) {
   const uid = useId().replace(/:/g, '');
   const gid = `seal-${uid}`;
   const isDark = theme === 'dark';
-  const ringColor = isDark ? VANTORIS_COLORS.champagneGold : VANTORIS_COLORS.executiveBlue;
+  const ringColor = isDark ? VANTAGE_COLORS.champagneGold : VANTAGE_COLORS.executiveBlue;
   const textColor = isDark ? 'rgba(248,250,252,0.7)' : 'rgba(18,58,110,0.8)';
 
   // circular text via textPath
-  const topText = 'VANTORIS PIP · PRIVATE INVESTMENT & PAYMENTS · ';
-  const bottomText = 'TRUST · STRUCTURE · PURPOSE · EST. MMXXV · ';
+  const topText = 'VANTAGE PRIVATE INVESTMENT · ';
+  const bottomText = 'TRUST · STRUCTURE · PURPOSE · ARCH · RIVER · ';
 
   return (
     <svg
@@ -26,7 +25,7 @@ export default function VantorisSeal({ size = 160, theme = 'light', className = 
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Vantoris Executive Seal"
+      aria-label="Vantage Private Investment seal"
     >
       <defs>
         <path id={`${gid}-top`} d="M100,100 m-78,0 a78,78 0 1,1 156,0" fill="none" />

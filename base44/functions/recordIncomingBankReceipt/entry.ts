@@ -33,6 +33,7 @@ export default async function(req: Request): Promise<Response> {
       }
       const account=await base44.asServiceRole.entities.Account.get(accountId);
       if(!account||account.user_id!==memberUserId||account.status!=='active') return Response.json({error:'Target member account is unavailable or does not belong to that member.'},{status:404});
+      if(account.currency!=='USD') return Response.json({error:'Target member account does not have a verified USD currency record. No receipt was recorded.'},{status:409});
 
       const transactional = await recordIncomingReceipt({
         rail:rail as 'ACH'|'FEDWIRE', bankReference,
@@ -64,7 +65,7 @@ export default async function(req: Request): Promise<Response> {
           }),
           base44.asServiceRole.entities.Notification.create({
             user_id:memberUserId,title:'Incoming payment under verification',
-            message:'AVCU recorded an incoming bank payment for independent verification. Your available balance has not been credited.',
+            message:'The institution recorded an incoming bank payment for independent verification. Your available balance has not been credited.',
             type:'info',read:false
           })
         ]);
@@ -86,8 +87,8 @@ export default async function(req: Request): Promise<Response> {
     if(receipt.recorded_by_user_id===staff.id) return Response.json({error:'The verifier must be a different staff member from the person who recorded the receipt.'},{status:403});
 
     const clearingLedgerAccountId = receipt.rail==='ACH'
-      ? Deno.env.get('AVCU_ACH_CLEARING_LEDGER_ACCOUNT_ID') || ''
-      : Deno.env.get('AVCU_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID') || '';
+      ? Deno.env.get('VANTAGE_ACH_CLEARING_LEDGER_ACCOUNT_ID') || ''
+      : Deno.env.get('VANTAGE_FEDWIRE_CLEARING_LEDGER_ACCOUNT_ID') || '';
     if(action==='verify_received' && !clearingLedgerAccountId) {
       return Response.json({error:'The approved bank-clearing ledger account is not configured. No ledger posting was made.'},{status:503});
     }
@@ -121,7 +122,7 @@ export default async function(req: Request): Promise<Response> {
       base44.asServiceRole.entities.Notification.create({
         user_id:receipt.member_user_id,
         title:next==='verified_received'?'Incoming payment verified':next==='returned'?'Incoming payment returned':'Incoming payment exception',
-        message:next==='verified_received'?'The incoming receipt was independently verified and posted to AVCU’s transactional ledger. Account balance display reconciliation remains a separate step.':next==='returned'?'The bank return was recorded and the corresponding ledger reversal was created.':'The incoming payment requires follow-up with AVCU support.',
+        message:next==='verified_received'?'The incoming receipt was independently verified and posted to the institution’s transactional ledger. Account balance display reconciliation remains a separate step.':next==='returned'?'The bank return was recorded and the corresponding ledger reversal was created.':'The incoming payment requires follow-up with client services.',
         type:next==='verified_received'?'info':'warning',read:false
       })
     ]);

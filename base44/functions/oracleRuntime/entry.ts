@@ -24,7 +24,7 @@ export default async function(req) {
     }
 
     if (action === 'history') {
-      const thread = await services.conversation.getOrCreateThread(user.id, 'AVCU Assistant');
+      const thread = await services.conversation.getOrCreateThread(user.id, 'Vantage Assistant');
       const messages = await services.conversation.getRecentHistory(thread.id, 20);
       return Response.json({ threadId: thread.id, messages: (messages || []).reverse() });
     }

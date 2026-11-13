@@ -71,7 +71,8 @@ Deno.serve(async (req) => {
         account_number: existing.account_number,
         account_type: existing.account_type,
         account_name: existing.account_name,
-        balance: existing.balance ?? 0,
+        balance: existing.balance ?? null,
+        currency: existing.currency || null,
       });
     }
 
@@ -131,6 +132,7 @@ Deno.serve(async (req) => {
       account_name: account_name.trim(),
       account_number: accountNumber,
       balance: 0,
+      currency: 'USD',
       status: 'active',
       application_id,
     });
@@ -164,6 +166,7 @@ Deno.serve(async (req) => {
       account_type,
       account_name: account_name.trim(),
       balance: 0,
+      currency: 'USD',
       notification_recorded: notificationRecorded,
       audit_recorded: auditRecorded,
       follow_up_attention_required: !notificationRecorded || !auditRecorded,

@@ -34,10 +34,13 @@ export default async function(req: Request): Promise<Response> {
     if (transfer.status !== 'approved_awaiting_bank_submission') {
       return Response.json({ error: 'Transfer has not completed the required review approvals.' }, { status: 409 });
     }
-    if (transfer.rail === 'FEDWIRE' &&
-        (!transfer.reviewer_user_id || !transfer.approver_user_id ||
-         transfer.reviewer_user_id === transfer.approver_user_id)) {
-      return Response.json({ error: 'Wire requires two distinct staff approvals.' }, { status: 403 });
+    if (!['ACH', 'FEDWIRE'].includes(transfer.rail) ||
+        !transfer.reviewer_user_id || !transfer.approver_user_id ||
+        transfer.reviewer_user_id === transfer.approver_user_id) {
+      return Response.json({ error: 'ACH and Fedwire require two distinct staff approvals before submission.' }, { status: 403 });
+    }
+    if (Deno.env.get('VANTAGE_PROVIDER_SUBMISSION_ENABLED') !== 'true') {
+      return Response.json({ error: 'External bank submission is disabled until U.S. sponsor-bank authorization, compliance approval and provider configuration are verified. No bank request was sent.' }, { status: 503 });
     }
     if (!transfer.beneficiary_account_token) {
       return Response.json({ error: 'A provider-issued beneficiary account token is required. No bank request was sent.' }, { status: 503 });
@@ -141,7 +144,7 @@ export default async function(req: Request): Promise<Response> {
       } },
     );
     if (!committed?.success || committed.updated !== 1) {
-      return Response.json({ error: 'Provider returned a bank reference but AVCU could not finalize the record. Escalate for reconciliation; do not resubmit.', bank_reference: result.bankReference || result.providerTransferId }, { status: 500 });
+      return Response.json({ error: 'Provider returned a bank reference but the institution could not finalize the record. Escalate for reconciliation; do not resubmit.', bank_reference: result.bankReference || result.providerTransferId }, { status: 500 });
     }
     return Response.json({ submitted: true, provider_transfer_id: result.providerTransferId, bank_reference: result.bankReference || '', status: result.status });
   } catch (error) {

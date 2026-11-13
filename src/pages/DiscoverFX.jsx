@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, RefreshCw, TrendingUp } from 'lucide-react';
 
-/** Live reference rates via Frankfurter (ECB-based, no API key). */
+/** Indicative daily reference rates via Frankfurter (ECB-based). */
 const QUOTES = ['EUR', 'GBP', 'JPY', 'CAD', 'CHF', 'AUD', 'CNY', 'INR', 'MXN', 'ZAR'];
 
 export default function DiscoverFX() {
@@ -48,7 +48,7 @@ export default function DiscoverFX() {
         <div className="flex-1">
           <h1 className="font-heading font-bold text-navy">Currency desk</h1>
           <p className="text-[11px] text-slate-500 font-mono">
-            {date ? `ECB ref · ${date}` : 'Live reference'}
+            {date ? `ECB reference · ${date}` : 'Reference feed'}
           </p>
         </div>
         <button
@@ -70,14 +70,13 @@ export default function DiscoverFX() {
         <div className="absolute inset-0 bg-gradient-to-t from-navy via-navy/70 to-transparent" />
         <div className="absolute bottom-4 left-5 right-5 text-white">
           <p className="font-mono text-[10px] text-brass uppercase tracking-wider">USD base</p>
-          <p className="font-heading font-bold text-xl">Real reference rates</p>
+          <p className="font-heading font-bold text-xl">Indicative reference rates</p>
         </div>
       </div>
 
       <div className="p-4">
         <p className="text-xs text-slate-500 mb-4 leading-relaxed">
-          Sourced from Frankfurter / European Central Bank daily references. Not a tradable quote—use for
-          planning only.
+          Indicative daily reference rates sourced from Frankfurter / European Central Bank for comparison only. They are not executable FX quotes; no FX order, conversion, settlement, or custody is performed here.
         </p>
 
         {error && (
@@ -91,6 +90,8 @@ export default function DiscoverFX() {
             <div className="py-16 flex justify-center">
               <div className="w-8 h-8 border-2 border-navy/20 border-t-navy rounded-full animate-spin" />
             </div>
+          ) : !rates.length ? (
+            <p className="px-4 py-10 text-center text-sm text-slate-500">No reference rates were returned by the current source.</p>
           ) : (
             rates.map((r) => (
               <div

@@ -20,7 +20,7 @@ export default function DeleteAccountDialog({ open, onOpenChange }) {
       // Clear local auth state and redirect; actual account deletion is handled server-side via admin workflow
       await base44.auth.logout('/');
     } catch (e) {
-      setError('Unable to process request. Please contact support@vantoris.sbs.');
+      setError('Unable to process request. Please contact Vantage through the configured in-app support channel.');
       console.error(e);
     }
     setDeleting(false);

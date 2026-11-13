@@ -1,117 +1,58 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
-import { Bell, Search, Check, X } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { Bell, Search, ShieldAlert } from 'lucide-react';
 
 export default function OperationsNotifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [search, setSearch] = useState('');
-  const [busy, setBusy] = useState('');
-  const { toast } = useToast();
-
-  async function decide(note, approved) {
-    setBusy(note.id);
-    try {
-      const txnId = (String(note.message || '').match(/txn:([A-Za-z0-9_-]+)/) || [])[1];
-      if (txnId) {
-        const txn = await base44.entities.Transaction.get(txnId).catch(() => null);
-        if (txn) {
-          if (approved && txn.account_id) {
-            const account = await base44.entities.Account.get(txn.account_id).catch(() => null);
-            const value = Math.abs(Number(txn.amount) || 0);
-            const credit = txn.type === 'deposit' || Number(txn.amount) > 0;
-            const next = account ? Math.round(((Number(account.balance) || 0) + (credit ? value : -value)) * 100) / 100 : null;
-            if (account && next != null) await base44.entities.Account.update(account.id, { balance: next });
-            await base44.entities.Transaction.update(txn.id, { status: 'approved', balance_after: next });
-          } else {
-            await base44.entities.Transaction.update(txn.id, { status: 'declined' });
-          }
-        }
-      }
-      await base44.entities.Notification.update(note.id, { status: approved ? 'approved' : 'declined' });
-      setNotifications((rows) => rows.map((row) => row.id === note.id ? { ...row, status: approved ? 'approved' : 'declined' } : row));
-      toast({ title: approved ? 'Approved' : 'Declined' });
-    } catch (e) {
-      toast({ title: 'Action failed', description: e.message || 'The backend rejected this decision.', variant: 'destructive' });
-    } finally {
-      setBusy('');
-    }
-  }
 
   useEffect(() => {
-    (async () => {
-      try {
-        const notifs = await base44.entities.Notification.list('-created_date', 100);
-        setNotifications(notifs);
-      } catch (e) { console.error(e); }
-      setLoading(false);
-    })();
+    let active = true;
+    base44.entities.Notification.list('-created_date', 100).then((rows) => {
+      if (!Array.isArray(rows)) throw new Error('Notification source returned an invalid response.');
+      if (active) setNotifications(rows);
+    }).catch(() => {
+      if (active) setError('Notification records are unavailable. No empty-queue conclusion can be drawn.');
+    }).finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
   }, []);
 
-  const filtered = notifications.filter(n =>
-    (n.title || '').toLowerCase().includes(search.toLowerCase()) ||
-    (n.message || '').toLowerCase().includes(search.toLowerCase())
+  const filtered = notifications.filter((item) =>
+    (item.title || '').toLowerCase().includes(search.toLowerCase()) ||
+    (item.message || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (
-    <OperationsPageLayout title="Notifications" description="All notifications sent across the platform" icon={Bell}>
-      {loading ? (
-        <div className="flex items-center justify-center h-48">
-          <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
-        </div>
+    <OperationsPageLayout title="Notifications" description="Read-only notification records. Financial decisions must use the dedicated server-authorized review workflow." icon={Bell}>
+      <div role="status" className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <ShieldAlert size={18} className="mt-0.5 shrink-0" />
+        <p>Notifications cannot approve, decline, or post financial transactions. This screen does not change account balances or transaction status.</p>
+      </div>
+      {loading ? <div className="flex h-48 items-center justify-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-brass/30 border-t-brass rounded-full" /></div> : error ? (
+        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">{error}</p>
       ) : (
         <>
-          <div className="relative mb-6">
-            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#AAB4C3]" />
-            <input
-              value={search}
-              onChange={e => setSearch(e.target.value)}
-              placeholder="Search notifications..."
-              className="w-full bg-[#242D38] border border-[#242D38] rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-brass/50 focus:outline-none"
-            />
-          </div>
+          <div className="relative mb-6"><Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#AAB4C3]" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search notification records" className="w-full rounded-xl border border-[#242D38] bg-[#242D38] py-3 pl-10 pr-4 text-sm text-white focus:border-brass/50 focus:outline-none" /></div>
           <div className="vantoris-card overflow-hidden">
             <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#242D38] bg-[#1a2535]">
-                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Title</th>
-                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Message</th>
-                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Type</th>
-                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Date</th>
-                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Decision</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map(n => (
-                  <tr key={n.id} className="border-b border-[#242D38]/40 hover:bg-[#242D38]/20 transition-all">
-                    <td className="px-5 py-4 text-white font-medium text-xs">{n.title}</td>
-                    <td className="px-5 py-4 text-[#AAB4C3] text-xs max-w-xs truncate">{n.message}</td>
-                    <td className="px-5 py-4">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        n.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' :
-                        n.type === 'warning' ? 'bg-brass/10 text-brass' :
-                        n.type === 'action' ? 'bg-blue-500/10 text-blue-400' :
-                        'bg-[#242D38] text-[#AAB4C3]'
-                      }`}>{n.type}</span>
-                    </td>
-                    <td className="px-5 py-4 text-[#AAB4C3] text-xs">{n.created_date?.split('T')[0]}</td>
-                    <td className="px-5 py-4">
-                      {/request/i.test(`${n.title || ''} ${n.message || ''}`) && !['approved', 'declined'].includes(n.status) && (
-                        <div className="flex gap-2">
-                          <button type="button" disabled={busy === n.id} onClick={() => decide(n, true)} className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white"><Check size={12} /> Approve</button>
-                          <button type="button" disabled={busy === n.id} onClick={() => decide(n, false)} className="inline-flex items-center gap-1 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white"><X size={12} /> Decline</button>
-                        </div>
-                      )}
-                      {n.status && <span className="text-xs text-[#AAB4C3]">{n.status}</span>}
-                    </td>
-                  </tr>
-                ))}
-                {filtered.length === 0 && (
-                  <tr><td colSpan={4} className="py-12 text-center text-[#AAB4C3]">No notifications found</td></tr>
-                )}
-              </tbody>
+              <thead><tr className="border-b border-[#242D38] bg-[#1a2535]">
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Title</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Message</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Type</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Date</th>
+                <th className="px-5 py-3 text-left text-xs font-medium uppercase tracking-wider text-[#AAB4C3]">Status</th>
+              </tr></thead>
+              <tbody>{filtered.map((item) => <tr key={item.id} className="border-b border-[#242D38]/40 hover:bg-[#242D38]/20">
+                <td className="px-5 py-4 text-xs font-medium text-white">{item.title || 'Title not supplied'}</td>
+                <td className="max-w-xs truncate px-5 py-4 text-xs text-[#AAB4C3]">{item.message || 'Message not supplied'}</td>
+                <td className="px-5 py-4 text-xs text-[#AAB4C3]">{item.type || 'Type not supplied'}</td>
+                <td className="px-5 py-4 text-xs text-[#AAB4C3]">{item.created_date ? new Date(item.created_date).toLocaleDateString() : 'Date not supplied'}</td>
+                <td className="px-5 py-4 text-xs text-[#AAB4C3]">{item.status || 'Status not supplied'}</td>
+              </tr>)}
+              {!filtered.length && <tr><td colSpan={5} className="py-12 text-center text-[#AAB4C3]">No notification records returned by the current query (max 100).</td></tr>}</tbody>
             </table>
           </div>
         </>

@@ -11,6 +11,12 @@ const ACTION_META = {
   withdrawal_rejected: { label: 'Rejected', icon: XCircle, color: 'text-crimson', bg: 'bg-crimson/10' },
 };
 
+function maskAccountNumber(value) {
+  if (!value) return 'Account number not supplied';
+  const digits = String(value).replace(/\s/g, '');
+  return digits.length > 4 ? '•••• ' + digits.slice(-4) : '••••';
+}
+
 function parseRequestId(details) {
   if (!details) return null;
   const match = details.match(/Request ID:\s*([a-f0-9]+)/i);
@@ -24,6 +30,7 @@ export default function WithdrawalAuditLog() {
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [exporting, setExporting] = useState(false);
+  const [loadError, setLoadError] = useState('');
   const { toast } = useToast();
 
   useEffect(() => { loadData(); }, []);
@@ -34,6 +41,7 @@ export default function WithdrawalAuditLog() {
         base44.entities.AuditLog.list('-created_date', 300),
         base44.entities.Account.list('-created_date', 200),
       ]);
+      if (!Array.isArray(allLogs) || !Array.isArray(accts)) throw new Error('Audit source returned an invalid response.');
       const withdrawalLogs = allLogs.filter(l =>
         l.action_type === 'withdrawal_processed' || l.action_type === 'withdrawal_rejected'
       );
@@ -41,6 +49,7 @@ export default function WithdrawalAuditLog() {
       setAccounts(accts);
     } catch (e) {
       console.error(e);
+      setLoadError('Withdrawal audit records are unavailable. No empty-audit conclusion can be drawn.');
       toast({ title: 'Load failed', description: e.message || 'Unable to load audit trail.', variant: 'destructive' });
     }
     setLoading(false);
@@ -68,13 +77,11 @@ export default function WithdrawalAuditLog() {
   const stats = useMemo(() => {
     const approved = logs.filter(l => l.action_type === 'withdrawal_processed');
     const rejected = logs.filter(l => l.action_type === 'withdrawal_rejected');
-    const totalApproved = approved.reduce((s, l) => s + Math.abs(l.amount || 0), 0);
-    const uniqueAdmins = new Set(logs.map(l => l.admin_name)).size;
+    const uniqueAdmins = new Set(logs.map(l => l.admin_name).filter(Boolean)).size;
     return {
       total: logs.length,
       approved: approved.length,
       rejected: rejected.length,
-      totalApproved,
       uniqueAdmins,
     };
   }, [logs]);
@@ -89,12 +96,12 @@ export default function WithdrawalAuditLog() {
           Timestamp: new Date(l.created_date).toLocaleString('en-US'),
           Admin: l.admin_name || '—',
           Action: ACTION_META[l.action_type]?.label || l.action_type,
-          Amount: l.amount != null ? formatCurrency(Math.abs(l.amount)) : '',
+          Amount: l.amount != null ? formatCurrency(l.amount, l.currency || l.currency_code || acct?.currency || acct?.currency_code || null) : '',
           Method: (l.description || '').match(/via\s(.+)$/)?.[1] || '',
           Account: acct?.account_name || '—',
-          'Account Number': acct?.account_number || '—',
-          'Balance Before': l.balance_before != null ? formatCurrency(l.balance_before) : '',
-          'Balance After': l.balance_after != null ? formatCurrency(l.balance_after) : '',
+          'Account Number': maskAccountNumber(acct?.account_number),
+          'Balance Before': l.balance_before != null ? formatCurrency(l.balance_before, l.currency || l.currency_code || acct?.currency || acct?.currency_code || null) : '',
+          'Balance After': l.balance_after != null ? formatCurrency(l.balance_after, l.currency || l.currency_code || acct?.currency || acct?.currency_code || null) : '',
           Details: l.details || '',
         };
       });
@@ -114,7 +121,7 @@ export default function WithdrawalAuditLog() {
 
   if (loading) {
     return (
-      <OperationsPageLayout title="Withdrawal Audit Trail" description="Complete record of who approved or rejected each withdrawal" icon={ShieldCheck}>
+      <OperationsPageLayout title="Withdrawal Audit Trail" description="Read-only withdrawal audit records returned by the current bounded query; not a complete institutional audit ledger." icon={ShieldCheck}>
         <div className="flex items-center justify-center h-48">
           <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
         </div>
@@ -125,7 +132,7 @@ export default function WithdrawalAuditLog() {
   return (
     <OperationsPageLayout
       title="Withdrawal Audit Trail"
-      description="Complete record of who approved or rejected each withdrawal"
+      description="Read-only withdrawal audit records returned by the current bounded query; not a complete institutional audit ledger."
       icon={ShieldCheck}
       actions={
         <button
@@ -133,7 +140,7 @@ export default function WithdrawalAuditLog() {
           disabled={exporting || filtered.length === 0}
           className="inline-flex items-center gap-2 px-4 py-2 bg-navy text-white rounded-xl text-xs font-semibold hover:bg-navy/90 transition-colors disabled:opacity-40"
         >
-          <Download size={14} /> Export Audit Trail
+          <Download size={14} /> Export returned records
         </button>
       }
     >
@@ -144,28 +151,28 @@ export default function WithdrawalAuditLog() {
             <ShieldCheck size={16} className="text-navy" />
           </div>
           <p className="text-foreground font-bold text-lg">{stats.total}</p>
-          <p className="text-gray text-xs">Total Audit Events</p>
+          <p className="text-gray text-xs">Audit records returned · max 300</p>
         </div>
         <div className="vantoris-card p-4">
           <div className="w-9 h-9 rounded-lg bg-mint/10 flex items-center justify-center mb-2">
             <CheckCircle2 size={16} className="text-mint" />
           </div>
           <p className="text-foreground font-bold text-lg">{stats.approved}</p>
-          <p className="text-gray text-xs">Withdrawals Approved</p>
+          <p className="text-gray text-xs">Approved records returned</p>
         </div>
         <div className="vantoris-card p-4">
           <div className="w-9 h-9 rounded-lg bg-crimson/10 flex items-center justify-center mb-2">
             <XCircle size={16} className="text-crimson" />
           </div>
           <p className="text-foreground font-bold text-lg">{stats.rejected}</p>
-          <p className="text-gray text-xs">Withdrawals Rejected</p>
+          <p className="text-gray text-xs">Rejected records returned</p>
         </div>
         <div className="vantoris-card p-4">
           <div className="w-9 h-9 rounded-lg bg-brass/10 flex items-center justify-center mb-2">
             <User size={16} className="text-brass" />
           </div>
           <p className="text-foreground font-bold text-lg">{stats.uniqueAdmins}</p>
-          <p className="text-gray text-xs">Admins Involved</p>
+          <p className="text-gray text-xs">Staff names in returned records</p>
         </div>
       </div>
 
@@ -195,11 +202,13 @@ export default function WithdrawalAuditLog() {
       </div>
 
       {/* Audit Trail */}
-      {filtered.length === 0 ? (
+      {loadError ? (
+        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">{loadError}</p>
+      ) : filtered.length === 0 ? (
         <div className="vantoris-card p-12 text-center">
           <ShieldCheck size={32} className="text-gray/30 mx-auto mb-3" />
-          <p className="text-foreground font-medium mb-1">No withdrawal audit events found</p>
-          <p className="text-gray text-sm">Approval and rejection actions will appear here for compliance tracking.</p>
+          <p className="text-foreground font-medium mb-1">No withdrawal audit events were returned</p>
+          <p className="text-gray text-sm">The current query is limited to the 300 newest audit records; this does not establish that no older events exist.</p>
         </div>
       ) : (
         <>
@@ -237,19 +246,19 @@ export default function WithdrawalAuditLog() {
                       </td>
                       <td className="px-5 py-3">
                         <p className="text-foreground text-xs font-medium">{acct?.account_name || '—'}</p>
-                        <p className="text-gray text-[10px] font-mono">{acct?.account_number || ''}</p>
+                        <p className="text-gray text-[10px] font-mono">{maskAccountNumber(acct?.account_number)}</p>
                       </td>
                       <td className="px-5 py-3 text-right">
                         {log.amount != null ? (
                           <span className={`text-xs font-semibold ${log.amount >= 0 ? 'text-foreground' : 'text-crimson'}`}>
-                            {formatCurrency(Math.abs(log.amount))}
+                            {formatCurrency(log.amount, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)}
                           </span>
                         ) : <span className="text-gray text-xs">—</span>}
                       </td>
                       <td className="px-5 py-3 text-right text-[11px] font-mono">
                         {log.balance_before != null && log.balance_after != null ? (
                           <span className="text-gray">
-                            {formatCurrency(log.balance_before)} <span className="text-gray/50">→</span> <span className="text-foreground">{formatCurrency(log.balance_after)}</span>
+                            {formatCurrency(log.balance_before, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)} <span className="text-gray/50">→</span> <span className="text-foreground">{formatCurrency(log.balance_after, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)}</span>
                           </span>
                         ) : <span className="text-gray">—</span>}
                       </td>
@@ -291,13 +300,13 @@ export default function WithdrawalAuditLog() {
                     </div>
                     {log.amount != null && (
                       <span className={`text-sm font-semibold ${log.amount >= 0 ? 'text-foreground' : 'text-crimson'}`}>
-                        {formatCurrency(Math.abs(log.amount))}
+                        {formatCurrency(log.amount, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)}
                       </span>
                     )}
                   </div>
                   {log.balance_before != null && log.balance_after != null && (
                     <p className="text-[11px] font-mono text-gray">
-                      {formatCurrency(log.balance_before)} → {formatCurrency(log.balance_after)}
+                      {formatCurrency(log.balance_before, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)} → {formatCurrency(log.balance_after, log.currency || log.currency_code || acct?.currency || acct?.currency_code || null)}
                     </p>
                   )}
                   {log.details && (

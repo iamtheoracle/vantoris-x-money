@@ -4,12 +4,13 @@ on:
   push:
     branches: [recovery/merge-vantoris-live]
   pull_request:
-    branches: [main]
+    branches: [main, recovery/merge-vantoris-live]
   workflow_dispatch:
 
 concurrency:
   group: recovery-build-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: true
+  # Let an active verification finish; only the newest pending PR check is retained.
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -18,10 +19,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      AVCU_LEDGER_TEST_DATABASE_URL: ${{ secrets.AVCU_LEDGER_TEST_DATABASE_URL }}
+      VANTAGE_LEDGER_TEST_DATABASE_URL: ${{ secrets.VANTAGE_LEDGER_TEST_DATABASE_URL }}
       VITE_BASE44_APP_ID: 6a3d85c1632966fefe16f3d4
       VITE_BASE44_SERVER_URL: https://vantoris.base44.app
-      VITE_BASE44_APP_BASE_URL: https://vantoris-platform.netlify.app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,16 +45,29 @@ jobs:
           deno check --node-modules-dir=auto base44/functions/recordIncomingBankReceipt/entry.ts
           deno check --node-modules-dir=auto base44/functions/recordManualTransferEvent/entry.ts
           deno test --node-modules-dir=auto --allow-env base44/shared/runtime/nexus.test.ts
-          deno test --node-modules-dir=auto --allow-env --allow-net tests/avcu-payment-store.test.ts
-          deno test --node-modules-dir=auto --allow-read=migrations,base44/entities,base44/functions/_shared tests/avcu-payment-migration.test.ts
+          deno test --node-modules-dir=auto --allow-env --allow-net tests/private-payment-store.test.ts
+          deno test --node-modules-dir=auto --allow-read=migrations,base44/entities,base44/functions/_shared tests/private-payment-migration.test.ts
+          deno test --node-modules-dir=auto --allow-read=src/pages tests/financial-formatting.test.ts
+          deno test --node-modules-dir=auto --allow-read=public/card-art,src/components/vantoris,src/pages,src/index.css tests/heritage-and-card-art.test.ts
+          deno test --node-modules-dir=auto --allow-read=base44,src/pages,src/components/vantoris,index.html,netlify/functions,docs,src/App.jsx tests/operational-truthfulness.test.ts
       - name: Prevent direct browser AI execution paths
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync, existsSync } from 'node:fs';
           const surfaces = [
-            'src/components/vantoris/AgentChat.jsx',
-            'src/components/vantoris/VantorisAssistant.jsx',
-            'src/components/vantoris/MemberAdvisorChat.jsx',
+            'src/components/vantoris/FloatingCommandDock.jsx',
+            'src/pages/Home.jsx',
+            'src/pages/Accounts.jsx',
+            'src/pages/MoveMoney.jsx',
+            'src/pages/Investment.jsx',
+            'src/pages/operations/Approvals.jsx',
+            'src/pages/operations/InvestmentDeposits.jsx',
+            'src/pages/operations/InvestmentWithdrawals.jsx',
+            'src/pages/operations/HeroBoxFundsShipping.jsx',
+            'src/pages/operations/HeroBoxAdminOrders.jsx',
+            'src/pages/operations/HeroBoxAdminProducts.jsx',
+            'src/pages/operations/HeroBoxMissionControl.jsx',
+            'src/pages/operations/HeroBoxCarePackages.jsx',
           ];
           for (const file of surfaces) {
             const source = readFileSync(file, 'utf8');
@@ -66,6 +79,106 @@ jobs:
           if (!shared.includes("functions.invoke('oracleRuntime'")) throw new Error('Shared Oracle runtime client is missing');
           if (existsSync('server/llm-proxy.mjs')) throw new Error('Obsolete standalone private-model proxy still exists');
           console.log('Assistant entry points use the shared Oracle runtime.');
+          NODE
+      - name: Prevent browser-side financial and privileged record mutations
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const surfaces = [
+            'src/components/vantoris/FloatingCommandDock.jsx',
+            'src/components/vantoris/HistoricalStatementImport.jsx',
+            'src/components/vantoris/herobox/DiscoverFeed.jsx',
+            'src/lib/discoveryEngine.js',
+            'src/lib/discoveryPipeline.js',
+            'src/lib/heroboxDiscovery.js',
+            'src/pages/Home.jsx',
+            'src/pages/Accounts.jsx',
+            'src/pages/AccountDetail.jsx',
+            'src/pages/MoveMoney.jsx',
+            'src/pages/Investment.jsx',
+            'src/pages/HeroBox.jsx',
+            'src/pages/Discovery.jsx',
+            'src/pages/admin/AdminOverview.jsx',
+            'src/pages/admin/AdminMembers.jsx',
+            'src/pages/admin/AdminApplications.jsx',
+            'src/pages/admin/AdminKYC.jsx',
+            'src/pages/admin/AdminAccounts.jsx',
+            'src/pages/admin/AdminWithdrawals.jsx',
+            'src/pages/operations/Approvals.jsx',
+            'src/pages/operations/InvestmentDeposits.jsx',
+            'src/pages/operations/InvestmentWithdrawals.jsx',
+            'src/pages/operations/HeroBoxFundsShipping.jsx',
+            'src/pages/operations/HeroBoxAdminOrders.jsx',
+            'src/pages/operations/HeroBoxAdminProducts.jsx',
+            'src/pages/operations/DiscoveryNetwork.jsx',
+            'src/pages/operations/HumanitarianCases.jsx',
+            'src/pages/operations/Organizations.jsx',
+            'src/pages/operations/OperationsNotifications.jsx',
+            'src/pages/operations/Referrals.jsx',
+            'src/pages/operations/WithdrawalLimits.jsx',
+            'src/pages/operations/BulkTransactionImport.jsx',
+            'src/pages/operations/TransactionExportDashboard.jsx',
+            'src/pages/operations/Deposits.jsx',
+            'src/pages/operations/Transfers.jsx',
+            'src/pages/operations/IncomingBankReceipts.jsx',
+            'src/pages/operations/InvestmentPortfolios.jsx',
+            'src/pages/operations/InvestmentSignals.jsx',
+            'src/pages/operations/InvestmentDashboard.jsx',
+            'src/pages/operations/Finance.jsx',
+            'src/pages/operations/TransactionSummaries.jsx',
+            'src/pages/operations/WithdrawalAuditLog.jsx',
+            'src/pages/operations/SecurityComplianceDashboard.jsx',
+            'src/pages/operations/AccountAssignment.jsx',
+            'src/pages/operations/AuditLogs.jsx',
+            'src/pages/Profile.jsx',
+            'src/components/vantoris/profile/RelationshipOverview.jsx',
+            'src/components/vantoris/profile/UnifiedTimeline.jsx',
+            'src/components/vantoris/widgets/SecurityStatusWidget.jsx',
+            'src/components/vantoris/widgets/LiveBankingActivity.jsx',
+            'src/components/vantoris/home/AccountsSection.jsx',
+          ];
+          const directWrite = /base44\.entities\.(Account|Transaction|Document|WithdrawalRequest|PaymentCard|InvestmentPortfolio|InvestmentTransaction|InvestmentDepositRequest|InvestmentWithdrawalRequest|HeroBoxOrder|HeroBoxProduct|HeroBoxActivity|HeroBoxRequest|HeroBoxProfile|Application|User|Notification|HumanitarianCase|OrganizationProfile|DiscoveryRecord|DiscoveryRun|DiscoveryAlert|DiscoverySource|DiscoveryChange|NewsRecord|VolunteerProfile|WithdrawalLimit|Referral|AuditLog|TransactionExport|InvestmentSignal|IncomingBankReceipt|TransferRequest|TransferWebhookEvent)\.(create|update|delete|updateMany|bulkCreate|createMany|bulkUpdate|upsert)\s*\(/;
+          const clientEmail = /base44\.integrations\.Core\.SendEmail\s*\(/;
+          const clientLLM = /base44\.integrations\.Core\.InvokeLLM\s*\(/;
+          for (const file of surfaces) {
+            const source = readFileSync(file, 'utf8');
+            if (directWrite.test(source)) {
+              throw new Error('Browser-side financial or privileged record mutation found in ' + file);
+            }
+            if (clientEmail.test(source)) {
+              throw new Error('Browser-side email delivery call found in ' + file);
+            }
+            if (clientLLM.test(source)) {
+              throw new Error('Browser-side LLM discovery/action call found in ' + file);
+            }
+          }
+          console.log('Critical member, admin, and discovery surfaces contain no direct privileged writes, browser-side email delivery, or browser-side LLM discovery.');
+          NODE
+      - name: Keep unverified financial operations fail-closed
+        run: |
+          node --input-type=module <<'NODE'
+          import { readFileSync } from 'node:fs';
+          const requiredGuards = [
+            ['src/pages/MoveMoney.jsx', 'const SERVER_MONEY_OPERATIONS_ENABLED = false;'],
+            ['src/pages/Investment.jsx', 'const SERVER_INVESTMENT_OPERATIONS_ENABLED = false;'],
+          ];
+          const readOnlySurfaces = [
+            ['src/pages/AccountDetail.jsx', 'Account detail is a read-only member record view'],
+            ['src/pages/admin/AdminAccounts.jsx', 'Admin account screens must not contain direct financial mutations'],
+            ['src/pages/admin/AdminWithdrawals.jsx', 'Withdrawal operations must remain read-only until an authorized server workflow exists'],
+          ];
+          for (const [file, reason] of readOnlySurfaces) {
+            const source = readFileSync(file, 'utf8');
+            if (/base44\.entities\.(Account|Transaction|WithdrawalRequest)\.(create|update|delete|updateMany|bulkCreate|bulkUpdate)\s*\(/.test(source)) {
+              throw new Error(reason + ': direct mutation found in ' + file);
+            }
+          }
+          for (const [file, marker] of requiredGuards) {
+            if (!readFileSync(file, 'utf8').includes(marker)) {
+              throw new Error('Unverified financial operations must remain disabled in ' + file);
+            }
+          }
+          console.log('Unverified member and operator financial operations remain fail-closed.');
           NODE
       - name: Validate entity JSON and security rules
         run: |
@@ -79,13 +192,13 @@ jobs:
             if (!schema.name || schema.type !== 'object') throw new Error(`Invalid entity schema: ${file}`);
           }
           const schemas = Object.fromEntries(
-            ['Account', 'Transaction', 'WithdrawalRequest', 'TransferRequest', 'TransferWebhookEvent', 'IncomingBankReceipt', 'Notification', 'User'].map((name) => {
+            ['Account', 'Transaction', 'WithdrawalRequest', 'TransferRequest', 'TransferWebhookEvent', 'IncomingBankReceipt', 'Notification', 'User', 'PaymentCard'].map((name) => {
               const schema = JSON.parse(readFileSync(`${dir}/${name}.jsonc`, 'utf8'));
               if (!schema.rls) throw new Error(`Missing row-level security rules: ${name}`);
               return [name, schema];
             })
           );
-          for (const name of ['Account', 'Transaction', 'WithdrawalRequest']) {
+          for (const name of ['Account', 'Transaction', 'WithdrawalRequest', 'PaymentCard']) {
             const rls = schemas[name].rls;
             for (const action of ['create', 'update', 'delete']) {
               if (rls[action] !== false) throw new Error(`${name}.${action} must remain denied to direct clients`);
@@ -111,6 +224,9 @@ jobs:
           }
           if (!schemas.Transaction.rls.read || !schemas.Account.rls.read) {
             throw new Error('Account and Transaction read policies must remain explicitly defined');
+          }
+          if (schemas.PaymentCard.rls.read?.['data.user_id'] !== '{{user.id}}') {
+            throw new Error('PaymentCard.read must remain owner-scoped');
           }
                     const transfer = schemas.TransferRequest;
           for (const status of ['awaiting_dual_approval', 'approved_awaiting_bank_submission', 'submitted_to_bank', 'pending_settlement', 'settled', 'rejected']) {

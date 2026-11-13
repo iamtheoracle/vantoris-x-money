@@ -23,14 +23,16 @@ export default function AuditLogs() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => { loadLogs(); }, []);
 
   async function loadLogs() {
     try {
       const data = await base44.entities.AuditLog.list('-created_date', 200);
+      if (!Array.isArray(data)) throw new Error('Audit query returned an invalid response.');
       setLogs(data);
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); setLoadError('Audit records are unavailable. No empty-audit conclusion can be drawn.'); }
     setLoading(false);
   }
 
@@ -48,7 +50,7 @@ export default function AuditLogs() {
   });
 
   return (
-    <OperationsPageLayout title="Audit Logs" description="Chronological record of all administrative actions" icon={ScrollText}>
+    <OperationsPageLayout title="Audit Logs" description="Read-only audit records returned by the newest-record query (max 200)." icon={ScrollText}>
       {/* Filters */}
       <div className="flex items-center gap-3 mb-6">
         <div className="relative flex-1">
@@ -79,11 +81,13 @@ export default function AuditLogs() {
         <div className="flex items-center justify-center h-96">
           <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
         </div>
+      ) : loadError ? (
+        <p role="status" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">{loadError}</p>
       ) : filtered.length === 0 ? (
         <div className="vantoris-card p-12 text-center">
           <ScrollText size={32} className="text-[#AAB4C3] mx-auto mb-3 opacity-50" />
-          <p className="text-white font-medium mb-1">No audit events recorded</p>
-          <p className="text-[#AAB4C3] text-sm">Administrative actions will be logged here for compliance tracking.</p>
+          <p className="text-white font-medium mb-1">No audit records returned</p>
+          <p className="text-[#AAB4C3] text-sm">The current query is limited to the 200 newest records; this does not establish that no older events exist.</p>
         </div>
       ) : (
         <>
@@ -110,23 +114,23 @@ export default function AuditLogs() {
                       </span>
                     </td>
                     <td className="px-5 py-3">
-                      <p className="text-white text-xs font-medium">{log.description}</p>
+                      <p className="text-white text-xs font-medium">{log.description || 'Description not supplied'}</p>
                       {log.details && <p className="text-[#AAB4C3]/70 text-[11px] mt-0.5">{log.details}</p>}
                     </td>
                     <td className="px-5 py-3 text-[#AAB4C3] text-xs">{log.admin_name || '—'}</td>
                     <td className="px-5 py-3 text-right text-xs font-medium">
                       {log.amount != null ? (
-                        <span className={log.amount >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                          {formatCurrency(log.amount)}
+                        <span className={Number.isFinite(Number(log.amount)) && log.amount != null ? (Number(log.amount) >= 0 ? 'text-emerald-400' : 'text-red-400') : 'text-[#AAB4C3]'}>
+                          {formatCurrency(log.amount, log.currency || log.currency_code || null)}
                         </span>
                       ) : '—'}
                     </td>
                     <td className="px-5 py-3 text-right text-[11px] font-mono text-[#AAB4C3]">
                       {log.balance_before != null && log.balance_after != null ? (
                         <>
-                          <span>{formatCurrency(log.balance_before)}</span>
+                          <span>{formatCurrency(log.balance_before, log.currency || log.currency_code || null)}</span>
                           <span className="text-[#AAB4C3]/50"> → </span>
-                          <span className="text-white">{formatCurrency(log.balance_after)}</span>
+                          <span className="text-white">{formatCurrency(log.balance_after, log.currency || log.currency_code || null)}</span>
                         </>
                       ) : '—'}
                     </td>

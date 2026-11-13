@@ -56,10 +56,10 @@ function setLabel(convId, label) {
 
 export default function AgentChat({
   agentName = 'vantoris_assistant',
-  title = 'Vantoris AI Assistant',
-  subtitle = 'Platform-wide operations',
+  title = 'Vantage Assistant',
+  subtitle = 'Private client assistance',
   suggestions = null,
-  inputPlaceholder = 'Ask about members, applications, KYC status, account balances...',
+  inputPlaceholder = 'Ask about platform features, available services, or general investment concepts...',
   singleColumn = false,
   onClose = null,
   renderActionSuggestions = null
@@ -94,7 +94,7 @@ export default function AgentChat({
       const result = await loadOracleHistory();
       if (result.ok && result.threadId && result.messages?.length) {
         const messages = result.messages.map(item => ({ role: item.sender, content: item.body, created_date: item.created_date }));
-        const conv = { id: result.threadId, agent_name: agentName, metadata: { name: 'AVCU Assistant' }, messages };
+        const conv = { id: result.threadId, agent_name: agentName, metadata: { name: 'Vantage Assistant' }, messages };
         setConversations([conv]);
         setActiveConv(conv);
         setMessages(messages);
@@ -406,18 +406,17 @@ export default function AgentChat({
               </div>
               <h4 className="font-bold text-base mb-1" style={{ color: COLORS.textPrimary }}>What can I help you with?</h4>
               <p className="text-sm max-w-sm mb-6" style={{ color: COLORS.textSecondary }}>
-                I have full access to your Vantoris platform. Ask me about members, accounts, applications, withdrawals, KYC status, and more.
+                I provide general platform guidance only; I cannot view account balances, private member records, investment holdings, withdrawals or identity files, and I cannot execute transactions. Messages are saved in your assistant history and sent to the institution’s configured private AI endpoint. Do not include account numbers, passwords, PINs or one-time codes.
               </p>
               {renderActionSuggestions
                 ? renderActionSuggestions({ setInput, sendMessage })
                 : (
                   <div className="space-y-2 w-full max-w-sm">
                     {(suggestions || [
-                      'Show me pending applications',
-                      'What is the total AUM?',
-                      'List the top 10 accounts by balance',
-                      'How many members completed KYC?',
-                      'Rewrite this code for me',
+                      'Explain the available account types',
+                      'What information is needed for investment onboarding?',
+                      'How do domestic payment requests work?',
+                      'Explain portfolio risk and diversification',
                     ]).map((suggestion) => (
                       <button
                         key={suggestion}

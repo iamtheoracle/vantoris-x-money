@@ -1,111 +1,68 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import OperationsPageLayout from '@/components/vantoris/OperationsPageLayout';
-import { ArrowUpRight, Loader2, Check, X } from 'lucide-react';
+import { ArrowUpRight, Loader2, ShieldAlert } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatCurrency';
-import { useToast } from '@/components/ui/use-toast';
 
 export default function InvestmentWithdrawals() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [processing, setProcessing] = useState('');
-  const { toast } = useToast();
+  const [error, setError] = useState('');
 
   const loadData = useCallback(async () => {
-    const reqs = await base44.entities.InvestmentWithdrawalRequest.list('-created_date');
-    setRequests(reqs);
+    const records = await base44.entities.InvestmentWithdrawalRequest.list('-created_date');
+    setRequests(Array.isArray(records) ? records : []);
   }, []);
 
-  useEffect(() => { loadData().finally(() => setLoading(false)); }, [loadData]);
-
-  async function handleAction(req, action) {
-    setProcessing(req.id);
-    try {
-      const me = await base44.auth.me();
-      if (action === 'approve') {
-        // Verify portfolio has sufficient cash
-        const portfolio = await base44.entities.InvestmentPortfolio.get(req.portfolio_id);
-        if ((portfolio.cash_balance || 0) < req.amount) {
-          toast({ title: 'Insufficient cash', description: 'Portfolio does not have enough available cash.', variant: 'destructive' });
-          setProcessing('');
-          return;
-        }
-        await base44.entities.InvestmentWithdrawalRequest.update(req.id, {
-          status: 'approved',
-          reviewed_by: me.id,
-          reviewed_by_name: me.full_name,
-          review_date: new Date().toISOString(),
-        });
-        await base44.entities.InvestmentPortfolio.update(req.portfolio_id, {
-          cash_balance: (portfolio.cash_balance || 0) - req.amount,
-          total_value: (portfolio.total_value || 0) - req.amount,
-        });
-        await base44.entities.InvestmentTransaction.create({
-          portfolio_id: req.portfolio_id,
-          user_id: req.user_id,
-          type: 'withdrawal',
-          amount: req.amount,
-          description: 'Investment withdrawal — approved',
-          status: 'completed',
-          transaction_date: new Date().toISOString().substring(0, 10),
-          source: 'operator_entry',
-        });
-        toast({ title: 'Withdrawal approved', description: `${formatCurrency(req.amount)} debited from portfolio.` });
-      } else {
-        await base44.entities.InvestmentWithdrawalRequest.update(req.id, {
-          status: 'rejected',
-          reviewed_by: me.id,
-          reviewed_by_name: me.full_name,
-          review_date: new Date().toISOString(),
-        });
-        toast({ title: 'Withdrawal rejected' });
-      }
-      loadData();
-    } catch (err) {
-      toast({ title: 'Action failed', description: err.message, variant: 'destructive' });
-    } finally {
-      setProcessing('');
-    }
-  }
-
-  if (loading) return <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brass" /></div>;
+  useEffect(() => {
+    let cancelled = false;
+    loadData()
+      .catch((loadError) => {
+        if (!cancelled) setError(loadError.message || 'Investment withdrawal requests could not be loaded.');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [loadData]);
 
   return (
-    <OperationsPageLayout title="Investment Withdrawal Requests" description="Review and approve member withdrawal requests" icon={ArrowUpRight}>
-      {requests.length === 0 ? (
-        <div className="vantoris-glass p-12 text-center">
-          <p className="text-gray">No withdrawal requests.</p>
+    <OperationsPageLayout title="Investment Withdrawal Requests" description="Read-only request queue; no portfolio balance changes are made here" icon={ArrowUpRight}>
+      <div role="status" className="mb-5 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+        <ShieldAlert size={19} className="mt-0.5 shrink-0" />
+        <div>
+          <p className="font-semibold">Secure investment review workflow unavailable</p>
+          <p className="mt-1">
+            Requests and their recorded statuses remain visible. Approval and rejection are disabled because no verified server-side investment ledger workflow is connected. This queue will not change portfolio cash, portfolio value, or investment transactions.
+          </p>
         </div>
+      </div>
+
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+
+      {loading ? (
+        <div className="flex justify-center py-20"><Loader2 className="animate-spin text-brass" /></div>
+      ) : requests.length === 0 ? (
+        <div className="vantoris-glass p-12 text-center"><p className="text-gray">No withdrawal requests.</p></div>
       ) : (
         <div className="space-y-3">
-          {requests.map(req => (
-            <div key={req.id} className="vantoris-glass p-4 flex items-center justify-between">
+          {requests.map((request) => (
+            <article key={request.id} className="vantoris-glass p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold text-foreground">{formatCurrency(req.amount)}</p>
+                <p className="text-sm font-bold text-foreground">{formatCurrency(request.amount, request.currency || request.currency_code || null)}</p>
                 <p className="text-xs text-gray mt-0.5">
-                  Submitted: {req.created_date?.substring(0, 10)} · Status: <span className="capitalize">{req.status.replace(/_/g, ' ')}</span>
+                  Submitted: {request.created_date?.substring(0, 10) || 'Date unavailable'} · Status: <span className="capitalize">{String(request.status || 'unknown').replace(/_/g, ' ')}</span>
                 </p>
-                {req.review_notes && <p className="text-xs text-gray mt-1">Notes: {req.review_notes}</p>}
+                {request.review_notes && <p className="text-xs text-gray mt-1">Notes: {request.review_notes}</p>}
               </div>
-              {req.status === 'requested' && (
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => handleAction(req, 'approve')}
-                    disabled={processing === req.id}
-                    className="px-3 py-2 rounded-lg bg-mint/10 text-mint text-xs font-semibold hover:bg-mint/20 transition flex items-center gap-1.5"
-                  >
-                    <Check size={14} /> Approve
-                  </button>
-                  <button
-                    onClick={() => handleAction(req, 'reject')}
-                    disabled={processing === req.id}
-                    className="px-3 py-2 rounded-lg bg-crimson/10 text-crimson text-xs font-semibold hover:bg-crimson/20 transition flex items-center gap-1.5"
-                  >
-                    <X size={14} /> Reject
-                  </button>
-                </div>
+              {request.status === 'requested' && (
+                <span className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+                  Awaiting secure review workflow
+                </span>
               )}
-            </div>
+            </article>
           ))}
         </div>
       )}

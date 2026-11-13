@@ -37,9 +37,9 @@ async function reserveUsage(userId, monthlyLimit) {
   const now = new Date();
   const month = now.toISOString().slice(0, 7);
   const day = now.toISOString().slice(0, 10);
-  const userKey = `avcu:ai:user:${userId}:${month}`;
-  const spendKey = `avcu:ai:spend:${day}`;
-  const minuteKey = `avcu:ai:minute:${userId}:${Math.floor(Date.now() / 60000)}`;
+  const userKey = `vantage:ai:user:${userId}:${month}`;
+  const spendKey = `vantage:ai:spend:${day}`;
+  const minuteKey = `vantage:ai:minute:${userId}:${Math.floor(Date.now() / 60000)}`;
   const perMinuteLimit = Math.max(1, Number(process.env.AI_PER_MINUTE_REQUESTS || 5));
   const script = [
     "local u = tonumber(redis.call('GET', KEYS[1]) or '0')",
@@ -72,7 +72,7 @@ async function reserveUsage(userId, monthlyLimit) {
   return { allowed: Number(result[0]) === 1, used: Number(result[1]) || 0, spendCents: Number(result[2]) || 0, reason: String(result[3] || 'unknown') };
 }
 
-const SYSTEM_PROMPT = 'You are Vantoris Intelligence, a careful financial information assistant for America Vanguard Credit Union (AVCU). Never invent balances, rates, transactions, card status, bookings, or provider results. You are read-only: never claim to execute payments, transfers, card controls, account changes, or bookings. Clearly distinguish general information from verified account facts. Do not request passwords, PINs, or one-time codes.';
+const SYSTEM_PROMPT = 'You are Vantage Assistant, a careful information assistant for Vantage Private Investment. You do not have access to client accounts, balances, private member records, holdings, withdrawals, or identity documents. Never invent financial data, rates, performance, transactions, card status, bookings, or provider results. You are read-only: never claim to execute payments, transfers, card controls, account changes, or bookings. Provide general investment education only; do not give personalized investment instructions. Clearly distinguish general information from verified facts. Do not request passwords, PINs, or one-time codes.';
 
 async function readOpenAICompatible({ url, key, model, prompt, provider }) {
   const response = await fetch(url, {
@@ -131,6 +131,7 @@ async function callBase44(client, prompt) {
 }
 
 async function callProvider(name, client, prompt) {
+  if (name !== 'private') throw new Error('external_ai_provider_disabled');
   if (name === 'openrouter') {
     if (!process.env.OPENROUTER_API_KEY) throw new Error('openrouter_not_configured');
     return readOpenAICompatible({ url: 'https://openrouter.ai/api/v1/chat/completions', key: process.env.OPENROUTER_API_KEY, model: process.env.OPENROUTER_MODEL || 'openai/gpt-4o-mini', prompt, provider: 'openrouter' });
@@ -143,24 +144,23 @@ async function callProvider(name, client, prompt) {
   if (name === 'anthropic') return readAnthropic(prompt);
   if (name === 'base44') return callBase44(client, prompt);
   if (name === 'private') {
-    if (!process.env.PRIVATE_LLM_URL) throw new Error('private_not_configured');
-    const endpoint = new URL(process.env.PRIVATE_LLM_URL);
+    if (!process.env.VANTAGE_PRIVATE_LLM_URL) throw new Error('private_not_configured');
+    const endpoint = new URL(process.env.VANTAGE_PRIVATE_LLM_URL);
     if (endpoint.protocol !== 'https:') throw new Error('private_invalid_url');
-    return readOpenAICompatible({ url: endpoint.toString(), key: process.env.PRIVATE_LLM_KEY || '', model: process.env.PRIVATE_LLM_MODEL || 'qwen2.5:7b', prompt, provider: 'private' });
+    return readOpenAICompatible({ url: endpoint.toString(), key: process.env.VANTAGE_PRIVATE_LLM_KEY || '', model: process.env.VANTAGE_PRIVATE_LLM_MODEL || 'qwen2.5:7b', prompt, provider: 'private' });
   }
   throw new Error('unknown_provider');
 }
 
 function providerOrder() {
-  const configured = (process.env.AI_PROVIDER_ORDER || 'openrouter,groq,gemini,anthropic,base44,private')
-    .split(',').map((item) => item.trim().toLowerCase()).filter(Boolean);
-  return [...new Set(configured)].filter((name) => ['openrouter', 'groq', 'gemini', 'anthropic', 'base44', 'private'].includes(name));
+  // Private endpoint only. No external AI provider fallback is enabled.
+  return ['private'];
 }
 
 export default async function handler(request) {
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
   const token = bearer(request);
-  if (!token) return json({ error: 'authentication_required', message: 'Sign in to use Vantoris Intelligence.' }, 401);
+  if (!token) return json({ error: 'authentication_required', message: 'Sign in to use Vantage Assistant.' }, 401);
 
   let client, user;
   try { ({ client, user } = await authenticate(token)); }
@@ -202,5 +202,5 @@ export default async function handler(request) {
     }
   }
   console.error('All AI providers failed', { userId: user.id, failures });
-  return json({ error: 'all_providers_unavailable', message: 'Vantoris Intelligence is temporarily unavailable. No AI answer was generated.' }, 503);
+  return json({ error: 'all_providers_unavailable', message: 'Vantage Assistant is temporarily unavailable. No AI answer was generated.' }, 503);
 }
