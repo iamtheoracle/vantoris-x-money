@@ -207,3 +207,14 @@ Deno.test("member payment card uses the approved Vantoris wordmark", async () =>
   assert(source.includes(">VANTORIS</span>"), "member card face must use Vantoris identity");
   assert(!source.includes(">VANTAGE</span>"), "legacy Vantage wordmark must not remain on member card face");
 });
+
+Deno.test("all inventoried public, member, and operations routes remain registered", async () => {
+  const register = await Deno.readTextFile("docs/route-preservation-register.md");
+  const app = await Deno.readTextFile("src/App.jsx");
+  const inventoriedRoutes = [...register.matchAll(/^\|\s*`([^\`]+)`\s*\|/gm)].map((match) => match[1]);
+  const registeredRoutes = new Set([...app.matchAll(/<Route path="([^"]+)"/g)].map((match) => match[1]));
+  assert(inventoriedRoutes.length >= 100, "route preservation register must retain the full public/member/operations inventory");
+  for (const route of inventoriedRoutes) {
+    assert(registeredRoutes.has(route), `inventoried route must remain registered: ${route}`);
+  }
+});
