@@ -34,3 +34,11 @@ Deno.test("account numbers cannot be generated in the browser", () => {
   }
   assertEqual(threw, true, "server-issued account number guard");
 });
+
+Deno.test("member Home transaction direction stays neutral when amount and type do not establish direction", async () => {
+  const source = await Deno.readTextFile("src/pages/Home.jsx");
+  assert(source.includes("function transactionPresentation(amount, type)"), "Home activity must use a centralized direction classifier");
+  assert(source.includes("return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-slate-500' };"), "unknown transaction types must remain neutral");
+  assert(source.includes("presentation.sign") && source.includes("presentation.tone"), "activity rows must render the classifier output");
+  assert(!source.includes("const credit = hasAmount"), "Home must not classify every unknown type as a debit");
+});

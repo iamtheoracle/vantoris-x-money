@@ -247,3 +247,8 @@ A source-level visual review found that the light account overview surface still
 ## Investment workspace runtime and activity-sign correction (13 November 2026)
 
 A deeper route-level source review found that the investment page rendered the financial heritage component without importing it, which could fail at runtime when the route was opened despite a successful Vite build. The missing import is now explicit. The activity list also previously treated every type other than withdrawal/fee as a positive inflow. It now assigns signs and color only to recognized inflow/outflow types; unknown types remain neutral and unsigned. A Deno regression test protects the import and classifier behavior. This is a display correction only; investment execution remains disabled pending verified backend, custody and provider workflows.
+
+
+## Member activity direction correction (13 November 2026)
+
+The Home activity list now classifies inflows/outflows only from a signed recorded amount or a recognized transaction type. Unknown types use a neutral tone and no sign; a missing amount remains unavailable rather than being inferred. This avoids presenting an unfamiliar record as a debit by default. A Deno regression test covers the fail-neutral behavior.

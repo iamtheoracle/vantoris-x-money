@@ -49,6 +49,21 @@ function relativeDay(iso) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+
+function transactionPresentation(amount, type) {
+  const raw = amount === null || amount === undefined || amount === '' ? NaN : Number(amount);
+  if (Number.isFinite(raw) && raw > 0) return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
+  if (Number.isFinite(raw) && raw < 0) return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
+  const normalized = String(type || '').trim().toLowerCase();
+  if (['deposit', 'interest', 'opening_balance', 'credit', 'dividend'].includes(normalized)) {
+    return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-emerald-600' };
+  }
+  if (['withdrawal', 'fee', 'debit', 'payment'].includes(normalized)) {
+    return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-navy' };
+  }
+  return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-slate-500' };
+}
+
 function accountLabel(a) {
   const type = (a.account_type || a.type || 'Account').replace(/_/g, ' ');
   const last4 = String(a.account_number || a.mask || '').slice(-4);
@@ -542,12 +557,7 @@ export default function Home() {
             ) : (
               <div className="rounded-[18px] bg-white border border-slate-200/70 divide-y divide-slate-100 shadow-sm overflow-hidden">
                 {transactions.map((tx) => {
-                  const rawAmount = tx.amount;
-                  const amt = rawAmount === null || rawAmount === undefined || rawAmount === '' ? NaN : Number(rawAmount);
-                  const hasAmount = Number.isFinite(amt);
-                  const credit = hasAmount
-                    ? amt > 0
-                    : ['deposit', 'interest', 'opening_balance', 'credit'].includes(String(tx.type || '').toLowerCase());
+                  const presentation = transactionPresentation(tx.amount, tx.type);
                   const label = tx.description || tx.type || 'Transaction';
                   return (
                     <button
@@ -570,12 +580,10 @@ export default function Home() {
                         </span>
                       </span>
                       <span
-                        className={`text-[15px] font-semibold tabular-nums shrink-0 ${
-                          credit ? 'text-emerald-600' : 'text-navy'
-                        }`}
+                        className={`text-[15px] font-semibold tabular-nums shrink-0 ${presentation.tone}`}
                       >
-                        {hasAmount ? (credit ? '+' : '−') : ''}
-                        {formatCurrency(hasAmount ? Math.abs(amt) : null, tx.currency || tx.currency_code || null)}
+                        {presentation.sign}
+                        {formatCurrency(presentation.amount, tx.currency || tx.currency_code || null)}
                       </span>
                     </button>
                   );
