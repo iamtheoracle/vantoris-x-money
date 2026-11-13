@@ -1,3 +1,7 @@
+function assert(condition: boolean, message: string) {
+  if (!condition) throw new Error(message);
+}
+
 import { formatCurrency, generateAccountNumber } from "../src/lib/formatCurrency.js";
 
 function assertEqual(actual: unknown, expected: unknown, message: string) {
