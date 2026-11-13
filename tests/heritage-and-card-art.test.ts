@@ -59,3 +59,12 @@ Deno.test("founder field notes are dated, sourced, and clearly independent of Va
     assert(source.includes(marker), `founder story collection must include ${marker}`);
   }
 });
+
+Deno.test("member Home account overview maintains readable contrast on its light surface", async () => {
+  const source = await Deno.readTextFile("src/pages/Home.jsx");
+  assert(source.includes("bg-white text-navy p-7"), "account overview must retain the approved light surface");
+  assert(source.includes("text-slate-600\">Individual recorded balances"), "account explanatory copy must use a readable dark neutral on white");
+  assert(source.includes("border-t border-slate-200 w-full"), "investment workspace divider must remain visible on white");
+  assert(!source.includes("text-white/65\">Individual recorded balances"), "light-surface explanatory copy must not use low-contrast white text");
+  assert(!source.includes("border-t border-white/10 w-full text-left"), "light-surface divider must not use a white-on-white border");
+});

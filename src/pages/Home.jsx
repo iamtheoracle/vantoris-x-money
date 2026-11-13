@@ -257,7 +257,7 @@ export default function Home() {
                   <p className="text-[30px] font-semibold tracking-tight tabular-nums leading-tight">
                     {accounts.length} {accounts.length === 1 ? 'account' : 'accounts'}
                   </p>
-                  <p className="mt-2 text-sm leading-6 text-white/65">Individual recorded balances are shown by account below. A consolidated figure is withheld until currency and valuation sources are verified.</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Individual recorded balances are shown by account below. A consolidated figure is withheld until currency and valuation sources are verified.</p>
                 </>
               )}
               {dataIssues.investments ? (
@@ -266,7 +266,7 @@ export default function Home() {
                 <button
                   type="button"
                   onClick={() => navigate('/investment')}
-                  className="mt-4 pt-3 border-t border-white/10 w-full text-left text-[13px] text-navy inline-flex items-center gap-1 font-medium"
+                  className="mt-4 pt-3 border-t border-slate-200 w-full text-left text-[13px] text-navy inline-flex items-center gap-1 font-medium"
                 >
                   Open investment workspace
                   {portfolios.length > 0 ? ' · ' + portfolios.length + (portfolios.length === 1 ? ' portfolio' : ' portfolios') : ''}

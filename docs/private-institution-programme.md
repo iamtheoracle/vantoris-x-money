@@ -237,3 +237,8 @@ Reference evidence:
 - James Dyson: James Dyson Foundation: https://www.jamesdysonfoundation.co.uk/who-we-are/our-story
 
 Verification note: the Wealthsimple reference scrape was successful, but its screenshot capture represented the login flow only; no private authenticated account was accessed. Browser visual QA of Vantoris at mobile/tablet/desktop widths remains required. No merge or production deployment is authorized.
+
+
+## Member Home contrast correction (13 November 2026)
+
+A source-level visual review found that the light account overview surface still used a translucent white paragraph and white divider, reducing contrast against the white card. The paragraph now uses slate text and the investment-workspace divider uses a slate border. A Deno regression test protects both details. This is a presentation-only correction; it does not change account data, balances, actions, or backend behavior.
