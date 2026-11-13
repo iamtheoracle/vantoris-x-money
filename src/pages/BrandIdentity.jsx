@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import VantorisMonogram, { VANTAGE_COLORS } from '@/components/vantoris/brand/VantorisMonogram';
+import VantorisMonogram, { VANTORIS_COLORS } from '@/components/vantoris/brand/VantorisMonogram';
 import VantorisLogo from '@/components/vantoris/brand/VantorisLogo';
 import VantorisSeal from '@/components/vantoris/brand/VantorisSeal';
 import VantorisAppIcon from '@/components/vantoris/brand/VantorisAppIcon';
@@ -59,7 +59,7 @@ export default function BrandIdentity() {
           <div className="relative z-10 flex flex-col items-center gap-6">
             <VantorisLogo layout="vertical" size={88} variant="metallic" theme="dark" showTagline />
             <p className="text-white/60 text-sm max-w-md leading-relaxed">
-              A timeless brand identity for a world-class private investment institution —
+              A timeless brand identity for a world-class private institution —
               engineered with precision, restraint, and institutional confidence.
             </p>
           </div>
@@ -191,7 +191,7 @@ export default function BrandIdentity() {
         <Section title="Typography" subtitle="07 — Geometric · Legible · Premium">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <Card>
-              <p className="text-[#071A2D] font-heading" style={{ fontSize: 40, fontWeight: 800, letterSpacing: '0.24em' }}>VANTAGE</p>
+              <p className="text-[#071A2D] font-heading" style={{ fontSize: 40, fontWeight: 800, letterSpacing: '0.24em' }}>VANTORIS</p>
               <p className="text-slate-400 text-xs">Inter · 800 · 0.24em tracking · Heading</p>
             </Card>
             <Card>
@@ -237,7 +237,7 @@ export default function BrandIdentity() {
         {/* Footer */}
         <div className="text-center py-10">
           <VantorisMonogram size={36} variant="flat" theme="light" className="mx-auto" />
-          <p className="text-slate-400 text-xs mt-4 tracking-widest uppercase">Vantage Private Investment · Brand Identity</p>
+          <p className="text-slate-400 text-xs mt-4 tracking-widest uppercase">Vantoris Private Institution · Brand Identity</p>
           <p className="text-slate-300 text-[10px] mt-1">Trust · Structure · Purpose</p>
         </div>
       </div>

@@ -158,9 +158,13 @@ Deno.test("public brand uses Vantoris Private Institution and the arch-over-rive
   const mark = await Deno.readTextFile("src/components/vantoris/brand/VantorisMonogram.jsx");
   const tribute = await Deno.readTextFile("src/components/vantoris/HambrosTribute.jsx");
   const html = await Deno.readTextFile("index.html");
+  const brandIdentity = await Deno.readTextFile("src/pages/BrandIdentity.jsx");
+  const appIcon = await Deno.readTextFile("src/components/vantoris/brand/VantorisAppIcon.jsx");
   assert(landing.includes("Vantoris Private Institution"), "public landing page must use approved Vantoris identity");
   assert(logo.includes("VANTORIS") && logo.includes("PRIVATE&nbsp;INSTITUTION"), "wordmark must use Vantoris Private Institution identity");
   assert(mark.includes("ARCH_PATH") && mark.includes("RIVER_PATH"), "logo mark must use arch-over-river direction");
+  assert(brandIdentity.includes("VANTORIS") && brandIdentity.includes("Vantoris Private Institution"), "brand identity page must use the approved institution name");
+  assert(appIcon.includes("Vantoris app icon"), "app icon accessibility name must use the approved institution identity");
   assert(tribute.includes("Vantoris Private Institution is focused on the United States"), "Hambros tribute must remain an independent historical corner");
   assert(html.includes("Vantoris Private Institution") && !html.includes("Vantage Private Investment"), "document metadata must use Vantoris identity");
 });
