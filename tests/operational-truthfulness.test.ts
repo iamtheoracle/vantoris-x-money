@@ -152,17 +152,17 @@ Deno.test("member bank transfer form only offers active accounts with verified U
   assert(source.includes("No active account with a verified USD currency record"), "member must see why no eligible account is available");
 });
 
-Deno.test("public brand uses Vantage and the arch-over-river identity", async () => {
+Deno.test("public brand uses Vantoris Private Institution and the arch-over-river identity", async () => {
   const landing = await Deno.readTextFile("src/pages/Landing.jsx");
   const logo = await Deno.readTextFile("src/components/vantoris/brand/VantorisLogo.jsx");
   const mark = await Deno.readTextFile("src/components/vantoris/brand/VantorisMonogram.jsx");
   const tribute = await Deno.readTextFile("src/components/vantoris/HambrosTribute.jsx");
   const html = await Deno.readTextFile("index.html");
-  assert(landing.includes("Vantage Private Investment"), "public landing page must use approved Vantage identity");
-  assert(logo.includes("VANTAGE") && logo.includes("PRIVATE"), "wordmark must use Vantage private investment identity");
+  assert(landing.includes("Vantoris Private Institution"), "public landing page must use approved Vantoris identity");
+  assert(logo.includes("VANTORIS") && logo.includes("PRIVATE&nbsp;INSTITUTION"), "wordmark must use Vantoris Private Institution identity");
   assert(mark.includes("ARCH_PATH") && mark.includes("RIVER_PATH"), "logo mark must use arch-over-river direction");
-  assert(tribute.includes("Vantage Private Investment is focused on the United States"), "Hambros tribute must remain an independent historical corner");
-  assert(html.includes("Vantage Private Investment") && !html.includes("Vantoris Private Institution"), "document metadata must use Vantage identity");
+  assert(tribute.includes("Vantoris Private Institution is focused on the United States"), "Hambros tribute must remain an independent historical corner");
+  assert(html.includes("Vantoris Private Institution") && !html.includes("Vantage Private Investment"), "document metadata must use Vantoris identity");
 });
 
 Deno.test("member QR does not send member identifiers to third-party image services", async () => {

@@ -1,7 +1,7 @@
 import React, { useId } from 'react';
 
 /**
- * VANTAGE — Architectural arch over a flowing river.
+ * VANTORIS — Architectural arch over a flowing river.
  * The arch represents enduring structure; the river represents continuity,
  * movement and stewardship. The mark is original vector artwork.
  *
@@ -105,7 +105,7 @@ export default function VantorisMonogram({
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Vantage arch over river mark"
+      aria-label="Vantoris arch over river mark"
     >
       <defs>{defs}</defs>
       <g filter={variant === 'embossed' ? `url(#${sid})` : undefined}>

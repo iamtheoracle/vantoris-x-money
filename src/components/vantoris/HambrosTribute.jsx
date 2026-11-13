@@ -50,7 +50,7 @@ export default function HambrosTribute() {
               <a href="https://atom.aim25.com/index.php/hambros-bank-limited?sf_culture=en" target="_blank" rel="noreferrer" className="font-semibold text-[#102638] underline decoration-[#B99B62] underline-offset-4">Explore the surviving bank records ↗</a>
             </div>
             <p className="mt-6 border-t border-[#B99B62]/35 pt-4 text-xs leading-relaxed text-slate-500">
-              Vantage Private Investment is focused on the United States. This London history corner is editorial remembrance only; it does not describe a Vantage office, service area or business relationship in the United Kingdom.
+              Vantoris Private Institution is focused on the United States. This London history corner is editorial remembrance only; it does not describe a Vantoris office, service area or business relationship in the United Kingdom.
             </p>
           </div>
         </div>
