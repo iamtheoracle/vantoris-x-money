@@ -418,6 +418,7 @@ async function currentMember(request) {
         accountReference: account.account_reference,
         accountType: account.account_type,
         account_type: account.account_type,
+        memberStatus: rows[0].status,
         account_name: account.account_type.replace(/_/g, ' '),
         mask: '•••• ' + String(account.account_reference).slice(-4),
         currency: account.currency,
