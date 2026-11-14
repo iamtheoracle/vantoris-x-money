@@ -43,7 +43,11 @@ export async function loadOracleHistory() {
     const memberId = await currentMemberId();
     let deleted = [];
     try { deleted = JSON.parse(localStorage.getItem('vantoris_deleted_conversations') || '[]'); } catch { deleted = []; }
-    return { ok: true, threadId: memberId, messages: deleted.includes(memberId) ? [] : readSessionHistory(memberId) };
+    if (deleted.includes(memberId)) {
+      try { sessionStorage.removeItem(historyStorageKey(memberId)); } catch { /* session storage may be unavailable */ }
+      return { ok: true, threadId: memberId, messages: [] };
+    }
+    return { ok: true, threadId: memberId, messages: readSessionHistory(memberId) };
   } catch {
     return { ok: false, error: 'authentication_required', messages: [] };
   }
