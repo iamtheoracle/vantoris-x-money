@@ -46,7 +46,7 @@ export default function StaffPortal(){
    else if(proposalType==='reverse_journal')body={action:'propose',proposalType,journalId,reason};
    else if(proposalType==='change_limit')body={action:'propose',proposalType,memberId,singleLimitCents:singleLimit,dailyLimitCents:dailyLimit};
    else body={action:'propose',proposalType,minimumUnimpairedCents:capitalFloor};
-   const result=await post(body);setNotice('Proposal created: '+result.proposalId);setDescription('');setJournalId('');setReason('');setSingleLimit('');setDailyLimit('');await load();
+   const result=await post(body);setNotice('Proposal created: '+result.proposalId);setDescription('');setJournalId('');setReason('');setSingleLimit('');setDailyLimit('');setCapitalFloor('');await load();
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
  async function issueMemberToken(event){
