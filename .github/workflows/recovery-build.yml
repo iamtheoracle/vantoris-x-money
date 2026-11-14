@@ -2,7 +2,7 @@ name: Recovery build check
 
 on:
   push:
-    branches: [recovery/merge-vantoris-live]
+    branches: [recovery/merge-vantoris-live, migration/remove-base44-and-codex]
   pull_request:
     branches: [main, recovery/merge-vantoris-live]
   workflow_dispatch:
