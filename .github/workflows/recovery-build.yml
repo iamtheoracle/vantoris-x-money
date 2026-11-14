@@ -29,6 +29,10 @@ jobs:
       - run: node --check netlify/functions/staff-auth.mjs
       - run: node --check netlify/functions/staff-actions.mjs
       - run: node --check netlify/functions/member-documents.mjs
+      - name: Generate and load Vantoris migration manifest
+        run: |
+          node scripts/generate-vantoris-migration-manifest.mjs
+          node --input-type=module -e "await import('./netlify/functions/migration-guard.mjs')"
       - run: node --check netlify/functions/oracle.mjs
       - run: node --check scripts/apply-vantoris-migrations.mjs
       - run: node --check scripts/generate-vantoris-migration-manifest.mjs
