@@ -1,4 +1,4 @@
--- Run after migrations 001–007 against a disposable PostgreSQL database as migration owner.
+-- Run after migrations 001–008 against a disposable PostgreSQL database as migration owner.
 -- Fixtures are synthetic. The complete test transaction is rolled back.
 BEGIN;
 DO $$
