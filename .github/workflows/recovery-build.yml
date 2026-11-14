@@ -195,7 +195,7 @@ jobs:
           if (!investment.includes('No investment balance is currently available') ||
               !investment.includes('verified underlying asset records') ||
               !investment.includes('No third-party portfolio figure is treated as a Vantoris balance') ||
-              /\\$[0-9]|€[0-9]|£[0-9]/.test(investment)) {
+              /\$[0-9]|€[0-9]|£[0-9]/.test(investment)) {
             throw new Error('Investment screen must not represent unverified holdings as Vantoris balances');
           }
           const readOnlySurfaces = [
