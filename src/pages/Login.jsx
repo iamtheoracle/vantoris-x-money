@@ -192,7 +192,7 @@ export default function Login() {
               autoComplete="one-time-code"
               maxLength={6}
               value={otp}
-              onChange={(event) => setOtp(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+              onChange={(event) => setOtp(event.target.value.replace(/\D/g, "").slice(0, 6))}
               placeholder="000000"
               required
               className="w-full h-12 rounded-lg border border-slate-200 bg-white px-3 text-center text-lg tracking-[0.35em] text-foreground outline-none focus:border-navy focus:ring-2 focus:ring-navy/10 transition"
