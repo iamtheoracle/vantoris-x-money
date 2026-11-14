@@ -104,4 +104,23 @@ CREATE TRIGGER member_transfer_limit_history_no_truncate BEFORE TRUNCATE ON vant
 REVOKE ALL ON FUNCTION vantoris_ledger.post_approved_limit_change(bytea,uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION vantoris_ledger.post_approved_limit_change(bytea,uuid) TO vantoris_backend;
 REVOKE ALL ON ALL TABLES IN SCHEMA vantoris_ledger FROM PUBLIC;
+CREATE OR REPLACE FUNCTION vantoris_ledger.get_member_transfer_limits(p_session_token_hash bytea)
+RETURNS TABLE(single_limit_cents bigint,daily_limit_cents bigint,used_today_cents numeric,remaining_today_cents numeric)
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $
+DECLARE member_id uuid; day_start timestamptz; current_limit vantoris_ledger.member_transfer_limit_history%ROWTYPE; used numeric;
+BEGIN
+ member_id:=vantoris_ledger.resolve_member_session(p_session_token_hash);
+ SELECT * INTO current_limit FROM vantoris_ledger.member_transfer_limit_history
+  WHERE member_transfer_limit_history.member_id=get_member_transfer_limits.member_id
+  ORDER BY effective_at DESC,id DESC LIMIT 1;
+ IF NOT FOUND THEN RETURN; END IF;
+ day_start:=date_trunc('day',clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
+ SELECT COALESCE(sum(amount_cents),0) INTO used FROM vantoris_ledger.payment_operations
+  WHERE payment_operations.member_id=get_member_transfer_limits.member_id AND operation_type='internal_transfer'
+    AND status='posted' AND created_at>=day_start;
+ RETURN QUERY SELECT current_limit.single_limit_cents,current_limit.daily_limit_cents,used,
+  GREATEST(current_limit.daily_limit_cents-used,0);
+END $;
+REVOKE ALL ON FUNCTION vantoris_ledger.get_member_transfer_limits(bytea) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vantoris_ledger.get_member_transfer_limits(bytea) TO vantoris_backend;
 COMMIT;
