@@ -127,6 +127,8 @@ export default async function handler(request){
   }
   if(request.method==='POST'){
    if(!sameOrigin(request))return json({error:'origin_invalid'},403);
+   const auth=await database().begin(async tx=>await memberContext(request,tx));
+   if(!auth)return json({error:'authentication_required'},401);
    const form=await request.formData();
    const file=form.get('file'),documentType=String(form.get('documentType')||'');
    if(!file||typeof file.arrayBuffer!=='function')return json({error:'document_file_required'},400);
@@ -139,13 +141,11 @@ export default async function handler(request){
    const encrypted=encryptDocument(plaintext,version);
    const filename=safeFilename(file.name);
    const stored=await database().begin(async tx=>{
-    const auth=await memberContext(request,tx);if(!auth)return {error:'authentication_required'};
     const rows=await tx`SELECT vantoris_ledger.store_member_identity_document(
       ${auth.tokenHash},${documentType},${encrypted.ciphertext},${encrypted.nonce},${encrypted.authTag},
       ${version},${encrypted.contentHash},${mediaType},${filename}) AS document_id`;
     return {documentId:rows[0].document_id};
    });
-   if(stored.error)return json({error:stored.error},401);
    return json({documentId:stored.documentId,status:'received'},201);
   }
   return json({error:'method_not_allowed'},405);
