@@ -1,5 +1,12 @@
 # Vantoris is a React SPA using BrowserRouter.
 # Netlify returns the SPA entry point for client-side routes.
+# First-party Vantoris member API; no Base44 or external banking proxy.
+[[redirects]]
+  from = "/api/member-auth"
+  to = "/.netlify/functions/member-auth"
+  status = 200
+  force = true
+
 # Server APIs must be implemented as authenticated Netlify Functions or another
 # explicitly configured backend; this rewrite does not proxy application APIs.
 
