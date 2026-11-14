@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowLeftRight, CheckCircle2, ChevronRight, CircleAlert, Loader2, RefreshCw, Send, ShieldCheck, Wallet } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatCurrency';
+import { centsToDecimal, formatCurrency } from '@/lib/formatCurrency';
 import { useAuth } from '@/lib/AuthContext';
 
 function readCsrfCookie() {
@@ -16,13 +16,6 @@ function amountToCents(value) {
   const cents = BigInt(wholeText) * 100n + BigInt(fractionText.padEnd(2, '0'));
   if (cents <= 0n || cents > BigInt(Number.MAX_SAFE_INTEGER)) return null;
   return Number(cents);
-}
-
-function centsToDecimal(centsValue) {
-  const cents = BigInt(String(centsValue || '0'));
-  const whole = cents / 100n;
-  const fraction = String(cents % 100n).padStart(2, '0');
-  return whole.toString() + '.' + fraction;
 }
 
 function accountTitle(account) {
@@ -43,9 +36,14 @@ export default function MoveMoney() {
   const [message, setMessage] = useState(null);
   const idempotencyKey = useRef(null);
 
+  const eligibleAccounts = useMemo(
+    () => accounts.filter(account => account.currency === 'USD' && account.status === 'active'),
+    [accounts],
+  );
+
   const sourceAccount = useMemo(
-    () => accounts.find(account => account.id === sourceAccountId) || null,
-    [accounts, sourceAccountId],
+    () => eligibleAccounts.find(account => account.id === sourceAccountId) || null,
+    [eligibleAccounts, sourceAccountId],
   );
 
   const loadAccounts = useCallback(async () => {
@@ -62,9 +60,10 @@ export default function MoveMoney() {
       if (!Array.isArray(data.accounts)) throw new Error('Vantoris returned an invalid account response.');
       setAccounts(data.accounts);
       setTransferLimits(data.transferLimits || null);
-      setSourceAccountId(current => current && data.accounts.some(account => account.id === current)
+      const eligible = data.accounts.filter(account => account.currency === 'USD' && account.status === 'active');
+      setSourceAccountId(current => current && eligible.some(account => account.id === current)
         ? current
-        : data.accounts[0]?.id || '');
+        : eligible[0]?.id || '');
     } catch (error) {
       setLoadError(error.message || 'Account information is unavailable.');
     } finally {
@@ -191,15 +190,21 @@ export default function MoveMoney() {
           <h2 className="mt-3 font-semibold text-navy">No member accounts are linked</h2>
           <p className="mt-1 text-sm text-slate-500">Vantoris has not returned an account linked to this member session.</p>
         </section>
+      ) : eligibleAccounts.length === 0 ? (
+        <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+          <Wallet className="mx-auto text-slate-400" size={28} />
+          <h2 className="mt-3 font-semibold text-navy">No eligible transfer account</h2>
+          <p className="mt-1 text-sm text-slate-500">No active account with a verified USD currency record is available for internal transfers.</p>
+        </section>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-semibold text-navy">Your Vantoris accounts</h2>
-              <span className="text-xs text-slate-500">{accounts.length} linked</span>
+              <span className="text-xs text-slate-500">{eligibleAccounts.length} eligible
             </div>
             <div className="space-y-3">
-              {accounts.map(account => (
+              {eligibleAccounts.map(account => (
                 <button key={account.id} type="button" onClick={() => { setSourceAccountId(account.id); resetIdempotency(); }}
                   className={`w-full rounded-xl border p-4 text-left transition ${sourceAccountId === account.id ? 'border-navy bg-slate-50 ring-1 ring-navy/10' : 'border-slate-200 hover:border-slate-300'}`}>
                   <div className="flex items-center gap-3">
@@ -209,7 +214,7 @@ export default function MoveMoney() {
                       <span className="mt-1 block text-xs text-slate-500">{account.mask || 'Account reference unavailable'}</span>
                     </span>
                     <span className="text-right">
-                      <strong className="block text-sm tabular-nums text-navy">{formatCurrency(account.availableBalance, account.currency)}</strong>
+                      <strong className="block text-sm tabular-nums text-navy">{formatCurrency(account.availableBalance, account.currency || account.currency_code || null)}</strong>
                       <span className="text-[11px] text-slate-500">Available</span>
                     </span>
                     <ChevronRight size={16} className="text-slate-400" />
@@ -265,13 +270,13 @@ export default function MoveMoney() {
             {sourceAccount && (
               <div className="mb-5 rounded-xl bg-slate-50 p-3">
                 <div className="flex justify-between gap-3 text-xs text-slate-600">
-                  <span>Posted balance</span><span className="font-semibold tabular-nums">{formatCurrency(sourceAccount.balance, sourceAccount.currency)}</span>
+                  <span>Posted balance</span><span className="font-semibold tabular-nums">{formatCurrency(sourceAccount.balance, sourceAccount.currency || sourceAccount.currency_code || null)}</span>
                 </div>
                 <div className="mt-2 flex justify-between gap-3 text-xs text-slate-600">
-                  <span>Active holds</span><span className="font-semibold tabular-nums">{formatCurrency(centsToDecimal(sourceAccount.activeHoldCents), sourceAccount.currency)}</span>
+                  <span>Active holds</span><span className="font-semibold tabular-nums">{formatCurrency(centsToDecimal(sourceAccount.activeHoldCents), sourceAccount.currency || sourceAccount.currency_code || null)}</span>
                 </div>
                 <div className="mt-2 flex justify-between gap-3 border-t border-slate-200 pt-2 text-xs text-slate-600">
-                  <span>Available balance</span><span className="font-semibold tabular-nums text-navy">{formatCurrency(sourceAccount.availableBalance, sourceAccount.currency)}</span>
+                  <span>Available balance</span><span className="font-semibold tabular-nums text-navy">{formatCurrency(sourceAccount.availableBalance, sourceAccount.currency || sourceAccount.currency_code || null)}</span>
                 </div>
               </div>
             )}
@@ -285,7 +290,7 @@ export default function MoveMoney() {
               </div>
             )}
 
-            <button type="submit" disabled={submitting || !sourceAccount || sourceAccount.availableBalanceCents === null || !transferLimits}
+            <button type="submit" disabled={submitting || !sourceAccount || sourceAccount.availableBalanceCents === null || sourceAccount.availableBalanceCents === undefined || !transferLimits}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-navy py-3.5 text-sm font-semibold text-white transition hover:bg-[#17365C] disabled:cursor-not-allowed disabled:opacity-45">
               {submitting ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
               {submitting ? 'Posting transfer…' : 'Confirm internal transfer'}
