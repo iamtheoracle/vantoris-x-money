@@ -26,6 +26,7 @@ jobs:
           node-version: 20
       - run: npm install --no-audit --no-fund
       - run: node --check netlify/functions/ask.mjs
+      - run: node --check netlify/functions/member-auth.mjs
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
