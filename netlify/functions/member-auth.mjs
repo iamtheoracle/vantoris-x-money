@@ -4,6 +4,7 @@ import {
   scrypt, timingSafeEqual,
 } from 'node:crypto';
 import { promisify } from 'node:util';
+import { assertVantorisMigrationHistory } from './migration-guard.mjs';
 
 const scryptAsync = promisify(scrypt);
 let sql;
@@ -627,6 +628,8 @@ async function resetMemberPassword(body) {
 }
 
 export default async function handler(request) {
+  try { await assertVantorisMigrationHistory(database()); }
+  catch { return json({ error: 'member_service_unavailable' }, 503); }
   const url = new URL(request.url);
   const action = url.searchParams.get('action') || 'me';
   if (request.method === 'GET' && action === 'account') {
