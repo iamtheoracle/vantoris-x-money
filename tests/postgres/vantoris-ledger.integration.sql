@@ -30,12 +30,11 @@ BEGIN
     VALUES(gen_random_uuid(),opening_journal,clearing_id,'USD',10000),
           (gen_random_uuid(),opening_journal,a1,'USD',-10000);
   SELECT * INTO result FROM vantoris_ledger.create_internal_transfer_operation(
-    op_id,'test-transfer:'||op_id,repeat('a',64)
+    op_id,m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,
+    'test-transfer:'||op_id,repeat('a',64)
   );
   op_id := result.operation_id;
-  SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(
-    op_id,m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-member-session','Synthetic transfer test'
-  );
+  SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(op_id,m1);
   IF result.duplicate THEN RAISE EXCEPTION 'First transfer unexpectedly marked duplicate'; END IF;
   SELECT -COALESCE(sum(amount_cents),0) INTO sender_balance
     FROM vantoris_ledger.journal_entries WHERE ledger_account_id=a1;
@@ -52,19 +51,15 @@ BEGIN
    WHERE journal_type='internal_transfer' AND source_reference=op_id::text;
   IF journal_count<>1 THEN RAISE EXCEPTION 'Expected exactly one transfer journal, got %',journal_count; END IF;
 
-  SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(
-    op_id,m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-member-session','Synthetic retry'
-  );
+  SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(op_id,m1);
   IF NOT result.duplicate THEN RAISE EXCEPTION 'Retry was not idempotent'; END IF;
 
   SELECT * INTO result FROM vantoris_ledger.create_internal_transfer_operation(
-    gen_random_uuid(),'test-insufficient:'||m1,repeat('b',64)
+    gen_random_uuid(),m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,
+    'test-insufficient:'||m1,repeat('b',64)
   );
   BEGIN
-    PERFORM * FROM vantoris_ledger.execute_internal_transfer(
-      result.operation_id,
-      m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,'test-member-session','Must fail'
-    );
+    PERFORM * FROM vantoris_ledger.execute_internal_transfer(result.operation_id,m1);
     RAISE EXCEPTION 'Insufficient funds transfer unexpectedly succeeded';
   EXCEPTION WHEN SQLSTATE 'P0001' THEN
     IF SQLERRM<>'INSUFFICIENT_AVAILABLE_FUNDS' THEN RAISE; END IF;
