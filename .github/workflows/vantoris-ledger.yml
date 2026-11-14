@@ -57,7 +57,7 @@ jobs:
             migrations/009_vantoris_staff_controls.sql \
             migrations/010_vantoris_permanent_capital_protection.sql \
             migrations/011_vantoris_approved_journal_posting.sql \
-            migrations/012_vantoris_member_transfer_limits.sql \\
+            migrations/012_vantoris_member_transfer_limits.sql \
             migrations/013_vantoris_member_activation_mfa.sql
           do
             psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
