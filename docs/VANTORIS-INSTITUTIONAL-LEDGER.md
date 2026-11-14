@@ -36,15 +36,24 @@ These migrations have **not been verified as applied** to any live Vantoris data
 
 Use a dedicated empty disposable database for integration testing. Never use the production URL for tests.
 
-A DBA creates a server-only runtime role before migration 002. The role must be a LOGIN role with a strong generated password, and must not be a superuser or have database/role creation privileges:
+The founder-approved runtime identity is `avcu_backend`. Migration 002 retains the historical privilege-group name `vantoris_backend`; do not treat the names as interchangeable or connect the application as `vantoris_backend`.
+
+For a **new disposable database**, provision a non-login privilege group and a separate login identity before migration 002:
 
 ```sql
 CREATE ROLE vantoris_backend
-  LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION
+  NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;
+CREATE ROLE avcu_backend
+  LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION
   PASSWORD '<generated-secret>';
+GRANT vantoris_backend TO avcu_backend;
 ```
 
-The migration owner is separate and retains schema ownership. The runtime credential is stored only in a server-side secret named `VANTORIS_LEDGER_DATABASE_URL`; never use a `VITE_` variable, browser storage or a client bundle. Members never receive this credential.
+Migration 002 grants the legacy privilege set to the non-login group. PostgreSQL role membership gives `avcu_backend` those inherited privileges; the application must connect as `avcu_backend`. The CI database must verify that the runtime login inherits the required schema/table/function privileges and cannot write journals or audit rows directly.
+
+For an existing institutional database, do not run these statements blindly. A DBA must inspect existing roles, memberships, active sessions, ownership and effective grants, then provision/cut over `avcu_backend` under a reviewed change and recovery plan. Do not revoke or disable any existing login until dependencies and cutover are verified. No production role change is authorized by this repository task.
+
+The migration owner is separate and retains schema ownership. The `VANTORIS_LEDGER_DATABASE_URL` secret must contain a server-side connection URL authenticated as `avcu_backend`; never use a `VITE_` variable, browser storage or a client bundle. Members never receive this credential.
 
 ## Apply and verify
 
