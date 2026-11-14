@@ -51,3 +51,14 @@ export function formatCurrency(amount, currency = 'USD') {
 export function generateAccountNumber() {
   throw new Error('Account numbers are issued by the trusted server-side account workflow.');
 }
+
+/** Convert integer cents to an exact decimal string without floating-point arithmetic. */
+export function centsToDecimal(value) {
+  const raw = typeof value === 'bigint' ? value.toString() : String(value ?? '');
+  if (!/^-?\d+$/.test(raw)) return null;
+  if (typeof value === 'number' && !Number.isSafeInteger(value)) return null;
+  const cents = BigInt(raw);
+  const negative = cents < 0n;
+  const absolute = negative ? -cents : cents;
+  return (negative ? '-' : '') + (absolute / 100n).toString() + '.' + (absolute % 100n).toString().padStart(2, '0');
+}
