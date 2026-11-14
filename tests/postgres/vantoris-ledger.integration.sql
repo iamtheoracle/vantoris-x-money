@@ -5,8 +5,8 @@ DO $$
 DECLARE
  m1 uuid:=gen_random_uuid(); m2 uuid:=gen_random_uuid();
  ops_staff uuid:=gen_random_uuid(); finance_staff uuid:=gen_random_uuid(); support_staff uuid:=gen_random_uuid();
- capital_id uuid:=gen_random_uuid(); clearing_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
- capital_journal uuid:=gen_random_uuid(); opening_journal uuid:=gen_random_uuid(); impairment_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid();
+ capital_id uuid:=gen_random_uuid(); clearing_id uuid:=gen_random_uuid(); suspense_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
+ capital_journal uuid:=gen_random_uuid(); opening_journal uuid:=gen_random_uuid(); impairment_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid(); manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid;
  result record; sender_balance numeric; receiver_balance numeric; captured_status text; journal_count integer;
 BEGIN
  INSERT INTO vantoris_ledger.members(id,member_reference,status) VALUES
@@ -36,7 +36,8 @@ BEGIN
  PERFORM vantoris_ledger.set_institutional_capital_floor(decode(repeat('a',64),'hex'),decode(repeat('g',64),'hex'),5000);
  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
   (capital_id,'TEST-PERMANENT-CAPITAL',NULL,'institutional_capital','USD'),
-  (clearing_id,'TEST-CLEARING',NULL,'internal_clearing','USD');
+  (clearing_id,'TEST-CLEARING',NULL,'internal_clearing','USD'),
+  (suspense_id,'TEST-SUSPENSE',NULL,'suspense','USD');
  INSERT INTO vantoris_ledger.journals(id,journal_type,source_reference,idempotency_key,description,created_by) VALUES
   (capital_journal,'manual','TEST-CAPITAL','test-capital','Synthetic permanent capital opening','test');
  INSERT INTO vantoris_ledger.journal_entries(id,journal_id,ledger_account_id,currency,amount_cents) VALUES
@@ -63,6 +64,31 @@ BEGIN
  EXCEPTION WHEN check_violation THEN
   IF SQLERRM NOT LIKE 'PERMANENT_CAPITAL_IMPAIRMENT_BLOCKED%' THEN RAISE; END IF;
  END;
+
+ -- Manual journal proposal, independent approval and posting by finance staff.
+ manual_proposal:=vantoris_ledger.create_staff_action_proposal(
+  decode(repeat('a',64),'hex'),'manual_journal','test-manual-journal',
+  jsonb_build_object('description','Synthetic manual reclassification','entries',jsonb_build_array(
+   jsonb_build_object('account_reference','TEST-CLEARING','amount_cents',100),
+   jsonb_build_object('account_reference','TEST-SUSPENSE','amount_cents',-100)
+  ))
+ );
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),manual_proposal,'approve');
+ manual_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('g',64),'hex'),manual_proposal);
+ IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.staff_action_proposals WHERE id=manual_proposal AND status='executed') THEN
+  RAISE EXCEPTION 'Approved manual journal proposal was not executed';
+ END IF;
+
+ -- Reverse that manual journal using a second independently approved action.
+ reversal_proposal:=vantoris_ledger.create_staff_action_proposal(
+  decode(repeat('a',64),'hex'),'reverse_journal',manual_journal::text,
+  jsonb_build_object('reason','Synthetic test reversal')
+ );
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),reversal_proposal,'approve');
+ reversal_journal:=vantoris_ledger.post_approved_reversal(decode(repeat('g',64),'hex'),reversal_proposal);
+ IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.journals WHERE id=reversal_journal AND reversal_of=manual_journal) THEN
+  RAISE EXCEPTION 'Reversal journal was not linked to original';
+ END IF;
 
  SELECT * INTO result FROM vantoris_ledger.create_member_internal_transfer_operation(
   op_id,decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-transfer:'||op_id,repeat('a',64));
@@ -116,7 +142,7 @@ SELECT vantoris_ledger.resolve_staff_session(decode(repeat('a',64),'hex'));
 DO $$ DECLARE n integer; BEGIN
  SELECT count(*) INTO n FROM vantoris_ledger.members; IF n<>2 THEN RAISE EXCEPTION 'Operations staff member access missing'; END IF;
  SELECT count(*) INTO n FROM vantoris_ledger.audit_events; IF n<1 THEN RAISE EXCEPTION 'Operations staff audit access missing'; END IF;
- SELECT count(*) INTO n FROM vantoris_ledger.ledger_accounts; IF n<>4 THEN RAISE EXCEPTION 'Operations staff ledger access missing: %',n; END IF;
+ SELECT count(*) INTO n FROM vantoris_ledger.ledger_accounts; IF n<>5 THEN RAISE EXCEPTION 'Operations staff ledger access missing: %',n; END IF;
 END $$;
 SELECT vantoris_ledger.resolve_staff_session(decode(repeat('i',64),'hex'));
 DO $$ DECLARE n integer; BEGIN
