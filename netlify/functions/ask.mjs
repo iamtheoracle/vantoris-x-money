@@ -1,17 +1,28 @@
-const json = (body, status = 503) => new Response(JSON.stringify(body), {
-  status,
-  headers: {
-    'content-type': 'application/json; charset=utf-8',
-    'cache-control': 'no-store, private',
-    'x-content-type-options': 'nosniff',
-    'referrer-policy': 'no-referrer',
-  },
-});
+import oracle from './oracle.mjs';
 
+/**
+ * Compatibility alias for existing clients. The legacy path now delegates to
+ * the same member-authenticated, rate-limited, informational Vantoris endpoint.
+ */
 export default async function handler(request) {
-  if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
-  return json({
-    error: 'assistant_disabled',
-    message: 'Vantoris Intelligence is not enabled. No assistant provider is connected, and no core institutional operation depends on this service.',
-  }, 503);
+  if (request.method !== 'POST') return oracle(request);
+
+  let payload = {};
+  try { payload = await request.clone().json(); } catch { /* oracle returns the canonical JSON error */ }
+  const message = typeof payload.message === 'string'
+    ? payload.message
+    : typeof payload.prompt === 'string'
+      ? payload.prompt
+      : '';
+
+  const adapted = new Request(request, {
+    body: JSON.stringify({ message }),
+  });
+  const response = await oracle(adapted);
+  const data = await response.json().catch(() => ({}));
+  if (data.ok === true && typeof data.text === 'string') data.response = data.text;
+  return new Response(JSON.stringify(data), {
+    status: response.status,
+    headers: response.headers,
+  });
 }
