@@ -55,7 +55,7 @@ export default function Transactions() {
             const presentation = transactionPresentation(decimalAmount, item.type);
             const date = item.created_date ? new Date(item.created_date) : null;
             const dateLabel = date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : 'Date not supplied';
-            const statusLabel = item.status || 'Status not supplied';
+            const statusLabel = typeof item.status === 'string' && item.status.trim() ? item.status : 'Status not supplied';
             const Icon = presentation.sign === '+'
               ? ArrowDownLeft
               : presentation.sign === '−'
