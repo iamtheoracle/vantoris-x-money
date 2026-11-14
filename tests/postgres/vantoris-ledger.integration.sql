@@ -6,11 +6,11 @@ DECLARE
  m1 uuid:=gen_random_uuid(); m2 uuid:=gen_random_uuid(); m3 uuid:=gen_random_uuid();
  ops_staff uuid:=gen_random_uuid(); finance_staff uuid:=gen_random_uuid(); support_staff uuid:=gen_random_uuid(); identity_staff uuid:=gen_random_uuid();
  ops_factor_id uuid:=gen_random_uuid(); finance_factor_id uuid:=gen_random_uuid(); support_factor_id uuid:=gen_random_uuid(); identity_factor_id uuid:=gen_random_uuid(); m1_factor_id uuid:=gen_random_uuid(); m2_factor_id uuid:=gen_random_uuid();
- capital_id uuid:=gen_random_uuid(); clearing_id uuid:=gen_random_uuid(); suspense_id uuid:=gen_random_uuid(); eur_clearing_id uuid:=gen_random_uuid(); eur_suspense_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
+ capital_id uuid:=gen_random_uuid(); clearing_id uuid:=gen_random_uuid(); suspense_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
  capital_journal uuid:=gen_random_uuid(); opening_journal uuid:=gen_random_uuid(); impairment_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid();
  activation_hash bytea:=decode(repeat('1',64),'hex'); reset_hash bytea:=decode(repeat('2',64),'hex'); mfa_challenge_hash bytea:=decode(repeat('3',64),'hex');
  mfa_session_hash bytea:=decode(repeat('4',64),'hex'); mfa_csrf_hash bytea:=decode(repeat('5',64),'hex'); mfa_factor_id uuid:=gen_random_uuid();
- mfa_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; staff_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid; mixed_currency_proposal uuid; limit_proposal uuid; limit_history uuid;
+ mfa_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; staff_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid; limit_proposal uuid; limit_history uuid;
  capital_proposal uuid; capital_opening_proposal uuid; opening_proposal uuid; identity_document_id uuid; identity_review_id uuid;
  result record; sender_balance numeric; receiver_balance numeric; captured_status text; journal_count integer;
 BEGIN
@@ -117,9 +117,7 @@ BEGIN
  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
   (capital_id,'TEST-PERMANENT-CAPITAL',NULL,'institutional_capital','USD'),
   (clearing_id,'TEST-CLEARING',NULL,'internal_clearing','USD'),
-  (suspense_id,'TEST-SUSPENSE',NULL,'suspense','USD'),
-  (eur_clearing_id,'TEST-CLEARING-EUR',NULL,'internal_clearing','EUR'),
-  (eur_suspense_id,'TEST-SUSPENSE-EUR',NULL,'suspense','EUR');
+  (suspense_id,'TEST-SUSPENSE',NULL,'suspense','USD');
 
  -- The opening capital is a dual-approved manual journal, never a typed balance.
  capital_opening_proposal:=vantoris_ledger.create_staff_action_proposal(
@@ -164,8 +162,8 @@ BEGIN
  manual_proposal:=vantoris_ledger.create_staff_action_proposal(
   decode(repeat('a',64),'hex'),'manual_journal','test-manual-journal',
   jsonb_build_object('description','Synthetic manual reclassification','entries',jsonb_build_array(
-   jsonb_build_object('account_reference','TEST-CLEARING-EUR','amount_cents',100),
-   jsonb_build_object('account_reference','TEST-SUSPENSE-EUR','amount_cents',-100)
+   jsonb_build_object('account_reference','TEST-CLEARING','amount_cents',100),
+   jsonb_build_object('account_reference','TEST-SUSPENSE','amount_cents',-100)
   ))
  );
  -- Even when a test staff identity holds both capabilities, the database rejects self-approval.
@@ -180,7 +178,7 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.staff_action_proposals WHERE id=manual_proposal AND status='executed') THEN
   RAISE EXCEPTION 'Approved manual journal proposal was not executed';
  END IF;
- IF (SELECT count(*) FROM vantoris_ledger.journal_entries WHERE journal_id=manual_journal AND currency='EUR')<>2 THEN
+ IF (SELECT count(*) FROM vantoris_ledger.journal_entries WHERE journal_id=manual_journal AND currency='USD')<>2 THEN
   RAISE EXCEPTION 'Manual journal did not derive EUR from its ledger accounts';
  END IF;
  IF vantoris_ledger.post_approved_manual_journal(decode(repeat('60',32),'hex'),manual_proposal)<>manual_journal THEN
@@ -201,23 +199,16 @@ BEGIN
   RAISE EXCEPTION 'Reversal did not preserve original journal currency';
  END IF;
 
- -- Mixed-currency manual journals are rejected before any journal is created.
- mixed_currency_proposal:=vantoris_ledger.create_staff_action_proposal(
-  decode(repeat('a',64),'hex'),'manual_journal','test-mixed-currency-journal',
-  jsonb_build_object('description','Must reject mixed currency','entries',jsonb_build_array(
-   jsonb_build_object('account_reference','TEST-CLEARING-EUR','amount_cents',100),
-   jsonb_build_object('account_reference','TEST-SUSPENSE','amount_cents',-100)
-  ))
- );
- PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),mixed_currency_proposal,'approve');
+ -- The current account schema is explicitly USD-only; do not silently enable EUR issuance.
  BEGIN
-  PERFORM vantoris_ledger.post_approved_manual_journal(decode(repeat('60',32),'hex'),mixed_currency_proposal);
-  RAISE EXCEPTION 'Mixed-currency manual journal unexpectedly posted';
- EXCEPTION WHEN raise_exception THEN
-  IF SQLERRM<>'MANUAL_JOURNAL_CURRENCY_MISMATCH' THEN RAISE; END IF;
+  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency)
+  VALUES(gen_random_uuid(),'TEST-EUR-ACCOUNT-REJECTED',NULL,'internal_clearing','EUR');
+  RAISE EXCEPTION 'EUR account unexpectedly passed the current USD-only ledger constraint';
+ EXCEPTION WHEN check_violation THEN
+  IF SQLERRM NOT LIKE '%ledger_accounts_currency_check%' THEN RAISE; END IF;
  END;
- IF EXISTS(SELECT 1 FROM vantoris_ledger.journals WHERE idempotency_key='manual-journal:'||mixed_currency_proposal::text) THEN
-  RAISE EXCEPTION 'Rejected mixed-currency proposal created a journal';
+ IF EXISTS(SELECT 1 FROM vantoris_ledger.ledger_accounts WHERE account_reference='TEST-EUR-ACCOUNT-REJECTED') THEN
+  RAISE EXCEPTION 'Rejected EUR account was persisted';
  END IF;
 
  -- Member transfer limits are created only through a separate proposal, approval and posting.
