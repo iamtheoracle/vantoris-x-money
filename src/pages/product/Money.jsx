@@ -1,7 +1,7 @@
 import React,{useEffect,useState} from 'react';
 import {Link} from 'react-router-dom';
 import {ArrowRightLeft,Loader2,ReceiptText,Wallet} from 'lucide-react';
-import {formatCurrency} from '@/lib/currency';
+import {formatCurrency} from '@/lib/formatCurrency';
 import ProductShell from './ProductShell';
 
 export default function Money(){
