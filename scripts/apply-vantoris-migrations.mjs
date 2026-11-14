@@ -22,7 +22,8 @@ export function stripTransactionBoundaries(content, filename = 'migration.sql') 
   }
   const prefix = content.slice(0, beginIndex).replace(/^\s*--.*$/gm, '').trim();
   const trailing = content.slice(commitIndex + 'COMMIT;'.length).replace(/^\s*--.*$/gm, '').trim();
-  if (prefix || trailing) throw new Error(filename + ' contains SQL outside its outer transaction');
+  if (prefix) throw new Error(filename + ' contains SQL before its outer BEGIN');
+  if (trailing) throw new Error(filename + ' contains SQL after its outer COMMIT');
   return content.slice(beginIndex + 'BEGIN;'.length, commitIndex);
 }
 
