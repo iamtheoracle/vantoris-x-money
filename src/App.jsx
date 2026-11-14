@@ -17,6 +17,7 @@ import OperationsRoute from './components/OperationsRoute';
 import MemberRoute from './components/MemberRoute';
 
 const Login = React.lazy(() => import('./pages/Login'));
+const StaffLogin = React.lazy(() => import('./pages/StaffLogin'));
 const Landing = React.lazy(() => import('./pages/Landing'));
 const Register = React.lazy(() => import('./pages/Register'));
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
@@ -149,6 +150,7 @@ const AuthenticatedApp = () => {
           <Route element={<PageTransition />}>
             <Route path="/welcome" element={<Landing />} />
             <Route path="/login" element={<Login />} />
+            <Route path="/staff/login" element={<StaffLogin />} />
             <Route path="/brand" element={<BrandIdentity />} />
             <Route path="/register" element={<Register />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
@@ -195,8 +197,10 @@ const AuthenticatedApp = () => {
               <Route path="/investment" element={<Investment />} />
             </Route>
             </Route>
+          </Route>
 
-            <Route path="/admin/*" element={<Navigate to="/operations" replace />} />
+          <Route path="/admin/*" element={<Navigate to="/operations" replace />} />
+          <Route path="/staff/portal" element={<OperationsRoute />} />
 
             <Route element={<OperationsRoute />}>
               <Route element={<AdminLayout />}>
@@ -264,7 +268,6 @@ const AuthenticatedApp = () => {
                 <Route path="/operations/investment/signals" element={<InvestmentSignals />} />
               </Route>
             </Route>
-          </Route>
 
           <Route path="*" element={<PageNotFound />} />
         </Routes>
