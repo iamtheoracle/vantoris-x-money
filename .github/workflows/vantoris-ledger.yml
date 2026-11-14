@@ -48,7 +48,7 @@ jobs:
             migrations/004_avcu_payment_audit_hardening.sql \
             migrations/005_avcu_payment_outbox_claims.sql \
             migrations/006_vantoris_identity_and_sessions.sql \
-            migrations/007_vantoris_session_rls.sql \\
+            migrations/007_vantoris_session_rls.sql \
             migrations/008_vantoris_auth_rate_limits.sql
           do
             psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
