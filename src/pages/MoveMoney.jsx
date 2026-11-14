@@ -1,6 +1,6 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { ArrowLeftRight, CheckCircle2, ChevronRight, CircleAlert, Copy, Loader2, RefreshCw, Send, ShieldCheck, Wallet } from 'lucide-react';
+import { ArrowLeftRight, CheckCircle2, ChevronRight, CircleAlert, Loader2, RefreshCw, Send, ShieldCheck, Wallet } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatCurrency';
 import { useAuth } from '@/lib/AuthContext';
 
@@ -10,12 +10,19 @@ function readCsrfCookie() {
 }
 
 function amountToCents(value) {
-  const match = /^(?:0|[1-9]\\d*)(?:\\.(\\d{1,2}))?$/.exec(String(value || '').trim());
+  const match = /^(?:0|[1-9]\d*)(?:\.(\d{1,2}))?$/.exec(String(value || '').trim());
   if (!match) return null;
   const [wholeText, fractionText = ''] = String(value).trim().split('.');
   const cents = BigInt(wholeText) * 100n + BigInt(fractionText.padEnd(2, '0'));
   if (cents <= 0n || cents > BigInt(Number.MAX_SAFE_INTEGER)) return null;
   return Number(cents);
+}
+
+function centsToDecimal(centsValue) {
+  const cents = BigInt(String(centsValue || '0'));
+  const whole = cents / 100n;
+  const fraction = String(cents % 100n).padStart(2, '0');
+  return whole.toString() + '.' + fraction;
 }
 
 function accountTitle(account) {
@@ -40,7 +47,7 @@ export default function MoveMoney() {
     [accounts, sourceAccountId],
   );
 
-  async function loadAccounts() {
+  const loadAccounts = useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -61,9 +68,9 @@ export default function MoveMoney() {
     } finally {
       setLoading(false);
     }
-  }
+  }, []);
 
-  useEffect(() => { loadAccounts(); }, []);
+  useEffect(() => { loadAccounts(); }, [loadAccounts]);
 
   function resetIdempotency() {
     idempotencyKey.current = null;
@@ -238,7 +245,7 @@ export default function MoveMoney() {
                   <span>Posted balance</span><span className="font-semibold tabular-nums">{formatCurrency(sourceAccount.balance, sourceAccount.currency)}</span>
                 </div>
                 <div className="mt-2 flex justify-between gap-3 text-xs text-slate-600">
-                  <span>Active holds</span><span className="font-semibold tabular-nums">{formatCurrency((BigInt(sourceAccount.activeHoldCents || '0')).toString().replace(/^(-?)(\\d+)$/, '$1$2.00'), sourceAccount.currency)}</span>
+                  <span>Active holds</span><span className="font-semibold tabular-nums">{formatCurrency(centsToDecimal(sourceAccount.activeHoldCents), sourceAccount.currency)}</span>
                 </div>
                 <div className="mt-2 flex justify-between gap-3 border-t border-slate-200 pt-2 text-xs text-slate-600">
                   <span>Available balance</span><span className="font-semibold tabular-nums text-navy">{formatCurrency(sourceAccount.availableBalance, sourceAccount.currency)}</span>
