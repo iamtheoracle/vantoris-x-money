@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import {
-  createDecipheriv, createHash, createHmac, randomBytes,
+  createCipheriv, createDecipheriv, createHash, createHmac, randomBytes,
   scrypt, timingSafeEqual,
 } from 'node:crypto';
 import { promisify } from 'node:util';
@@ -69,10 +69,109 @@ const sessionCookie = (value, maxAge) =>
   `__Host-vantoris_session=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${maxAge}`;
 const csrfCookie = (value, maxAge) =>
   `__Host-vantoris_csrf=${value}; Path=/; Secure; SameSite=Strict; Max-Age=${maxAge}`;
+const mfaChallengeCookie = (value) => `__Host-vantoris_mfa_challenge=${value}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=600`;
+const mfaCsrfCookie = (value) => `__Host-vantoris_mfa_csrf=${value}; Path=/; Secure; SameSite=Strict; Max-Age=600`;
+const clearMfaCookies = [
+  '__Host-vantoris_mfa_challenge=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0',
+  '__Host-vantoris_mfa_csrf=; Path=/; Secure; SameSite=Strict; Max-Age=0',
+];
 const clearCookies = [
   '__Host-vantoris_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0',
   '__Host-vantoris_csrf=; Path=/; Secure; SameSite=Strict; Max-Age=0',
 ];
+
+function base32Encode(bytes) {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0, buffer = 0, output = '';
+  for (const byte of bytes) {
+    buffer = (buffer << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      output += alphabet[(buffer >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) output += alphabet[(buffer << (5 - bits)) & 31];
+  return output;
+}
+
+function validateNewPassword(password) {
+  return typeof password === 'string' && password.length >= 12 && password.length <= 256 &&
+    /[a-z]/.test(password) && /[A-Z]/.test(password) && /[0-9]/.test(password) &&
+    /[^A-Za-z0-9]/.test(password);
+}
+
+async function hashNewPassword(password) {
+  if (!validateNewPassword(password)) throw new Error('PASSWORD_POLICY_FAILED');
+  const salt = randomBytes(16);
+  const derived = await scryptAsync(password, salt, 64, { N: 16384, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
+  return `scrypt$16384$8$1${salt.toString('base64')}${Buffer.from(derived).toString('base64')}`;
+}
+
+async function startMfaEnrollment(memberId, email) {
+  const key = Buffer.from(process.env.VANTORIS_MFA_ENCRYPTION_KEY || '', 'base64');
+  if (key.length !== 32) throw new Error('VANTORIS_MFA_ENCRYPTION_KEY must be a 32-byte base64 key');
+  const secret = base32Encode(randomBytes(20));
+  const nonce = randomBytes(12);
+  const cipher = createCipheriv('aes-256-gcm', key, nonce);
+  const ciphertext = Buffer.concat([cipher.update(Buffer.from(secret, 'utf8')), cipher.final()]);
+  const authTag = cipher.getAuthTag();
+  const challenge = randomBytes(32).toString('base64url');
+  const csrf = randomBytes(32).toString('base64url');
+  const factorId = crypto.randomUUID();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
+  await database().begin(async tx => {
+    await tx`SELECT vantoris_ledger.begin_member_mfa_enrollment(
+      ${memberId},${sha256(challenge)},${factorId},${ciphertext},${nonce},${authTag},1,${expiresAt}
+    )`;
+  });
+  const label = encodeURIComponent('Vantoris:' + email);
+  const issuer = encodeURIComponent('Vantoris');
+  const otpauthUri = `otpauth://totp/${label}?secret=${secret}&issuer=${issuer}&algorithm=SHA1&digits=6&period=30`;
+  return json({
+    error: 'mfa_setup_required',
+    message: 'Set up your Vantoris authenticator, then enter its current six-digit code.',
+    mfaSetup: { secret, otpauthUri },
+  }, 200, [mfaChallengeCookie(challenge), mfaCsrfCookie(csrf)]);
+}
+
+async function confirmMfaEnrollment(request, body) {
+  const cookie = cookies(request);
+  const challenge = cookie.__Host-vantoris_mfa_challenge || '';
+  const csrf = cookie.__Host-vantoris_mfa_csrf || '';
+  const header = request.headers.get('x-csrf-token') || '';
+  if (!challenge || !csrf || !header || csrf.length !== header.length ||
+      !timingSafeEqual(Buffer.from(csrf), Buffer.from(header))) {
+    return json({ error: 'csrf_invalid' }, 403);
+  }
+  const challengeHash = sha256(challenge);
+  const factors = await database()`SELECT * FROM vantoris_ledger.get_member_mfa_enrollment_factor(${challengeHash})`;
+  if (!factors.length) return json({ error: 'mfa_enrollment_expired' }, 401);
+  let secret;
+  try { secret = decryptMfaSecret(factors[0]); }
+  catch { return json({ error: 'mfa_unavailable' }, 503); }
+  if (!verifyTotp(secret, body.otp)) return json({ error: 'mfa_code_invalid' }, 401);
+
+  const sessionToken = randomBytes(32).toString('base64url');
+  const csrfToken = randomBytes(32).toString('base64url');
+  const sessionHash = sha256(sessionToken);
+  const csrfHash = sha256(csrfToken);
+  const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
+  const member = await database().begin(async tx => {
+    const rows = await tx`SELECT vantoris_ledger.complete_member_mfa_enrollment(
+      ${challengeHash},${sessionHash},${csrfHash},${expiresAt}
+    ) AS member_id`;
+    const memberId = rows[0].member_id;
+    await tx`SELECT vantoris_ledger.resolve_member_session(${sessionHash})`;
+    const members = await tx`SELECT m.id,m.member_reference,m.status,c.email FROM vantoris_ledger.members m
+      JOIN vantoris_ledger.member_credentials c ON c.member_id=m.id WHERE m.id=${memberId}`;
+    return members[0];
+  });
+  if (!member) return json({ error: 'member_session_unavailable' }, 503);
+  return json({
+    member: { id: member.id, memberReference: member.member_reference, email: member.email, status: member.status, role: 'member' },
+  }, 200, [sessionCookie(sessionToken, 43200), csrfCookie(csrfToken, 43200), ...clearMfaCookies]);
+}
 
 function base32Decode(value) {
   const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
@@ -195,7 +294,7 @@ async function login(request, body) {
          WHERE member_id=${member.member_id} AND verified_at IS NOT NULL AND disabled_at IS NULL
          ORDER BY enrolled_at DESC LIMIT 1
       `;
-      if (!factors.length) return { error: 'mfa_enrollment_required' };
+      if (!factors.length) return { error: 'mfa_enrollment_required', memberId: member.member_id, email: member.email };
       if (!otp) return { error: 'mfa_required' };
       let secret;
       try { secret = decryptMfaSecret(factors[0]); }
@@ -226,7 +325,7 @@ async function login(request, body) {
   });
 
   if (result.error === 'mfa_required') return json({ error: 'mfa_required', message: 'Enter the current code from your authenticator.' }, 200);
-  if (result.error === 'mfa_enrollment_required') return json({ error: 'mfa_enrollment_required', message: 'Your Vantoris security setup must be completed before sign-in.' }, 403);
+  if (result.error === 'mfa_enrollment_required') return await startMfaEnrollment(result.memberId,result.email);
   if (result.error === 'mfa_unavailable') return json({ error: 'mfa_unavailable', message: 'Vantoris could not verify your security factor. Contact member support.' }, 503);
   if (result.error) return json({ error: 'invalid_credentials', message: 'The email or password is incorrect.' }, 401);
 
@@ -476,6 +575,28 @@ async function currentStatement(request, accountId, from, to) {
     'cache-control':'no-store, private','x-content-type-options':'nosniff','referrer-policy':'no-referrer'
   }});
 }
+async function activateMember(body) {
+  const token = typeof body.token === 'string' ? body.token.trim() : '';
+  if (token.length < 24 || token.length > 200) return json({ error: 'activation_token_invalid' }, 400);
+  let passwordHash;
+  try { passwordHash = await hashNewPassword(body.password); }
+  catch (error) { return json({ error: error.message === 'PASSWORD_POLICY_FAILED' ? 'password_policy_failed' : 'member_service_unavailable' }, 400); }
+  const rows = await database()`SELECT vantoris_ledger.consume_member_activation(${sha256(token)},${passwordHash}) AS member_id`;
+  const members = await database()`SELECT email FROM vantoris_ledger.member_credentials WHERE member_id=${rows[0].member_id}`;
+  if (!members.length) return json({ error: 'member_credentials_unavailable' }, 503);
+  return await startMfaEnrollment(rows[0].member_id,members[0].email);
+}
+
+async function resetMemberPassword(body) {
+  const token = typeof body.token === 'string' ? body.token.trim() : '';
+  if (token.length < 24 || token.length > 200) return json({ error: 'password_reset_token_invalid' }, 400);
+  let passwordHash;
+  try { passwordHash = await hashNewPassword(body.password); }
+  catch (error) { return json({ error: error.message === 'PASSWORD_POLICY_FAILED' ? 'password_policy_failed' : 'member_service_unavailable' }, 400); }
+  await database()`SELECT vantoris_ledger.consume_member_password_reset(${sha256(token)},${passwordHash})`;
+  return json({ ok: true, message: 'Password updated. Sign in using your Vantoris authenticator.' }, 200, [...clearCookies,...clearMfaCookies]);
+}
+
 export default async function handler(request) {
   const url = new URL(request.url);
   const action = url.searchParams.get('action') || 'me';
@@ -509,6 +630,9 @@ export default async function handler(request) {
 
   try {
     if (body.action === 'login') return await login(request, body);
+    if (body.action === 'activate') return await activateMember(body);
+    if (body.action === 'reset-password') return await resetMemberPassword(body);
+    if (body.action === 'mfa-enroll-confirm') return await confirmMfaEnrollment(request, body);
     if (body.action === 'statement') return await currentStatement(request,body.accountId,body.from,body.to);
     if (body.action === 'logout') {
       const result = await database().begin(async tx => {
