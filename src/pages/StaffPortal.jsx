@@ -32,6 +32,7 @@ export default function StaffPortal(){
    proposal_state_conflict:'The proposal has changed or is no longer actionable.',
    invalid_staff_action:'The proposed journal, reversal or limit values are invalid.',
    permanent_capital_protection_blocked:'This journal would impair Vantoris permanent capital and was blocked.',
+   capital_floor_not_permitted:'The proposed capital floor exceeds verified capital or attempts to reduce the existing floor.',
    csrf_invalid:'Your staff security token expired. Refresh and try again.',
    referenced_record_not_found_or_reversible:'The referenced account or journal could not be verified.',
   };throw new Error(messages[j.error]||'Vantoris could not complete this staff action.');}
