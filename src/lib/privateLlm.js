@@ -1,16 +1,22 @@
-/** Optional Vantoris Intelligence client. Disabled until a first-party private endpoint and controls are verified. */
-export async function askPrivateModel() {
+import { askOracle } from '@/lib/oracleAssistant';
+
+/** Compatibility adapter for existing informational assistant screens. */
+export async function askPrivateModel(prompt) {
+  const result = await askOracle(prompt);
   return {
-    ok: false,
-    error: 'assistant_disabled',
-    text: 'Vantoris Intelligence is currently unavailable. Core member, account and ledger services operate independently.',
-    provider: null,
-    plan: null,
+    ok: result.ok,
+    error: result.error,
+    text: result.text,
+    provider: result.metadata?.model || (result.ok ? 'vantoris-private' : null),
+    plan: 'member',
     remaining: null,
-    usage: null,
+    usage: result.metadata || null,
+    routing: null,
+    workspaceId: null,
   };
 }
 
 export function privateLlmConfigured() {
-  return false;
+  // Provider configuration is server-only and is never exposed to browser code.
+  return null;
 }
