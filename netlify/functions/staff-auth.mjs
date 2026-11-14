@@ -70,17 +70,17 @@ function decryptSecret(row) {
   decipher.setAuthTag(row.auth_tag);
   return base32Decode(Buffer.concat([decipher.update(row.secret_ciphertext),decipher.final()]).toString('utf8'));
 }
-function verifyTotp(secret,code,now=Date.now()) {
-  if(!/^\d{6}$/.test(String(code||''))) return false;
+function verifyTotpStep(secret,code,now=Date.now()) {
+  if(!/^\d{6}$/.test(String(code||''))) return null;
   const supplied=Buffer.from(String(code)), counter=Math.floor(now/30000);
   for(let drift=-1;drift<=1;drift++){
     const moving=Buffer.alloc(8); moving.writeBigUInt64BE(BigInt(counter+drift));
     const digest=createHmac('sha1',secret).update(moving).digest(),offset=digest[digest.length-1]&15;
     const binary=((digest[offset]&127)<<24)|((digest[offset+1]&255)<<16)|((digest[offset+2]&255)<<8)|(digest[offset+3]&255);
     const expected=Buffer.from(String(binary%1000000).padStart(6,'0'));
-    if(timingSafeEqual(expected,supplied)) return true;
+    if(timingSafeEqual(expected,supplied)) return counter+drift;
   }
-  return false;
+  return null;
 }
 async function readBody(request) {
   const length=Number(request.headers.get('content-length')||0);
@@ -115,13 +115,19 @@ async function login(request,body) {
       await tx`SELECT vantoris_ledger.record_login_failure(${emailHash},${ipHash})`;
       return {error:'invalid'};
     }
-    const factors=await tx`SELECT secret_ciphertext,nonce,auth_tag FROM vantoris_ledger.staff_mfa_factors
+    const factors=await tx`SELECT id,secret_ciphertext,nonce,auth_tag FROM vantoris_ledger.staff_mfa_factors
       WHERE staff_id=${staff.id} AND verified_at IS NOT NULL AND disabled_at IS NULL ORDER BY enrolled_at DESC LIMIT 1`;
     if(!factors.length) return {error:'staff_mfa_not_provisioned'};
     if(!otp) return {error:'mfa_required'};
     let secret;
     try { secret=decryptSecret(factors[0]); } catch { return {error:'mfa_unavailable'}; }
-    if(!verifyTotp(secret,otp)) {
+    const totpStep=verifyTotpStep(secret,otp);
+    if(totpStep===null) {
+      await tx`SELECT vantoris_ledger.record_login_failure(${emailHash},${ipHash})`;
+      return {error:'invalid'};
+    }
+    const replay=await tx`SELECT vantoris_ledger.consume_staff_totp_step(${factors[0].id},${totpStep}) AS accepted`;
+    if(replay[0]?.accepted!==true) {
       await tx`SELECT vantoris_ledger.record_login_failure(${emailHash},${ipHash})`;
       return {error:'invalid'};
     }
