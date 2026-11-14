@@ -32,7 +32,6 @@ const Services=React.lazy(()=>import('./pages/Services'));
 const Messages=React.lazy(()=>import('./pages/Messages'));
 const Profile=React.lazy(()=>import('./pages/Profile'));
 const MemberDocuments=React.lazy(()=>import('./pages/MemberDocuments'));
-const MemberAdvisor=React.lazy(()=>import('./pages/MemberAdvisor'));
 const More=React.lazy(()=>import('./pages/More'));
 const Discovery=React.lazy(()=>import('./pages/Discovery'));
 const Discover=React.lazy(()=>import('./pages/Discover'));
