@@ -19,9 +19,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      VANTAGE_LEDGER_TEST_DATABASE_URL: ${{ secrets.VANTAGE_LEDGER_TEST_DATABASE_URL }}
-      VITE_BASE44_APP_ID: 6a3d85c1632966fefe16f3d4
-      VITE_BASE44_SERVER_URL: https://vantoris.base44.app
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,8 +42,8 @@ jobs:
           deno check --node-modules-dir=auto base44/functions/recordIncomingBankReceipt/entry.ts
           deno check --node-modules-dir=auto base44/functions/recordManualTransferEvent/entry.ts
           deno test --node-modules-dir=auto --allow-env base44/shared/runtime/nexus.test.ts
-          deno test --node-modules-dir=auto --allow-env --allow-net tests/private-payment-store.test.ts
-          deno test --node-modules-dir=auto --allow-read=migrations,base44/entities,base44/functions/_shared tests/private-payment-migration.test.ts
+          deno test --node-modules-dir=auto --allow-read=migrations,tests/postgres tests/private-payment-store.test.ts
+          deno test --node-modules-dir=auto --allow-read=migrations tests/private-payment-migration.test.ts
           deno test --node-modules-dir=auto --allow-read=src/pages tests/financial-formatting.test.ts
           deno test --node-modules-dir=auto --allow-read=public/card-art,src/components/vantoris,src/pages,src/index.css tests/heritage-and-card-art.test.ts
           deno test --node-modules-dir=auto --allow-read=base44,src/pages,src/components/vantoris,index.html,netlify/functions,docs,src/App.jsx tests/operational-truthfulness.test.ts
