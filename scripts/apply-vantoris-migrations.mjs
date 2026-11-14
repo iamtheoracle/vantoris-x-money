@@ -17,14 +17,14 @@ export function stripTransactionBoundaries(content, filename = 'migration.sql') 
   if (beginIndex < 0 || commitIndex <= beginIndex) {
     throw new Error(filename + ' must contain one outer BEGIN; and COMMIT; boundary');
   }
-  const trailing = content.slice(commitIndex + 'COMMIT;'.length).replace(/^\\s*--.*$/gm, '').trim();
+  const trailing = content.slice(commitIndex + 'COMMIT;'.length).replace(/^\s*--.*$/gm, '').trim();
   if (trailing) throw new Error(filename + ' contains SQL after its outer COMMIT');
   return content.slice(beginIndex + 'BEGIN;'.length, commitIndex);
 }
 
 export function loadMigrationFiles(directory = MIGRATION_DIR) {
   const names = readdirSync(directory)
-    .filter(name => /^\\d{3}_[a-z0-9_]+\\.sql$/i.test(name))
+    .filter(name => /^\d{3}_[a-z0-9_]+\.sql$/i.test(name))
     .sort((a, b) => Number(a.slice(0, 3)) - Number(b.slice(0, 3)));
   const migrations = names.map(filename => {
     const content = readFileSync(join(directory, filename), 'utf8');
@@ -93,7 +93,7 @@ function readHistoryRows() {
     true,
   );
   if (!output) return [];
-  return output.split(/\\r?\\n/).filter(Boolean).map(line => {
+  return output.split(/\r?\n/).filter(Boolean).map(line => {
     const [version, filename, checksum] = line.split('|');
     return { version, filename, checksum };
   });
@@ -115,7 +115,7 @@ function applyMigration(migration) {
       sqlLiteral(migration.checksum),
     ].join(',') + ');',
     'COMMIT;',
-  ].join('\\n');
+  ].join('\n');
   psql(query);
 }
 
@@ -156,10 +156,10 @@ export async function applyVantorisMigrations({ verifyOnly = process.argv.includ
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
   applyVantorisMigrations()
     .then(result => {
-      process.stdout.write('Vantoris migrations verified: ' + result.applied + ' ordered checksums.\\n');
+      process.stdout.write('Vantoris migrations verified: ' + result.applied + ' ordered checksums.\n');
     })
     .catch(error => {
-      process.stderr.write(String(error?.stack || error) + '\\n');
+      process.stderr.write(String(error?.stack || error) + '\n');
       process.exitCode = 1;
     });
 }
