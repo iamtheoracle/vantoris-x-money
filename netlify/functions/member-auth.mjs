@@ -529,6 +529,9 @@ export default async function handler(request) {
     if (message.includes('TRANSFER_IDEMPOTENCY_CONFLICT')) return json({ error: 'idempotency_conflict' }, 409);
     if (message.includes('TRANSFER_OPERATION_NOT_OWNED_BY_MEMBER') || message.includes('SOURCE_ACCOUNT_NOT_OWNED_BY_MEMBER')) return json({ error: 'forbidden' }, 403);
     if (message.includes('RECIPIENT_MUST_BE_ANOTHER_MEMBER')) return json({ error: 'recipient_must_be_another_member' }, 400);
+    if (message.includes('MEMBER_TRANSFER_LIMIT_NOT_CONFIGURED')) return json({ error: 'member_transfer_limit_not_configured' }, 409);
+    if (message.includes('MEMBER_SINGLE_TRANSFER_LIMIT_EXCEEDED')) return json({ error: 'member_single_transfer_limit_exceeded' }, 409);
+    if (message.includes('MEMBER_DAILY_TRANSFER_LIMIT_EXCEEDED')) return json({ error: 'member_daily_transfer_limit_exceeded' }, 409);
     if (message.includes('RECEIVER_ACCOUNT_NOT_FOUND')) return json({ error: 'recipient_account_not_found' }, 404);
     if (message.includes('BOTH_MEMBER_ACCOUNTS_MUST_BE_ACTIVE')) return json({ error: 'member_account_unavailable' }, 409);
     console.error('Vantoris member auth operation failed:', message.slice(0, 160));
