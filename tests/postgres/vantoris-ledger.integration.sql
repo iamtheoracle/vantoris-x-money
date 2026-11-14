@@ -59,6 +59,18 @@ BEGIN
  END IF;
  PERFORM vantoris_ledger.resolve_member_session(mfa_session_hash);
 
+ -- MFA cannot be disabled for member or staff principals.
+ BEGIN
+  UPDATE vantoris_ledger.member_credentials SET mfa_required=false WHERE member_id=m1;
+  RAISE EXCEPTION 'Member MFA disable unexpectedly succeeded';
+ EXCEPTION WHEN check_violation THEN NULL;
+ END;
+ BEGIN
+  UPDATE vantoris_ledger.staff_users SET mfa_required=false WHERE id=ops_staff;
+  RAISE EXCEPTION 'Staff MFA disable unexpectedly succeeded';
+ EXCEPTION WHEN check_violation THEN NULL;
+ END;
+
  -- Permanent capital floor is proposed by operations, approved by finance and posted by finance.
  capital_proposal:=vantoris_ledger.create_staff_action_proposal(
   decode(repeat('a',64),'hex'),'capital_floor','institutional-capital',
