@@ -96,6 +96,7 @@ export default async function handler(request) {
         let members=[];
         let accounts=[];
         let audit=[];
+        let identityDocuments=[];
         if(caps.has('staff.action.read')) {
           proposals=await tx`
             SELECT p.id,p.action_type,p.object_reference,p.proposed_by,p.payload,p.status,p.created_at,
@@ -113,7 +114,10 @@ export default async function handler(request) {
         if(caps.has('audit.read')) {
           audit=await tx`SELECT id,actor_id,action,object_type,object_id,details,created_at FROM vantoris_ledger.audit_events ORDER BY created_at DESC,id DESC LIMIT 100`;
         }
-        return {staff:auth.profile,proposals,members,accounts,audit};
+        if(caps.has('identity.review')) {
+          identityDocuments=await tx`SELECT id,member_id,document_type,media_type,review_status,created_at,original_filename FROM vantoris_ledger.member_identity_documents WHERE review_status='pending' ORDER BY created_at ASC LIMIT 100`;
+        }
+        return {staff:auth.profile,proposals,members,accounts,audit,identityDocuments};
       });
       return result?json(result):json({error:'authentication_required'},401);
     } catch(error) {
@@ -133,6 +137,14 @@ export default async function handler(request) {
       const auth=await authenticateStaff(request,tx);
       if(!auth) return {error:'unauthorized'};
       if(!await verifyCsrf(request,tx,auth)) return {error:'csrf_invalid'};
+      if(body.action==='review_identity_document') {
+        const documentId=requireUuid(body.documentId,'document_id');
+        const decision=String(body.decision||'');
+        const rationale=String(body.rationale||'').trim().slice(0,1000);
+        if(!['approved','rejected','needs_information'].includes(decision)||!rationale) return {error:'invalid_identity_review'};
+        const rows=await tx`SELECT vantoris_ledger.review_member_identity_document(${auth.tokenHash},${documentId},${decision},${rationale}) AS review_id`;
+        return {reviewId:rows[0].review_id,documentId,decision};
+      }
       if(body.action==='issue_activation_token'||body.action==='issue_password_reset_token') {
         const memberId=requireUuid(body.memberId,'member_id');
         const rawToken=randomBytes(32).toString('base64url');
@@ -167,6 +179,7 @@ export default async function handler(request) {
     if(result.error==='unauthorized') return json({error:'authentication_required'},401);
     if(result.error==='csrf_invalid') return json({error:'csrf_invalid'},403);
     if(result.error==='invalid_decision') return json({error:'invalid_decision'},400);
+    if(result.error==='invalid_identity_review') return json({error:'invalid_identity_review'},400);
     return json(result);
   } catch(error) {
     const message=String(error?.message||'');
@@ -174,7 +187,8 @@ export default async function handler(request) {
     if(message.includes('STAFF_CAPABILITY_REQUIRED')||message.includes('STAFF_SEPARATION_OF_DUTIES_REQUIRED')||message.includes('SEPARATION_OF_DUTIES_REQUIRED')) return json({error:'staff_capability_or_separation_required'},403);
     if(message.includes('NOT_APPROVED')||message.includes('NOT_PENDING')||message.includes('ALREADY_REVERSED')) return json({error:'proposal_state_conflict'},409);
     if(message.includes('MEMBER_NOT_ELIGIBLE')||message.includes('LIMIT_MEMBER_NOT_ACTIVE')) return json({error:'member_not_eligible'},409);
-    if(message.includes('INVALID_ACTIVATION_TOKEN')||message.includes('INVALID_PASSWORD_RESET_TOKEN')||message.includes('STAFF_ACTION_TYPE_NOT_SUPPORTED')) return json({error:'invalid_staff_action'},400);
+    if(message.includes('INVALID_ACTIVATION_TOKEN')||message.includes('INVALID_PASSWORD_RESET_TOKEN')||message.includes('STAFF_ACTION_TYPE_NOT_SUPPORTED')||message.includes('INVALID_IDENTITY_REVIEW_DECISION')) return json({error:'invalid_staff_action'},400);
+    if(message.includes('IDENTITY_DOCUMENT_NOT_FOUND')) return json({error:'identity_document_not_found'},404);
     if(message.includes('ACCOUNT_NOT_FOUND')||message.includes('JOURNAL_NOT_REVERSIBLE')) return json({error:'referenced_record_not_found_or_reversible'},404);
     if(message.includes('INVALID_')||message.includes('MUST_BALANCE')||message.includes('REQUIRES_TWO')||message.includes('DESCRIPTION_REQUIRED')) return json({error:'invalid_staff_action'},400);
     if(message.includes('CAPITAL_IMPAIRMENT')) return json({error:'permanent_capital_protection_blocked'},409);
