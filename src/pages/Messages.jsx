@@ -1,5 +1,5 @@
 import React from 'react';
-import { MessageSquare, ShieldCheck } from 'lucide-react';
+import { MessageSquare } from 'lucide-react';
 
 export default function Messages(){
  return <main className="mx-auto max-w-4xl px-5 py-8">
