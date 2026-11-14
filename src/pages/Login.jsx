@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import AuthLayout from "@/components/AuthLayout";
 import SplashScreen from "@/components/auth/SplashScreen";
@@ -11,6 +10,8 @@ export default function Login() {
   const [phase, setPhase] = useState("login");
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
+  const [otp, setOtp] = useState("");
+  const [mfaRequired, setMfaRequired] = useState(false);
   const [rememberId, setRememberId] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -40,48 +41,41 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      if (rememberId) localStorage.setItem("vantoris_user_id", userId);
+      if (rememberId) localStorage.setItem("vantoris_user_id", userId.trim());
       else localStorage.removeItem("vantoris_user_id");
 
-      const result = await base44.auth.loginViaEmailPassword(userId.trim(), password);
-      const token = result?.access_token;
-      if (!token) {
-        setError("Sign-in succeeded but no session was created. Please try again.");
-        return;
-      }
-      // Ensure SDK client + localStorage both hold the session token
-      base44.setToken(token);
-      base44.auth.setToken(token);
-      // Write every key the app rehydrates from. Do this before navigation.
-      localStorage.setItem('base44_access_token', token);
-      localStorage.setItem('token', token);
-      localStorage.setItem('base44_token', token);
+      const response = await fetch("/api/member-auth", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json", accept: "application/json" },
+        body: JSON.stringify({ action: "login", email: userId.trim(), password, otp }),
+      });
+      const result = await response.json().catch(() => ({}));
 
-      let dest = '/';
-      try {
-        const me = await base44.auth.me();
-        const role = String(me?.role || '').toLowerCase();
-        if (['admin', 'ops', 'super_admin', 'superadmin', 'operations'].includes(role)) dest = '/operations';
-        else dest = '/';
-      } catch (meErr) {
-        setError(meErr?.message || 'Signed in, but the session could not be confirmed. Try again.');
+      if (result.error === "mfa_required") {
+        setMfaRequired(true);
+        setError("Enter the current six-digit code from your Vantoris authenticator.");
         return;
       }
-      window.location.assign(dest);
-      return;
-    } catch (err) {
-      const status = err?.response?.status || err?.status;
-      if (status === 404) {
-        setError("Sign-in is temporarily unavailable. Please refresh the page and try again.");
-      } else if (status === 400 || status === 401) {
-        setError("Your User ID or password is incorrect.");
-      } else if (typeof navigator !== 'undefined' && navigator.onLine === false) {
-        setError("Unable to connect. Please check your internet connection and try again.");
-      } else if (err?.message?.includes('Network') || err?.code === 'ERR_NETWORK') {
-        setError("Unable to reach the server right now. Please try again in a moment.");
-      } else {
-        setError(err.message || "Invalid User ID or password.");
+      if (result.error === "mfa_enrollment_required") {
+        setError("Your Vantoris security setup must be completed before sign-in. Please contact member support.");
+        return;
       }
+      if (!response.ok || !result.member?.id) {
+        setError(result.message || (response.status === 429
+          ? "Sign-in is temporarily locked. Please try again later."
+          : "Your email or password is incorrect."));
+        return;
+      }
+
+      const authenticated = await checkUserAuth();
+      if (!authenticated) {
+        setError("Your session could not be confirmed. Please try again.");
+        return;
+      }
+      navigate("/");
+    } catch (err) {
+      setError(err?.message || "Vantoris sign-in is temporarily unavailable.");
     } finally {
       setLoading(false);
     }
@@ -120,7 +114,7 @@ export default function Login() {
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-1.5">
-          <label className="text-xs font-semibold uppercase tracking-wider text-gray">User ID</label>
+          <label className="text-xs font-semibold uppercase tracking-wider text-gray">Email address</label>
           <div className="relative">
             <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray" />
             <input
@@ -148,6 +142,22 @@ export default function Login() {
             />
           </div>
         </div>
+        {mfaRequired && (
+          <div className="space-y-1.5">
+            <label className="text-xs font-semibold uppercase tracking-wider text-gray">Authenticator code</label>
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={otp}
+              onChange={(event) => setOtp(event.target.value.replace(/\\D/g, "").slice(0, 6))}
+              placeholder="000000"
+              required
+              className="w-full h-12 rounded-lg border border-slate-200 bg-white px-3 text-center text-lg tracking-[0.35em] text-foreground outline-none focus:border-navy focus:ring-2 focus:ring-navy/10 transition"
+            />
+          </div>
+        )}
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
@@ -155,7 +165,7 @@ export default function Login() {
             onChange={(e) => setRememberId(e.target.checked)}
             className="w-4 h-4 rounded border-slate-300 text-navy focus:ring-navy/20"
           />
-          <span className="text-sm text-gray">Remember User ID</span>
+          <span className="text-sm text-gray">Remember email address</span>
         </label>
         <button
           type="submit"
