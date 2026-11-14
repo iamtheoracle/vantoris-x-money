@@ -100,3 +100,11 @@ Deno.test('Vantoris permanent capital is separately protected and cannot be impa
   assert(sql.includes('ledger_account_creation_capital_guard'), 'Member liabilities must not be opened before capital is funded.');
   assert(sql.includes('institutional_capital_policy_immutable'), 'Capital policy history must be append-only.');
 });
+
+Deno.test('Member transfer functions derive identity from a verified session token', async () => {
+  const sql = await Deno.readTextFile('migrations/007_vantoris_session_rls.sql');
+  assert(sql.includes('create_member_internal_transfer_operation'), 'Session-bound transfer claim function missing.');
+  assert(sql.includes('execute_member_internal_transfer'), 'Session-bound transfer execution function missing.');
+  assert(sql.includes('resolve_member_session(p_session_token_hash)'), 'Transfer actor must be resolved from the Vantoris session token.');
+  assert(sql.includes('REVOKE EXECUTE ON FUNCTION vantoris_ledger.execute_internal_transfer'), 'Runtime must not call the transitional member-ID transfer function directly.');
+});
