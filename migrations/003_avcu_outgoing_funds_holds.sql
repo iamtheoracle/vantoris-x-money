@@ -16,6 +16,7 @@ BEGIN
  SELECT * INTO dst FROM vantoris_ledger.ledger_accounts WHERE account_reference=p_receiver_account_ref AND account_type='member_liability' AND currency='USD';
  IF NOT FOUND THEN RAISE EXCEPTION 'RECEIVER_ACCOUNT_NOT_FOUND'; END IF;
  IF src.id=dst.id THEN RAISE EXCEPTION 'SAME_ACCOUNT_TRANSFER_NOT_ALLOWED'; END IF;
+ IF dst.member_id=p_member_id THEN RAISE EXCEPTION 'RECIPIENT_MUST_BE_ANOTHER_MEMBER'; END IF;
  INSERT INTO vantoris_ledger.payment_operations(id,member_id,source_account_id,receiver_account_id,amount_cents,operation_type,idempotency_key,request_hash,status)
  VALUES(p_operation_id,p_member_id,src.id,dst.id,p_amount_cents,'internal_transfer',p_idempotency_key,p_request_hash,'accepted')
  ON CONFLICT(member_id,operation_type,idempotency_key) DO NOTHING;
@@ -34,14 +35,14 @@ BEGIN
  SELECT * INTO op FROM vantoris_ledger.payment_operations WHERE id=p_operation_id AND operation_type='internal_transfer' FOR UPDATE;
  IF NOT FOUND OR op.member_id<>p_member_id THEN RAISE EXCEPTION 'TRANSFER_OPERATION_NOT_OWNED_BY_MEMBER' USING ERRCODE='42501'; END IF;
  IF op.status='posted' THEN
-  SELECT j.id,h.id INTO journal_id,hold_id FROM vantoris_ledger.journals j JOIN vantoris_ledger.outgoing_funds_holds h ON h.operation_id=p_operation_id WHERE j.journal_type='internal_transfer' AND j.source_reference=p_operation_id::text;
+  SELECT j.id,h.id INTO journal_id,hold_id FROM vantoris_ledger.journals j JOIN vantoris_ledger.outgoing_funds_holds h ON h.operation_id=p_operation_id WHERE j.journal_type='internal_transfer' AND j.source_reference=p_operation_id::text AND h.status='captured';
   IF journal_id IS NULL OR hold_id IS NULL THEN RAISE EXCEPTION 'POSTED_TRANSFER_INTEGRITY_FAILURE'; END IF;
   RETURN QUERY SELECT journal_id,hold_id,true; RETURN;
  END IF;
  IF op.status<>'accepted' THEN RAISE EXCEPTION 'TRANSFER_OPERATION_NOT_ACCEPTED'; END IF;
  SELECT * INTO src FROM vantoris_ledger.ledger_accounts WHERE id=op.source_account_id;
  SELECT * INTO dst FROM vantoris_ledger.ledger_accounts WHERE id=op.receiver_account_id;
- IF src.id IS NULL OR src.member_id<>p_member_id OR dst.id IS NULL OR dst.account_type<>'member_liability' THEN RAISE EXCEPTION 'TRANSFER_ACCOUNT_CONFIGURATION_INVALID'; END IF;
+ IF src.id IS NULL OR src.member_id<>p_member_id OR dst.id IS NULL OR dst.account_type<>'member_liability' OR dst.member_id=p_member_id THEN RAISE EXCEPTION 'TRANSFER_ACCOUNT_CONFIGURATION_INVALID'; END IF;
  PERFORM 1 FROM vantoris_ledger.members WHERE id IN(src.member_id,dst.member_id) ORDER BY id FOR SHARE;
  IF src.id<dst.id THEN
   PERFORM 1 FROM vantoris_ledger.ledger_accounts WHERE id=src.id FOR UPDATE;
