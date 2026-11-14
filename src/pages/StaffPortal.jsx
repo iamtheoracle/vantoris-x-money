@@ -8,6 +8,7 @@ export default function StaffPortal(){
  const [data,setData]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const [proposalType,setProposalType]=useState('manual_journal'),[description,setDescription]=useState(''),[journalId,setJournalId]=useState(''),[reason,setReason]=useState('');
  const [memberId,setMemberId]=useState(''),[singleLimit,setSingleLimit]=useState(''),[dailyLimit,setDailyLimit]=useState('');
+ const [memberTokenAction,setMemberTokenAction]=useState('issue_activation_token'),[issuedToken,setIssuedToken]=useState(null);
  const [entries,setEntries]=useState([{accountReference:'',amountCents:''},{accountReference:'',amountCents:''}]);
  const staff=data?.staff;
  const capabilities=useMemo(()=>new Set(staff?.capabilities||[]),[staff]);
@@ -45,6 +46,14 @@ export default function StaffPortal(){
    else if(proposalType==='reverse_journal')body={action:'propose',proposalType,journalId,reason};
    else body={action:'propose',proposalType,memberId,singleLimitCents:singleLimit,dailyLimitCents:dailyLimit};
    const result=await post(body);setNotice('Proposal created: '+result.proposalId);setDescription('');setJournalId('');setReason('');setSingleLimit('');setDailyLimit('');await load();
+  }catch(e){setError(e.message);}finally{setBusy(false);}
+ }
+ async function issueMemberToken(event){
+  event.preventDefault();setBusy(true);setError('');setNotice('');setIssuedToken(null);
+  try{
+   const result=await post({action:memberTokenAction,memberId});
+   setIssuedToken(result);
+   setNotice('One-time token issued. Copy it and deliver it through Vantoris’ approved secure channel.');
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
  async function decide(proposalId,decision){
@@ -99,6 +108,23 @@ export default function StaffPortal(){
      </div>
     </section>
    </div>
+
+   {(can('members.activate')||can('members.credentials.reset'))&&<section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+    <div className="mb-4 flex items-center gap-2"><Users size={18} className="text-navy"/><h2 className="font-semibold text-navy">Member access administration</h2></div>
+    <form onSubmit={issueMemberToken} className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+     <select value={memberId} onChange={e=>setMemberId(e.target.value)} required className="rounded-xl border border-slate-200 px-3 py-3 text-sm"><option value="">Choose member</option>{(data?.members||[]).map(m=><option key={m.id} value={m.id}>{m.member_reference} · {m.status}</option>)}</select>
+     <select value={memberTokenAction} onChange={e=>setMemberTokenAction(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-3 text-sm">
+      {can('members.activate')&&<option value="issue_activation_token">Issue activation token</option>}
+      {can('members.credentials.reset')&&<option value="issue_password_reset_token">Issue password recovery token</option>}
+     </select>
+     <button type="submit" disabled={busy||!memberId} className="rounded-xl bg-navy px-4 py-3 text-sm font-semibold text-white disabled:opacity-40">Issue one-time token</button>
+    </form>
+    {issuedToken&&<div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4">
+     <p className="text-sm font-semibold text-amber-950">One-time token · {issuedToken.tokenType}</p>
+     <p className="mt-1 text-xs leading-5 text-amber-900">Copy and deliver through Vantoris’ approved secure channel. This token is shown only once and expires at {new Date(issuedToken.expiresAt).toLocaleString()}.</p>
+     <code className="mt-3 block break-all rounded-lg bg-white p-3 text-xs text-navy">{issuedToken.oneTimeToken}</code>
+    </div>}
+   </section>}
 
    <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
     <div className="mb-4 flex items-center gap-2"><Plus size={18} className="text-navy"/><h2 className="font-semibold text-navy">Propose a controlled financial action</h2></div>
