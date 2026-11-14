@@ -244,7 +244,7 @@ BEGIN
  EXCEPTION WHEN OTHERS THEN IF SQLERRM='Audit UPDATE unexpectedly succeeded' THEN RAISE; END IF; END;
 END $$;
 
-SET ROLE vantoris_backend;
+SET ROLE avcu_backend;
 SELECT vantoris_ledger.resolve_member_session(decode(repeat('c',64),'hex'));
 DO $$ DECLARE n integer; BEGIN
  SELECT count(*) INTO n FROM vantoris_ledger.ledger_accounts; IF n<>1 THEN RAISE EXCEPTION 'Member one account scope leaked: %',n; END IF;
