@@ -1,5 +1,6 @@
 import postgres from 'postgres';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
+import { assertVantorisMigrationHistory } from './migration-guard.mjs';
 
 let sql;
 function database() {
@@ -85,6 +86,8 @@ function normalizeProposal(body) {
 }
 
 export default async function handler(request) {
+  try { await assertVantorisMigrationHistory(database()); }
+  catch { return json({ error: 'staff_service_unavailable' }, 503); }
   const url=new URL(request.url),action=url.searchParams.get('action')||'overview';
   if(request.method==='GET'&&action==='overview') {
     try {
