@@ -192,7 +192,7 @@ Deno.test("investment workspace does not invent unverified holdings or balances"
   assert(source.includes("No investment balance is currently available"), "unverified holdings must remain explicitly unavailable");
   assert(source.includes("verified underlying asset records"), "investment figures require verified underlying assets");
   assert(source.includes("No third-party portfolio figure is treated as a Vantoris balance"), "third-party portfolio totals must not be represented as institutional balances");
-  assert(!/\\$[0-9]|€[0-9]|£[0-9]/.test(source), "investment page must not contain fabricated balances");
+  assert(!/\$[0-9]|€[0-9]|£[0-9]/.test(source), "investment page must not contain fabricated balances");
 });
 
 Deno.test("transaction history preserves source currency and neutral direction", async () => {
