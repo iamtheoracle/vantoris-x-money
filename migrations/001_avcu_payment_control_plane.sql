@@ -1,8 +1,8 @@
 -- VANTORIS INSTITUTIONAL LEDGER — migration 001
 -- Vantoris-owned PostgreSQL is the sole system of record for institutional
 -- capital, member liabilities, internal accounts, journals, holds and audit.
--- No bank, payment processor, identity vendor, Base44 projection or network is
--- part of this schema. Apply only to a Vantoris-administered database.
+-- No external provider, payment rail or network is part of this schema.
+-- Apply only to a Vantoris-administered database.
 BEGIN;
 
 CREATE SCHEMA IF NOT EXISTS vantoris_ledger;
