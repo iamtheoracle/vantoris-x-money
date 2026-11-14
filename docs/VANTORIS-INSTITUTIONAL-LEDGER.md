@@ -8,7 +8,7 @@ The current migration set is a replacement foundation. It does **not** import ex
 
 ## Migration state
 
-The eleven files are ordered and must be applied once, in order, to an empty Vantoris-administered PostgreSQL database:
+The twelve files are ordered and must be applied once, in order, to an empty Vantoris-administered PostgreSQL database:
 
 1. `migrations/001_avcu_payment_control_plane.sql` — Vantoris ledger schema, member/account registry, immutable journals and entries, operations, holds, audit and staff approval records.
 2. `migrations/002_avcu_backend_grants.sql` — least-privilege runtime grants. Requires the runtime role to exist.
@@ -21,6 +21,7 @@ The eleven files are ordered and must be applied once, in order, to an empty Van
 9. `migrations/009_vantoris_staff_controls.sql` — Vantoris staff roles/capabilities, MFA-gated proposal/approval functions and independent two-person approval constraints.
 10. `migrations/010_vantoris_permanent_capital_protection.sql` — append-only, dual-approved permanent-capital floor; blocks member-liability account creation before capital is funded and rejects journals that impair it.
 11. `migrations/011_vantoris_approved_journal_posting.sql` — posts approved manual journals and reversals through immutable, balanced journal entries; no balance-edit operation exists.
+12. `migrations/012_vantoris_member_transfer_limits.sql` — append-only, dual-approved member limits; single and UTC-day totals are enforced under a per-member lock before a transfer is claimed.
 
 These migrations have **not been verified as applied** to any live Vantoris database. A file in Git is not an applied migration. Record the actual database name, server identity, migration owner, execution timestamp and checksums in the institution's controlled change record after a successful application.
 
