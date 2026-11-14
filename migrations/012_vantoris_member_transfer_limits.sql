@@ -39,7 +39,8 @@ BEGIN
   daily_limit:=(proposal.payload->>'daily_limit_cents')::bigint;
  EXCEPTION WHEN OTHERS THEN RAISE EXCEPTION 'LIMIT_CHANGE_PAYLOAD_INVALID'; END;
  IF single_limit<=0 OR daily_limit<single_limit THEN RAISE EXCEPTION 'LIMIT_CHANGE_VALUES_INVALID'; END IF;
- IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.members WHERE id=target_member AND status='active') THEN RAISE EXCEPTION 'LIMIT_MEMBER_NOT_ACTIVE'; END IF;
+ PERFORM 1 FROM vantoris_ledger.members WHERE id=target_member AND status='active' FOR UPDATE;
+ IF NOT FOUND THEN RAISE EXCEPTION 'LIMIT_MEMBER_NOT_ACTIVE'; END IF;
  INSERT INTO vantoris_ledger.member_transfer_limit_history(id,member_id,single_limit_cents,daily_limit_cents,proposed_by_staff_id,approved_by_staff_id,posted_by_staff_id)
  VALUES(history_id,target_member,single_limit,daily_limit,proposer_id,approver_id,poster_id);
  UPDATE vantoris_ledger.staff_action_proposals SET status='executed' WHERE id=p_proposal_id;
