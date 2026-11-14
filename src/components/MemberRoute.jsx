@@ -1,7 +1,6 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { hasOperationsAccess } from '@/lib/operationsAccess';
 
 export default function MemberRoute() {
   const { user, isAuthenticated, isLoadingAuth, authChecked } = useAuth();
@@ -14,6 +13,5 @@ export default function MemberRoute() {
     );
   }
   if (!isAuthenticated || !user) return <Navigate to="/login" replace />;
-  if (hasOperationsAccess(user.role)) return <Navigate to="/operations" replace />;
   return <Outlet />;
 }
