@@ -51,6 +51,8 @@ jobs:
         run: |
           node scripts/apply-vantoris-migrations.mjs
           node scripts/apply-vantoris-migrations.mjs --verify-only
+      - name: Generate runtime migration manifest for server function tests
+        run: node scripts/generate-vantoris-migration-manifest.mjs
       - name: Verify avcu_backend inherits restricted ledger privileges
         run: |
           psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
