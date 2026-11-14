@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatCurrency';
+import { formatCurrency } from '@/lib/currency';
 
 function dateInputValue(date) {
   const year = date.getFullYear();
