@@ -6,7 +6,7 @@ DECLARE
  m1 uuid:=gen_random_uuid(); m2 uuid:=gen_random_uuid();
  ops_staff uuid:=gen_random_uuid(); finance_staff uuid:=gen_random_uuid(); support_staff uuid:=gen_random_uuid();
  capital_id uuid:=gen_random_uuid(); clearing_id uuid:=gen_random_uuid(); suspense_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
- capital_journal uuid:=gen_random_uuid(); opening_journal uuid:=gen_random_uuid(); impairment_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid(); manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid;
+ capital_journal uuid:=gen_random_uuid(); opening_journal uuid:=gen_random_uuid(); impairment_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid(); manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid; limit_proposal uuid; limit_history uuid;
  result record; sender_balance numeric; receiver_balance numeric; captured_status text; journal_count integer;
 BEGIN
  INSERT INTO vantoris_ledger.members(id,member_reference,status) VALUES
@@ -90,6 +90,14 @@ BEGIN
   RAISE EXCEPTION 'Reversal journal was not linked to original';
  END IF;
 
+ -- Member transfer limits are created only through a separate proposal, approval and posting.
+ limit_proposal:=vantoris_ledger.create_staff_action_proposal(
+  decode(repeat('a',64),'hex'),'change_limit',m1::text,
+  jsonb_build_object('member_id',m1,'single_limit_cents',9000,'daily_limit_cents',10000)
+ );
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),limit_proposal,'approve');
+ limit_history:=vantoris_ledger.post_approved_limit_change(decode(repeat('g',64),'hex'),limit_proposal);
+
  SELECT * INTO result FROM vantoris_ledger.create_member_internal_transfer_operation(
   op_id,decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-transfer:'||op_id,repeat('a',64));
  op_id:=result.operation_id;
@@ -108,8 +116,28 @@ BEGIN
   PERFORM * FROM vantoris_ledger.create_member_internal_transfer_operation(gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3100,'test-transfer:'||op_id,repeat('a',64));
   RAISE EXCEPTION 'Idempotency payload conflict unexpectedly succeeded';
  EXCEPTION WHEN SQLSTATE '23505' THEN NULL; END;
+ -- Single and daily limits are enforced before a transfer operation is claimed.
+ BEGIN
+  PERFORM * FROM vantoris_ledger.create_member_internal_transfer_operation(
+   gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',10000,'test-single-limit:'||m1,repeat('b',64));
+  RAISE EXCEPTION 'Single transfer limit unexpectedly bypassed';
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'MEMBER_SINGLE_TRANSFER_LIMIT_EXCEEDED' THEN RAISE; END IF; END;
+ BEGIN
+  PERFORM * FROM vantoris_ledger.create_member_internal_transfer_operation(
+   gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,'test-daily-limit:'||m1,repeat('c',64));
+  RAISE EXCEPTION 'Daily transfer limit unexpectedly bypassed';
+ EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'MEMBER_DAILY_TRANSFER_LIMIT_EXCEEDED' THEN RAISE; END IF; END;
+
+ -- A second dual-approved limit change permits the request to reach the funds check.
+ limit_proposal:=vantoris_ledger.create_staff_action_proposal(
+  decode(repeat('a',64),'hex'),'change_limit',m1::text,
+  jsonb_build_object('member_id',m1,'single_limit_cents',9000,'daily_limit_cents',15000)
+ );
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),limit_proposal,'approve');
+ limit_history:=vantoris_ledger.post_approved_limit_change(decode(repeat('g',64),'hex'),limit_proposal);
+
  SELECT * INTO result FROM vantoris_ledger.create_member_internal_transfer_operation(
-  gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,'test-insufficient:'||m1,repeat('b',64));
+  gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,'test-insufficient:'||m1,repeat('d',64));
  BEGIN
   PERFORM * FROM vantoris_ledger.execute_member_internal_transfer(result.operation_id,decode(repeat('c',64),'hex'));
   RAISE EXCEPTION 'Insufficient funds transfer unexpectedly succeeded';
