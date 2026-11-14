@@ -1,80 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import { useNavigate } from 'react-router-dom';
-import ShieldLogo from '@/components/vantoris/ShieldLogo';
-import { FolderOpen, Download, FileText } from 'lucide-react';
+import React,{useEffect,useState} from 'react';
+import { FileText, Loader2, ShieldCheck } from 'lucide-react';
 
-export default function MemberDocuments() {
-  const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const me = await base44.auth.me();
-        const docs = await base44.entities.Document.filter({ user_id: me.id }, '-created_date', 50);
-        setDocuments(docs);
-      } catch (e) { console.error(e); }
-      setLoading(false);
-    })();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return (
-    <div className="px-5 pt-6">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <ShieldLogo size={28} />
-          <h1 className="text-white font-bold text-xl">Documents</h1>
-        </div>
-      </div>
-
-      {documents.length === 0 ? (
-        <div className="vantoris-card p-8 text-center">
-          <FolderOpen size={28} className="text-[#AAB4C3] mx-auto mb-3 opacity-50" />
-          <p className="text-white font-medium text-sm mb-1">No documents yet</p>
-          <p className="text-[#AAB4C3] text-xs">
-            Your statements and documents will appear here. Generate a statement from any account detail page.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {documents.map(doc => (
-            <div key={doc.id} className="vantoris-card p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-brass/15 flex items-center justify-center">
-                  <FileText size={16} className="text-brass" />
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">{doc.title}</p>
-                  <div className="flex items-center gap-2">
-                    <p className="text-[#AAB4C3] text-xs">{doc.created_date.split('T')[0]}</p>
-                    {doc.reference_number && (
-                      <p className="text-brass text-[10px] font-mono">{doc.reference_number}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-              {doc.file_url && (
-                <button
-                  onClick={() => window.open(doc.file_url, '_blank')}
-                  className="w-9 h-9 rounded-xl bg-[#242D38] flex items-center justify-center text-[#AAB4C3] hover:text-white transition-all"
-                >
-                  <Download size={14} />
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+export default function MemberDocuments(){
+ const [documents,setDocuments]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState('');
+ useEffect(()=>{
+  let active=true;
+  fetch('/api/member-auth?action=documents',{credentials:'same-origin',cache:'no-store'})
+   .then(async response=>{const result=await response.json().catch(()=>({}));if(!response.ok)throw new Error(result.error==='authentication_required'?'Your member session has expired.':'Vantoris document records are unavailable.');if(active)setDocuments(result.documents||[]);})
+   .catch(err=>{if(active)setError(err.message||'Unable to load Vantoris documents.');})
+   .finally(()=>{if(active)setLoading(false);});
+  return()=>{active=false;};
+ },[]);
+ return <main className="mx-auto max-w-4xl px-5 py-8">
+  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Member records</p><h1 className="mt-2 text-3xl font-semibold text-navy">Identity documents</h1>
+  <p className="mt-2 text-sm leading-6 text-slate-600">Document metadata is retrieved from Vantoris PostgreSQL. Encrypted document contents are never exposed through this listing.</p>
+  {loading?<div className="flex justify-center py-16"><Loader2 className="animate-spin text-navy"/></div>:error?<p role="alert" className="mt-6 rounded-xl bg-rose-50 p-4 text-sm text-rose-800">{error}</p>:!documents.length?<div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center"><ShieldCheck size={26} className="mx-auto text-slate-400"/><h2 className="mt-3 font-semibold text-navy">No documents on record</h2><p className="mt-2 text-sm leading-6 text-slate-500">No Vantoris-held identity document is currently linked to this member. Secure document upload and review actions are not yet enabled.</p></div>:<div className="mt-6 space-y-3">{documents.map(doc=><article key={doc.id} className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-4"><FileText size={20} className="text-navy"/><div className="min-w-0 flex-1"><p className="text-sm font-semibold capitalize text-navy">{doc.documentType.replace(/_/g,' ')}</p><p className="mt-1 text-xs text-slate-500">{doc.mediaType} · {new Date(doc.createdAt).toLocaleDateString()}</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs capitalize text-slate-700">{doc.reviewStatus.replace(/_/g,' ')}</span></article>)}</div>}
+ </main>;
 }
