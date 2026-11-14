@@ -87,7 +87,7 @@ REVOKE EXECUTE ON FUNCTION vantoris_ledger.set_institutional_capital_floor(bytea
 REVOKE ALL ON FUNCTION vantoris_ledger.post_approved_capital_floor(bytea,uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION vantoris_ledger.post_approved_capital_floor(bytea,uuid) TO vantoris_backend;
 CREATE OR REPLACE FUNCTION vantoris_ledger.execute_approved_staff_action(p_session_token_hash bytea,p_proposal_id uuid)
-RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE proposal vantoris_ledger.staff_action_proposals%ROWTYPE; result_id uuid;
 BEGIN
  PERFORM vantoris_ledger.resolve_staff_session(p_session_token_hash);
@@ -101,7 +101,7 @@ BEGIN
   ELSE RAISE EXCEPTION 'STAFF_ACTION_TYPE_NOT_SUPPORTED';
  END CASE;
  RETURN jsonb_build_object('proposalId',p_proposal_id,'actionType',proposal.action_type,'resultId',result_id,'status','executed');
-END $;
+END $$;
 REVOKE ALL ON FUNCTION vantoris_ledger.execute_approved_staff_action(bytea,uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION vantoris_ledger.execute_approved_staff_action(bytea,uuid) TO vantoris_backend;
 COMMIT;
