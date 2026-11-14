@@ -160,6 +160,8 @@ export default async function handler(request) {
     if(message.includes('STAFF_SESSION_INVALID')) return json({error:'authentication_required'},401);
     if(message.includes('STAFF_CAPABILITY_REQUIRED')||message.includes('STAFF_SEPARATION_OF_DUTIES_REQUIRED')||message.includes('SEPARATION_OF_DUTIES_REQUIRED')) return json({error:'staff_capability_or_separation_required'},403);
     if(message.includes('NOT_APPROVED')||message.includes('NOT_PENDING')||message.includes('ALREADY_REVERSED')) return json({error:'proposal_state_conflict'},409);
+    if(message.includes('MEMBER_NOT_ELIGIBLE')||message.includes('LIMIT_MEMBER_NOT_ACTIVE')) return json({error:'member_not_eligible'},409);
+    if(message.includes('INVALID_ACTIVATION_TOKEN')||message.includes('INVALID_PASSWORD_RESET_TOKEN')||message.includes('STAFF_ACTION_TYPE_NOT_SUPPORTED')) return json({error:'invalid_staff_action'},400);
     if(message.includes('ACCOUNT_NOT_FOUND')||message.includes('JOURNAL_NOT_REVERSIBLE')) return json({error:'referenced_record_not_found_or_reversible'},404);
     if(message.includes('INVALID_')||message.includes('MUST_BALANCE')||message.includes('REQUIRES_TWO')||message.includes('DESCRIPTION_REQUIRED')) return json({error:'invalid_staff_action'},400);
     if(message.includes('CAPITAL_IMPAIRMENT')) return json({error:'permanent_capital_protection_blocked'},409);
