@@ -41,7 +41,9 @@ function writeSessionHistory(memberId, messages) {
 export async function loadOracleHistory() {
   try {
     const memberId = await currentMemberId();
-    return { ok: true, threadId: memberId, messages: readSessionHistory(memberId) };
+    let deleted = [];
+    try { deleted = JSON.parse(localStorage.getItem('vantoris_deleted_conversations') || '[]'); } catch { deleted = []; }
+    return { ok: true, threadId: memberId, messages: deleted.includes(memberId) ? [] : readSessionHistory(memberId) };
   } catch {
     return { ok: false, error: 'authentication_required', messages: [] };
   }
@@ -73,6 +75,11 @@ export async function askOracle(message) {
       };
     }
 
+    let deleted = [];
+    try { deleted = JSON.parse(localStorage.getItem('vantoris_deleted_conversations') || '[]'); } catch { deleted = []; }
+    if (deleted.includes(memberId)) {
+      localStorage.setItem('vantoris_deleted_conversations', JSON.stringify(deleted.filter(id => id !== memberId)));
+    }
     const history = readSessionHistory(memberId);
     const now = new Date().toISOString();
     history.push({ sender: 'user', body: prompt, created_date: now });
