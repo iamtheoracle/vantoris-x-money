@@ -294,7 +294,7 @@ export default function Home() {
                 QR Pay
               </button>
             </div>
-            <p className="mb-6 text-center text-[11px] leading-5 text-slate-500">Payment shortcuts remain disabled while the member transfer interface completes verification. External payment networks are not available.</p>
+            <p className="mb-6 text-center text-[11px] leading-5 text-slate-500">Only internal member-to-member transfers are available. Deposits, requests, QR payments and external payment networks are disabled.</p>
 
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2.5 px-0.5">
