@@ -2,7 +2,8 @@ function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
 }
 
-import { formatCurrency, generateAccountNumber } from "../src/lib/formatCurrency.js";
+import { centsToDecimal, formatCurrency, generateAccountNumber } from "../src/lib/formatCurrency.js";
+import { transactionPresentation } from "../src/lib/transactionPresentation.js";
 
 function assertEqual(actual: unknown, expected: unknown, message: string) {
   if (actual !== expected) {
@@ -39,20 +40,26 @@ Deno.test("account numbers cannot be generated in the browser", () => {
   assertEqual(threw, true, "server-issued account number guard");
 });
 
-Deno.test("member Home transaction direction stays neutral when amount and type do not establish direction", async () => {
-  const source = await Deno.readTextFile("src/pages/Home.jsx");
-  assert(source.includes("function transactionPresentation(amount, type)"), "Home activity must use a centralized direction classifier");
-  assert(source.includes("return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-slate-500' };"), "unknown transaction types must remain neutral");
-  assert(source.includes("presentation.sign") && source.includes("presentation.tone"), "activity rows must render the classifier output");
-  assert(!source.includes("const credit = hasAmount"), "Home must not classify every unknown type as a debit");
+Deno.test("transaction direction requires a recognized transaction type", () => {
+  const unknownPositive = transactionPresentation(25, "unclassified");
+  assertEqual(unknownPositive.amount, 25, "unknown amount remains visible");
+  assertEqual(unknownPositive.sign, "", "unknown positive direction stays neutral");
+  assertEqual(unknownPositive.tone, "text-slate-500", "unknown direction uses neutral tone");
+
+  const unknownNegative = transactionPresentation(-25, "unclassified");
+  assertEqual(unknownNegative.sign, "", "amount sign alone does not imply debit or credit");
+  assertEqual(transactionPresentation(25, "debit").sign, "−", "recognized debit direction");
+  assertEqual(transactionPresentation(25, "deposit").sign, "+", "recognized credit direction");
+  assertEqual(transactionPresentation(null, "deposit").amount, null, "missing amount remains unavailable");
 });
 
-Deno.test("account detail formatter does not coerce absent amounts to zero", async () => {
-  const source = await Deno.readTextFile("src/pages/AccountDetail.jsx");
-  assert(source.includes("value === null || value === undefined || (typeof value === 'string' && value.trim() === '')"), "account detail must reject null and blank values before numeric coercion");
-  assert(source.includes("if (!/^-?\\d+$/.test(raw)) return null;"), "invalid account detail amounts must remain unavailable");
-  assert(source.includes("const cents = BigInt(raw);"), "only a validated integer-cent value may be converted");
-  assert(!source.includes("String(value || '0')"), "missing hold amounts must not be coerced to zero");
+Deno.test("account detail uses exact integer-cent formatting", () => {
+  assertEqual(centsToDecimal(0), "0.00", "zero cents");
+  assertEqual(centsToDecimal(12345), "123.45", "positive cents");
+  assertEqual(centsToDecimal(-12345), "-123.45", "negative cents");
+  assertEqual(centsToDecimal(null), null, "missing cents");
+  assertEqual(centsToDecimal(""), null, "blank cents");
+  assertEqual(centsToDecimal("12x"), null, "invalid cents");
 });
 
 Deno.test("investment screen withholds unverified portfolio balances", async () => {
