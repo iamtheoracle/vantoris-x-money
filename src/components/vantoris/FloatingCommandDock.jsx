@@ -2,10 +2,9 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/lib/AuthContext';
-import { hasOperationsAccess } from '@/lib/operationsAccess';
 import VantorisMonogram from '@/components/vantoris/brand/VantorisMonogram';
 import {
-  Command, X, Sparkles, CreditCard, Shield,
+  Command, X, Sparkles, CreditCard,
 } from 'lucide-react';
 
 // ============================================================
@@ -110,11 +109,6 @@ export default function FloatingCommandDock() {
     { id: 'assistant', label: 'Assistant', icon: Sparkles, color: 'bg-navy/8 text-navy', onClick: () => navigate('/ask') },
     { id: 'card-services', label: 'Card Services', icon: CreditCard, color: 'bg-navy/8 text-navy', onClick: () => navigate('/cards') },
   ];
-
-  // Operations staff get Mission Control instead of member card services
-  if (hasOperationsAccess(user?.role)) {
-    actions[1] = { id: 'mission-control', label: 'Mission Control', icon: Shield, color: 'bg-navy text-white', onClick: () => navigate('/operations') };
-  }
 
   function handleAction(action) {
     haptic(8);
