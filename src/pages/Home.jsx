@@ -271,8 +271,8 @@ export default function Home() {
                   key={mode}
                   type="button"
                   onClick={() => openQuick(mode)}
-                  disabled={!HOME_PAYMENT_ACTIONS_ENABLED}
-                  title={!HOME_PAYMENT_ACTIONS_ENABLED ? "Unavailable until authorized payment processing is enabled" : undefined}
+                  disabled={!HOME_PAYMENT_ACTIONS_ENABLED && mode !== 'send'}
+                  title={!HOME_PAYMENT_ACTIONS_ENABLED && mode !== 'send' ? "Unavailable until a Vantoris internal workflow is available" : undefined}
                   className="flex flex-col items-center gap-2 text-[13px] font-semibold text-navy disabled:cursor-not-allowed disabled:opacity-45"
                 >
                   <span className="w-14 h-14 rounded-full bg-navy text-white flex items-center justify-center shadow-md active:scale-95 transition-transform ring-2 ring-brass/30">
