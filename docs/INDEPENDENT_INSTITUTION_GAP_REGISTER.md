@@ -13,14 +13,16 @@
 - No provider, Base44, Plaid, sponsor bank, card network, or assistant call may be required for internal ledger operation.
 - Outbound wires remain unavailable until a real Fedwire origination capability in Vantoris's own name is independently evidenced. Approval is not sending; a timeout is not proof of non-acceptance.
 
-## Verified repository contradictions
+## Verified repository contradictions — refreshed 2026-11-14
 
-1. `migrations/001_avcu_payment_control_plane.sql` through `005_avcu_payment_outbox_claims.sql` currently define schema `vantoris_ledger`, not `avcu_payments`. They create the runtime role/grants for `vantoris_backend`, while the agreed deployment contract names `avcu_backend`. Do not paper over this with a second ledger schema or assume role equivalence.
-2. `netlify/functions/member-auth.mjs` connects with `VANTORIS_LEDGER_DATABASE_URL` and queries `vantoris_ledger.member_credentials`, `member_mfa_factors`, session/login-control tables and functions. Those objects are not defined by migrations 001–005 as currently checked in. This makes the checked-in authentication implementation incompatible with the five-file schema until forward migrations supply and test the missing objects.
-3. `base44/functions/_shared/paymentStore.ts` remains under the Base44 tree, connects through `VANTAGE_LEDGER_DATABASE_URL`, and contains provider-event, Plaid, Base44 projection/outbox, bank-receipt and bank-rail workflows against `avcu_payments`. It is not a valid Vantoris ledger service and must not be used by the application.
-4. Member-facing pages still import `@base44/sdk` and call Base44 authentication/entities. Examples confirmed: `src/pages/Apply.jsx`, `src/pages/Profile.jsx`, and `src/components/MemberRoute.jsx`. Removing the SDK before replacing these calls would break existing member access.
-5. `.github/workflows/recovery-build.yml` still type-checks and tests Base44 function paths, including Plaid and external bank workflows. CI therefore still treats removed architecture as part of the active application.
-6. The current five migrations do not establish the complete authentication/session schema used by the current Netlify member-auth function, nor do they by themselves prove that they were applied to the production database. The repository cannot attest to live migration state.
+1. **Runtime role contract:** migrations 001–005 grant the historical role `vantoris_backend`, while the founder-approved application login is `avcu_backend`. The runbook and disposable CI provisioning now model `vantoris_backend` as a non-login privilege group and `avcu_backend` as the login member. CI includes a privilege-inheritance check. This is a test-database contract only; production provisioning/cutover still requires DBA review and evidence.
+2. **Authentication schema:** the first-party member/staff auth functions use objects introduced across migrations 006–019. The statement that these objects are absent from migrations 001–005 is true only when considering the first five migrations in isolation; it is not an accurate description of the complete 001–019 migration set. The full ordered migration set must pass a clean PostgreSQL run before auth is treated as tested.
+3. **Legacy Base44 code:** `base44/functions/_shared/paymentStore.ts` and associated Base44/Plaid/bank-rail functions and entity schemas remain in the repository. They are legacy code, not the authoritative Vantoris ledger service. They must not be reachable from member or staff money workflows and must be removed or archived only after caller and data-preservation checks.
+4. **Member route/auth replacement:** current versions of `src/lib/AuthContext.jsx`, `src/pages/Apply.jsx`, `src/pages/Profile.jsx`, and `src/components/MemberRoute.jsx` use Vantoris-owned member-auth endpoints/context; the earlier claim that these exact files still import `@base44/sdk` is stale. A repository-wide audit of every route, hook, component and build-time integration is still required before Base44 can be declared removed.
+5. **CI still references legacy architecture:** `.github/workflows/recovery-build.yml` still checks and tests Base44 Oracle/payment functions, Plaid/bank paths, Base44 entity JSON and legacy environment assumptions. It is not yet a clean proof of a Base44-free Vantoris application. Its empty job-level `env:` block was removed to restore workflow execution; the remaining legacy checks still need a deliberate migration.
+6. **Migration syntax defects discovered by actual PostgreSQL CI:** clean PostgreSQL execution exposed malformed single-dollar function delimiters in migrations 007, 008, 012, 014 and 016. These were corrected on this branch in separate commits. The latest full migration/integration workflow must complete successfully before the fixes are accepted as verified.
+7. **Migration history/startup gate:** the runbook enumerates migrations 001–019, but a durable applied-migration registry with checksums and fail-closed application startup has not yet been demonstrated. A clean migration run alone does not prove startup detects missing or altered migrations.
+8. **Production evidence:** repository files and CI do not prove any institutional database migration state, existing-member reconciliation, real capital funding, staff provisioning, encryption-key provisioning or Netlify production runtime configuration.
 
 ## Required implementation sequence
 
@@ -80,10 +82,18 @@
 
 ## Current state
 
-- Codex GitHub Actions workflow: removed on this migration branch.
-- Base44: **not removed**; SDK and active page callers remain.
-- Canonical independent member authentication: **incomplete**; current function expects schema objects absent from migrations 001–005.
-- Canonical transfer API: **not verified as wired to the member UI**.
-- Live PostgreSQL migration state and existing-member reconciliation: **unverified**.
-- External wire origination: **not implemented/authorized**.
-- Production database, merge, and deployment: **not changed**.
+- **Assigned branch:** `migration/remove-base44-and-codex`; branch exists and current work is being committed there.
+- **Migrations:** runbook enumerates 001–019. Migrations 007, 008, 012, 014 and 016 had PostgreSQL syntax defects and were corrected on this branch. Clean PostgreSQL CI is rerunning; no successful end-to-end run has yet been established in this gap register.
+- **Runtime role:** documentation and disposable CI now model `avcu_backend` as the runtime LOGIN inheriting the historical `vantoris_backend` privilege group. Production role provisioning and cutover remain unverified and unauthorized.
+- **Member authentication:** first-party Netlify functions and React auth context exist in source. Real PostgreSQL/browser behavior, MFA secret provisioning, session revocation and production configuration remain unverified.
+- **Staff authentication:** separate staff auth and capability-gated operations endpoints exist in source. Staff identity provisioning, MFA provisioning, role-management UI and real browser authorization tests remain incomplete.
+- **Base44:** **not fully removed**. Current member auth routes use Vantoris endpoints, but the legacy Base44 functions/entities and CI references remain. A full repository-wide caller inventory and safe retirement are outstanding.
+- **Internal transfers:** the database transfer functions and a synthetic PostgreSQL integration scenario exist. Member UI is intentionally fail-closed/unavailable until account limits, member records, runtime-role tests and end-to-end browser wiring are verified. Concurrency and forced-rollback tests remain outstanding.
+- **Existing-member preservation:** no verified source export, identity crosswalk, account/journal reconciliation, permission mapping or rollback has been completed. No member data has been migrated.
+- **Institutional capital:** capital-floor controls exist in source; actual capital records, reserve evidence and opening journals have not been supplied or posted.
+- **Identity documents:** encrypted document workflow exists in source; key provisioning, rotation, retention and live DB/browser verification remain outstanding.
+- **Staff operations:** proposal/approval and audit SQL exists. Staff directory/role-management, account opening, verified receipt posting, complete audit/reporting and reconciliation workflows remain incomplete.
+- **CI/testing:** a PostgreSQL service workflow and build workflow exist. The PostgreSQL workflow is being used to repair migration execution. Multi-session concurrency, startup migration-checksum failure tests, outbound-network-blocked E2E, browser QA and backup/restore proof remain outstanding.
+- **External wires and payment rails:** not implemented/authorized. Wire requests must terminate at `approved_not_sent`; no provider or settlement status may be fabricated.
+- **Netlify/production:** no merge, deployment, DNS change, production database operation or external payment activation has been performed by this work.
+
