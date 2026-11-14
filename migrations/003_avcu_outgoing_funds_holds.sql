@@ -9,7 +9,7 @@ CREATE OR REPLACE FUNCTION vantoris_ledger.create_internal_transfer_operation(
 RETURNS TABLE(operation_id uuid, operation_status text, duplicate boolean)
 LANGUAGE plpgsql SECURITY DEFINER
 SET search_path = pg_catalog, vantoris_ledger
-AS $
+AS $$
 DECLARE prior vantoris_ledger.payment_operations%ROWTYPE;
 BEGIN
   IF p_operation_id IS NULL OR p_idempotency_key IS NULL OR length(p_idempotency_key)=0 OR
@@ -139,7 +139,7 @@ COMMIT;
     RAISE EXCEPTION 'TRANSFER_IDEMPOTENCY_CONFLICT' USING ERRCODE='23505';
   END IF;
   RETURN QUERY SELECT prior.id,prior.status,(prior.id<>p_operation_id);
-END $;
+END $$;
 
 CREATE OR REPLACE FUNCTION vantoris_ledger.execute_internal_transfer(
   p_operation_id uuid,
