@@ -30,6 +30,8 @@ jobs:
       - run: node --check netlify/functions/staff-actions.mjs
       - run: node --check netlify/functions/member-documents.mjs
       - run: node --check netlify/functions/oracle.mjs
+      - run: node --check scripts/apply-vantoris-migrations.mjs
+      - run: node --test tests/migration-runner.test.mjs
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
