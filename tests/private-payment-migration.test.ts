@@ -244,3 +244,11 @@ Deno.test('migration history bootstrap is append-only and exposes read access on
   assert(sql.includes('REVOKE ALL ON TABLE public.vantoris_schema_migrations FROM PUBLIC, vantoris_backend'), 'runtime role must not mutate migration history');
   assert(sql.includes('GRANT SELECT ON TABLE public.vantoris_schema_migrations TO vantoris_backend'), 'runtime role may verify migration history');
 });
+
+Deno.test('member transfer posting defers journal constraints and validates complete ledger visibility', async () => {
+  const sql = await Deno.readTextFile('migrations/024_vantoris_transfer_journal_visibility.sql');
+  assert(sql.includes('SECURITY DEFINER') && sql.includes('SET row_security=off'), 'balance and capital trigger functions must not silently validate an RLS-filtered ledger view');
+  assert(sql.includes('SET CONSTRAINTS journal_balance_after_insert,entry_balance_after_insert,institutional_capital_floor_check DEFERRED'), 'member transfer posting must defer all related journal and capital checks until the transaction contains every line');
+  assert(sql.includes('execute_member_internal_transfer(uuid,bytea)'), 'the session-derived transfer entry point must be replaced');
+  assert(sql.includes('GRANT EXECUTE ON FUNCTION vantoris_ledger.execute_member_internal_transfer(uuid,bytea) TO vantoris_backend'), 'the restricted runtime role must retain the authorized transfer entry point');
+});
