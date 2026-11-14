@@ -653,6 +653,14 @@ export default async function handler(request) {
     if (message.includes('TRANSFER_IDEMPOTENCY_CONFLICT')) return json({ error: 'idempotency_conflict' }, 409);
     if (message.includes('TRANSFER_OPERATION_NOT_OWNED_BY_MEMBER') || message.includes('SOURCE_ACCOUNT_NOT_OWNED_BY_MEMBER')) return json({ error: 'forbidden' }, 403);
     if (message.includes('RECIPIENT_MUST_BE_ANOTHER_MEMBER')) return json({ error: 'recipient_must_be_another_member' }, 400);
+    if (message.includes('ACTIVATION_TOKEN_INVALID_OR_EXPIRED')) return json({ error: 'activation_token_invalid' }, 401);
+    if (message.includes('PASSWORD_RESET_TOKEN_INVALID_OR_EXPIRED')) return json({ error: 'password_reset_token_invalid' }, 401);
+    if (message.includes('MEMBER_NOT_ELIGIBLE_FOR_ACTIVATION') || message.includes('MEMBER_NOT_ELIGIBLE_FOR_PASSWORD_RESET')) return json({ error: 'member_not_eligible' }, 409);
+    if (message.includes('MEMBER_CREDENTIALS_NOT_PROVISIONED')) return json({ error: 'member_credentials_unavailable' }, 409);
+    if (message.includes('INVALID_PASSWORD_HASH')) return json({ error: 'password_policy_failed' }, 400);
+    if (message.includes('MFA_ENROLLMENT_CHALLENGE_INVALID_OR_EXPIRED')) return json({ error: 'mfa_enrollment_expired' }, 401);
+    if (message.includes('MEMBER_MFA_ALREADY_ENROLLED')) return json({ error: 'mfa_already_enrolled' }, 409);
+    if (message.includes('MEMBER_NOT_READY_FOR_MFA') || message.includes('MFA_FACTOR_NOT_PENDING')) return json({ error: 'mfa_enrollment_unavailable' }, 409);
     if (message.includes('MEMBER_TRANSFER_LIMIT_NOT_CONFIGURED')) return json({ error: 'member_transfer_limit_not_configured' }, 409);
     if (message.includes('MEMBER_SINGLE_TRANSFER_LIMIT_EXCEEDED')) return json({ error: 'member_single_transfer_limit_exceeded' }, 409);
     if (message.includes('MEMBER_DAILY_TRANSFER_LIMIT_EXCEEDED')) return json({ error: 'member_daily_transfer_limit_exceeded' }, 409);
