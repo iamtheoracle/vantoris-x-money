@@ -113,14 +113,13 @@ export default async function handler(request){
    const documentId=url.searchParams.get('id');
    if(!/^[0-9a-f-]{36}$/i.test(documentId||''))return json({error:'invalid_document_id'},400);
    const result=await database().begin(async tx=>{
-    const member=await memberContext(request,tx);
-    if(member){
-     const rows=await tx`SELECT * FROM vantoris_ledger.read_member_identity_document(${member.tokenHash},${documentId}::uuid)`;
+    if(cookie(request,'__Host-vantoris_staff_session')){
+     const staff=await staffContext(request,tx);if(!staff)return null;
+     const rows=await tx`SELECT * FROM vantoris_ledger.read_staff_identity_document(${staff.tokenHash},${documentId}::uuid)`;
      return rows[0]||null;
     }
-    const staff=await staffContext(request,tx);
-    if(!staff)return null;
-    const rows=await tx`SELECT * FROM vantoris_ledger.read_staff_identity_document(${staff.tokenHash},${documentId}::uuid)`;
+    const member=await memberContext(request,tx);if(!member)return null;
+    const rows=await tx`SELECT * FROM vantoris_ledger.read_member_identity_document(${member.tokenHash},${documentId}::uuid)`;
     return rows[0]||null;
    });
    if(!result)return json({error:'document_not_found_or_not_authorized'},404);
