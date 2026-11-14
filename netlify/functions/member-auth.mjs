@@ -26,6 +26,15 @@ function database() {
 }
 
 const sha256 = (value) => createHash('sha256').update(value).digest();
+
+function centsToDecimal(value) {
+  const cents = BigInt(String(value));
+  const negative = cents < 0n;
+  const absolute = negative ? -cents : cents;
+  const whole = absolute / 100n;
+  const fraction = String(absolute % 100n).padStart(2, '0');
+  return `${negative ? '-' : ''}${whole.toString()}.${fraction}`;
+}
 const json = (body, status = 200, cookies = []) => {
   const headers = new Headers({
     'content-type': 'application/json; charset=utf-8',
@@ -293,11 +302,11 @@ async function currentMember(request) {
         account_name: account.account_type.replace(/_/g, ' '),
         mask: '•••• ' + String(account.account_reference).slice(-4),
         currency: account.currency,
-        balance: account.posted_balance_cents === null ? null : Number(account.posted_balance_cents) / 100,
-        availableBalance: account.available_balance_cents === null ? null : Number(account.available_balance_cents) / 100,
-        postedBalanceCents: account.posted_balance_cents === null ? null : Number(account.posted_balance_cents),
-        availableBalanceCents: account.available_balance_cents === null ? null : Number(account.available_balance_cents),
-        activeHoldCents: Number(account.active_hold_cents || 0),
+        balance: account.posted_balance_cents === null ? null : centsToDecimal(account.posted_balance_cents),
+        availableBalance: account.available_balance_cents === null ? null : centsToDecimal(account.available_balance_cents),
+        postedBalanceCents: account.posted_balance_cents === null ? null : String(account.posted_balance_cents),
+        availableBalanceCents: account.available_balance_cents === null ? null : String(account.available_balance_cents),
+        activeHoldCents: String(account.active_hold_cents || '0'),
       })),
       transactions: activity.map(item => ({
         id: item.id + ':' + item.account_id,
@@ -306,7 +315,8 @@ async function currentMember(request) {
         type: item.journal_type,
         description: item.description,
         created_date: item.created_at,
-        amount: -Number(item.amount_cents) / 100,
+        amount: centsToDecimal(-BigInt(String(item.amount_cents))),
+        amountCents: String(-BigInt(String(item.amount_cents))),
         currency: item.currency,
         status: 'posted',
       })),
