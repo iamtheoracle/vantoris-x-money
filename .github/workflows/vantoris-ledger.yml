@@ -71,7 +71,8 @@ jobs:
             migrations/019_vantoris_identity_document_workflow.sql \
             migrations/020_vantoris_staff_approval_separation.sql \
             migrations/021_vantoris_journal_balance_trigger_row_fix.sql \
-            migrations/022_vantoris_member_assistant_rate_limits.sql
+            migrations/022_vantoris_member_assistant_rate_limits.sql \
+            migrations/023_vantoris_manual_journal_currency_integrity.sql
           do
             psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
