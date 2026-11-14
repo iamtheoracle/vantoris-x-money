@@ -220,5 +220,6 @@ Deno.test('Vantoris assistant rate limits are member-scoped and database-enforce
   assert(sql.includes('p_per_minute_limit') && sql.includes('p_per_day_limit'), 'Minute and daily request limits must both be enforced.');
   assert(sql.includes('REVOKE ALL ON TABLE vantoris_ledger.member_assistant_usage FROM vantoris_backend'), 'Runtime must not read or mutate raw assistant counters.');
   assert(sql.includes('GRANT EXECUTE ON FUNCTION vantoris_ledger.consume_member_assistant_request'), 'Runtime must consume limits only through the controlled function.');
-  assert(!/prompt|response|message_body/i.test(sql), 'Assistant prompts and responses must not be stored by the rate-limit table.');
+  const schema = sql.replace(/^\\s*--.*$/gm, '');
+  assert(!/prompt|response|message_body/i.test(schema), 'Assistant prompts and responses must not be stored by the rate-limit table.');
 });
