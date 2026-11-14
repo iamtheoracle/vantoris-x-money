@@ -9,18 +9,18 @@ export default function MemberDocuments(){
   const response=await fetch('/api/member-documents?action=list',{credentials:'same-origin',cache:'no-store'});
   const result=await response.json().catch(()=>({}));
   if(!response.ok)throw new Error(result.error==='authentication_required'?'Your member session has expired.':'Vantoris document records are unavailable.');
-  setDocuments(result.documents||[]);
+  return result.documents||[];
  },[]);
- useEffect(()=>{let active=true;load().catch(e=>{if(active)setError(e.message||'Unable to load Vantoris documents.');}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[load]);
+ useEffect(()=>{let active=true;load().then(items=>{if(active)setDocuments(items);}).catch(e=>{if(active)setError(e.message||'Unable to load Vantoris documents.');}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[load]);
  async function upload(event){
-  event.preventDefault();if(!file)return;setUploading(true);setError('');setNotice('');
+  event.preventDefault();if(!file)return;const formElement=event.currentTarget;setUploading(true);setError('');setNotice('');
   try{
    const form=new FormData();form.append('file',file);form.append('documentType',documentType);
    const response=await fetch('/api/member-documents',{method:'POST',credentials:'same-origin',body:form});
    const result=await response.json().catch(()=>({}));
    if(!response.ok)throw new Error(result.error||'Vantoris could not store this document.');
-   setFile(null);event.currentTarget.reset();setNotice('Document encrypted and received by Vantoris. It is awaiting Vantoris staff review.');
-   await load();
+   setFile(null);formElement.reset();setNotice('Document encrypted and received by Vantoris. It is awaiting Vantoris staff review.');
+   setDocuments(await load());
   }catch(e){setError(e.message||'Document upload failed.');}finally{setUploading(false);}
  }
  return <main className="mx-auto max-w-4xl px-5 py-8">
