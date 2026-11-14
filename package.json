@@ -4,12 +4,14 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "node scripts/generate-vantoris-migration-manifest.mjs && vite",
+    "build": "node scripts/generate-vantoris-migration-manifest.mjs && vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc -p ./jsconfig.json",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:migrate:vantoris": "node scripts/apply-vantoris-migrations.mjs",
+    "db:verify:vantoris": "node scripts/apply-vantoris-migrations.mjs --verify-only"
   },
   "dependencies": {
     "postgres": "^3.4.7",
