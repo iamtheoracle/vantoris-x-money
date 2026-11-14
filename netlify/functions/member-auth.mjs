@@ -524,6 +524,23 @@ function csvCell(value) {
   return '"' + text.replace(/"/g,'""') + '"';
 }
 
+async function currentDocuments(request) {
+  return await database().begin(async tx => {
+    const auth=await authenticateMember(request,tx);
+    if(!auth) return null;
+    const rows=await tx`
+      SELECT id,document_type,media_type,review_status,created_at,reviewed_at
+        FROM vantoris_ledger.member_identity_documents
+       WHERE member_id=${auth.memberId}
+       ORDER BY created_at DESC,id DESC
+    `;
+    return rows.map(row=>({
+      id:row.id,documentType:row.document_type,mediaType:row.media_type,
+      reviewStatus:row.review_status,createdAt:row.created_at,reviewedAt:row.reviewed_at,
+    }));
+  });
+}
+
 async function currentStatement(request, accountId, from, to) {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(accountId || '')) || !/^\d{4}-\d{2}-\d{2}$/.test(String(from||'')) || !/^\d{4}-\d{2}-\d{2}$/.test(String(to||''))) {
     return json({ error:'invalid_statement_request' },400);
