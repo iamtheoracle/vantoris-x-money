@@ -7,7 +7,7 @@ export default function StaffPortal(){
  const navigate=useNavigate();
  const [data,setData]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const [proposalType,setProposalType]=useState('manual_journal'),[description,setDescription]=useState(''),[journalId,setJournalId]=useState(''),[reason,setReason]=useState('');
- const [memberId,setMemberId]=useState(''),[singleLimit,setSingleLimit]=useState(''),[dailyLimit,setDailyLimit]=useState('');
+ const [memberId,setMemberId]=useState(''),[singleLimit,setSingleLimit]=useState(''),[dailyLimit,setDailyLimit]=useState(''),[capitalFloor,setCapitalFloor]=useState('');
  const [memberTokenAction,setMemberTokenAction]=useState('issue_activation_token'),[issuedToken,setIssuedToken]=useState(null);
  const [entries,setEntries]=useState([{accountReference:'',amountCents:''},{accountReference:'',amountCents:''}]);
  const staff=data?.staff;
@@ -44,7 +44,8 @@ export default function StaffPortal(){
    let body;
    if(proposalType==='manual_journal')body={action:'propose',proposalType,description,entries};
    else if(proposalType==='reverse_journal')body={action:'propose',proposalType,journalId,reason};
-   else body={action:'propose',proposalType,memberId,singleLimitCents:singleLimit,dailyLimitCents:dailyLimit};
+   else if(proposalType==='change_limit')body={action:'propose',proposalType,memberId,singleLimitCents:singleLimit,dailyLimitCents:dailyLimit};
+   else body={action:'propose',proposalType,minimumUnimpairedCents:capitalFloor};
    const result=await post(body);setNotice('Proposal created: '+result.proposalId);setDescription('');setJournalId('');setReason('');setSingleLimit('');setDailyLimit('');await load();
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
@@ -71,8 +72,8 @@ export default function StaffPortal(){
   try{await fetch('/api/staff-auth',{method:'POST',credentials:'same-origin',headers:{'content-type':'application/json','x-csrf-token':readCsrf()},body:JSON.stringify({action:'logout'})});}
   finally{window.location.assign('/staff/login');}
  }
- function canApprove(type){return can(type==='manual_journal'?'ledger.manual_journal.approve':type==='reverse_journal'?'ledger.reverse.approve':'limits.change.approve');}
- function canExecute(type){return can(type==='manual_journal'?'ledger.manual_journal.post':type==='reverse_journal'?'ledger.reverse.post':'limits.change.post');}
+ function canApprove(type){return can(type==='manual_journal'?'ledger.manual_journal.approve':type==='reverse_journal'?'ledger.reverse.approve':type==='change_limit'?'limits.change.approve':'capital.floor.approve');}
+ function canExecute(type){return can(type==='manual_journal'?'ledger.manual_journal.post':type==='reverse_journal'?'ledger.reverse.post':type==='change_limit'?'limits.change.post':'capital.floor.post');}
  function addLine(){setEntries(current=>[...current,{accountReference:'',amountCents:''}]);}
  function updateLine(index,key,value){setEntries(current=>current.map((line,i)=>i===index?{...line,[key]:value}:line));}
  function removeLine(index){setEntries(current=>current.filter((_,i)=>i!==index));}
@@ -133,6 +134,7 @@ export default function StaffPortal(){
       {can('ledger.manual_journal.propose')&&<option value="manual_journal">Manual journal</option>}
       {can('ledger.reverse.propose')&&<option value="reverse_journal">Reverse posted journal</option>}
       {can('limits.change.propose')&&<option value="change_limit">Change member transfer limit</option>}
+      {can('capital.floor.propose')&&<option value="capital_floor">Set permanent capital floor</option>}
      </select>
      {proposalType==='manual_journal'&&can('ledger.manual_journal.propose')&&<div className="space-y-3">
       <input value={description} onChange={e=>setDescription(e.target.value)} placeholder="Journal description" maxLength={300} className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm"/>
@@ -146,12 +148,13 @@ export default function StaffPortal(){
       <button type="button" onClick={addLine} className="text-sm font-semibold text-navy">+ Add journal line</button>
      </div>}
      {proposalType==='reverse_journal'&&can('ledger.reverse.propose')&&<div className="grid gap-3 sm:grid-cols-2"><input value={journalId} onChange={e=>setJournalId(e.target.value)} placeholder="Original posted journal UUID" className="rounded-xl border border-slate-200 px-3 py-3 text-sm"/><input value={reason} onChange={e=>setReason(e.target.value)} placeholder="Reason for reversal" className="rounded-xl border border-slate-200 px-3 py-3 text-sm"/></div>}
+     {proposalType==='capital_floor'&&can('capital.floor.propose')&&<div className="max-w-md"><label className="block text-xs font-semibold uppercase tracking-wider text-slate-500">Minimum unimpaired permanent capital (cents)<input value={capitalFloor} onChange={e=>setCapitalFloor(e.target.value)} placeholder="Enter verified amount in cents" inputMode="numeric" className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-3 text-sm"/></label><p className="mt-2 text-xs leading-5 text-slate-500">The database rejects a floor above verified capital and will never permit the floor to be reduced.</p></div>}
      {proposalType==='change_limit'&&can('limits.change.propose')&&<div className="grid gap-3 sm:grid-cols-3">
       <select value={memberId} onChange={e=>setMemberId(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-3 text-sm"><option value="">Choose member</option>{(data?.members||[]).map(m=><option key={m.id} value={m.id}>{m.member_reference} · {m.status}</option>)}</select>
       <input value={singleLimit} onChange={e=>setSingleLimit(e.target.value)} placeholder="Single limit (cents)" inputMode="numeric" className="rounded-xl border border-slate-200 px-3 py-3 text-sm"/>
       <input value={dailyLimit} onChange={e=>setDailyLimit(e.target.value)} placeholder="Daily limit (cents)" inputMode="numeric" className="rounded-xl border border-slate-200 px-3 py-3 text-sm"/>
      </div>}
-     <button type="submit" disabled={busy||!((proposalType==='manual_journal'&&can('ledger.manual_journal.propose'))||(proposalType==='reverse_journal'&&can('ledger.reverse.propose'))||(proposalType==='change_limit'&&can('limits.change.propose')))} className="rounded-xl bg-navy px-5 py-3 text-sm font-semibold text-white disabled:opacity-40">{busy?'Processing…':'Submit proposal for independent review'}</button>
+     <button type="submit" disabled={busy||!((proposalType==='manual_journal'&&can('ledger.manual_journal.propose'))||(proposalType==='reverse_journal'&&can('ledger.reverse.propose'))||(proposalType==='change_limit'&&can('limits.change.propose'))||(proposalType==='capital_floor'&&can('capital.floor.propose')))} className="rounded-xl bg-navy px-5 py-3 text-sm font-semibold text-white disabled:opacity-40">{busy?'Processing…':'Submit proposal for independent review'}</button>
     </form>
    </section>
 
