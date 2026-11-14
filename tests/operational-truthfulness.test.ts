@@ -177,16 +177,16 @@ Deno.test("member QR screen clearly reports that QR payments are unavailable", a
   assert(!source.includes("api.qrserver.com") && !source.includes("vantage://pay"), "member identifiers must not be sent to external QR services or legacy schemes");
 });
 
-Deno.test("Vantage assistant uses only the configured private AI endpoint", async () => {
+Deno.test("Vantoris assistant remains optional, disabled and isolated from Base44", async () => {
   const ask = await Deno.readTextFile("netlify/functions/ask.mjs");
-  const boot = await Deno.readTextFile("base44/shared/runtime/bootLoader.ts");
+  const client = await Deno.readTextFile("src/lib/privateLlm.js");
   const chat = await Deno.readTextFile("src/components/vantoris/AgentChat.jsx");
-  assert(ask.includes("return ['private']") && ask.includes("name !== 'private'"), "external AI providers must remain disabled");
-  assert(ask.includes("VANTAGE_PRIVATE_LLM_URL") && !ask.includes("avcu:ai:"), "AI endpoint and usage namespace must be Vantage-specific");
-  assert(boot.includes("VANTAGE_APP_URL") && boot.includes("parsed.origin === app.origin"), "AI gateway must be same-origin with the configured Vantage application");
-  assert(chat.includes("Messages are saved in your assistant history") && !chat.includes("List the top 10 accounts by balance"), "assistant UI must disclose storage and avoid inviting private data queries");
+  assert(ask.includes("assistant_disabled") && ask.includes("}, 503)"), "assistant endpoint must fail closed while disabled");
+  assert(client.includes("assistant_disabled") && client.includes("return false"), "browser client must report the assistant as unavailable");
+  assert(!ask.includes("@base44/sdk") && !ask.includes("BASE44_") && !ask.includes("UPSTASH_"), "assistant endpoint must not depend on Base44 or external usage infrastructure");
+  assert(!client.includes("fetch(") && !chat.includes("base44"), "assistant must not perform direct browser provider calls or access Base44");
+  assert(chat.includes("Vantoris Intelligence is unavailable"), "legacy chat surface must clearly disclose that the optional assistant is disabled");
 });
-
 Deno.test("investment workspace does not invent unverified holdings or balances", async () => {
   const source = await Deno.readTextFile("src/pages/Investment.jsx");
   assert(source.includes("No investment balance is currently available"), "unverified holdings must remain explicitly unavailable");
