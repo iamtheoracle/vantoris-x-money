@@ -517,7 +517,10 @@ export default async function handler(request) {
     const message = String(error?.message || '');
     if (message.includes('INSUFFICIENT_AVAILABLE_FUNDS')) return json({ error: 'insufficient_available_funds' }, 409);
     if (message.includes('TRANSFER_IDEMPOTENCY_CONFLICT')) return json({ error: 'idempotency_conflict' }, 409);
-    if (message.includes('TRANSFER_OPERATION_NOT_OWNED_BY_MEMBER')) return json({ error: 'forbidden' }, 403);
+    if (message.includes('TRANSFER_OPERATION_NOT_OWNED_BY_MEMBER') || message.includes('SOURCE_ACCOUNT_NOT_OWNED_BY_MEMBER')) return json({ error: 'forbidden' }, 403);
+    if (message.includes('RECIPIENT_MUST_BE_ANOTHER_MEMBER')) return json({ error: 'recipient_must_be_another_member' }, 400);
+    if (message.includes('RECEIVER_ACCOUNT_NOT_FOUND')) return json({ error: 'recipient_account_not_found' }, 404);
+    if (message.includes('BOTH_MEMBER_ACCOUNTS_MUST_BE_ACTIVE')) return json({ error: 'member_account_unavailable' }, 409);
     console.error('Vantoris member auth operation failed:', message.slice(0, 160));
     return json({ error: 'member_service_unavailable' }, 503);
   }
