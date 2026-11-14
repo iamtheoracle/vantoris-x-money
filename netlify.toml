@@ -19,6 +19,12 @@
   status = 200
 
 [[redirects]]
+  from = "/api/oracle"
+  to = "/.netlify/functions/oracle"
+  status = 200
+  force = true
+
+[[redirects]]
   from = "/api/staff-actions"
   to = "/.netlify/functions/staff-actions"
   status = 200
