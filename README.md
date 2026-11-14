@@ -35,6 +35,16 @@ Not yet complete:
 
 The member/staff UI intentionally shows unavailable states where the Vantoris-owned workflow is not ready. It must not fabricate accounts, balances, identity decisions, messages, cards, investment holdings, orders or provider statuses.
 
+### Existing feature availability — not changed in this implementation batch
+
+- The Home action guard currently keeps Deposit, Request and QR actions unavailable; the Send action remains the internal member-to-member transfer path.
+- The Member QR page states that payment QR is not enabled and links to internal transfers.
+- Card information and investment holdings remain unavailable until genuine issuance/verified asset records exist.
+- Staff withdrawal decisions remain unavailable; no replacement balance or manual client-side posting was added.
+- ACH, Fedwire, card-network and other external money rails remain unconfigured/unavailable.
+- The /operations/* route remains behind the staff gate but resolves to the shared StaffPortal; distinct legacy operations screens are still incomplete.
+- WhatsApp support remains available when VITE_BUSINESS_WHATSAPP_NUMBER is configured. The legacy Base44 AppConfiguration lookup has been replaced with Vantoris deployment configuration; no number is invented when unset.
+
 ## PostgreSQL setup
 
 Use a new disposable PostgreSQL database for tests. Create the restricted runtime role before migration 002 and apply migrations 001–022 in numeric order. Follow [the institutional ledger runbook](docs/VANTORIS-INSTITUTIONAL-LEDGER.md).
@@ -50,6 +60,9 @@ Never use a `VITE_` prefix for credentials. Never point integration tests at pro
 
 ## Validation and release
 
-Latest disposable PostgreSQL run `43616801830` applied migrations 001–022, passed the restricted runtime-role check and passed the ledger integration SQL. Its migration contract suite then failed one assertion about the rate-limit table DDL; the assertion was corrected in commit `960461b9675f3cfa1b3d6e60bfd786efa42f615d`. PostgreSQL rerun `43617019392` and recovery build `43617019331` are in progress. No lint/typecheck/build pass is claimed yet.
+Latest verified CI on branch HEAD ca96080d9ebe8d4ddc2ca76b3168fe8393a163b9:
+- PostgreSQL run 43618034707: passed migrations 001–022, restricted runtime-role verification, disposable ledger integration (including member assistant limits), member/staff syntax checks, MFA cryptography tests and migration contract tests.
+- Recovery build run 43618034865: passed Oracle/runtime tests, assistant security-boundary checks, browser financial-mutation checks, internal-transfer truthfulness checks, entity/security rules, lint, typecheck and production Vite build.
+These are CI/disposable-environment results only. No institutional database, production deployment, merge or external money rail was changed.
 
 Do not merge or deploy without explicit authorization. Do not import or replace existing member records until a source export, stable identity crosswalk, financial reconciliation, permissions mapping and rollback plan have been verified.
