@@ -3,7 +3,7 @@
 BEGIN;
 DO $$
 DECLARE
- m1 uuid:=gen_random_uuid(); m2 uuid:=gen_random_uuid(); staff_id uuid:=gen_random_uuid();
+ m1 uuid:=gen_random_uuid(); m2 uuid:=gen_random_uuid(); staff_id uuid:=gen_random_uuid(); support_staff_id uuid:=gen_random_uuid();
  clearing_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
  opening_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid();
  result record; sender_balance numeric; receiver_balance numeric; captured_status text; journal_count integer;
@@ -14,12 +14,17 @@ BEGIN
  VALUES(m1,'member-one@example.test','scrypt-test-hash',clock_timestamp(),false,false),
        (m2,'member-two@example.test','scrypt-test-hash',clock_timestamp(),false,false);
  INSERT INTO vantoris_ledger.staff_users(id,staff_reference,email,password_hash,status,mfa_required)
- VALUES(staff_id,'TEST-STAFF-ONE','staff-one@example.test','scrypt-test-hash','active',true);
+ VALUES(staff_id,'TEST-STAFF-ONE','staff-one@example.test','scrypt-test-hash','active',true),
+       (support_staff_id,'TEST-STAFF-SUPPORT','support@example.test','scrypt-test-hash','active',true);
  INSERT INTO vantoris_ledger.staff_mfa_factors(id,staff_id,factor_type,secret_ciphertext,nonce,auth_tag,encryption_key_version,verified_at)
- VALUES(gen_random_uuid(),staff_id,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp());
+ VALUES(gen_random_uuid(),staff_id,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
+       (gen_random_uuid(),support_staff_id,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp());
+ INSERT INTO vantoris_ledger.staff_role_assignments(staff_id,role_code,assigned_by_staff_id)
+ VALUES(staff_id,'auditor',support_staff_id),(support_staff_id,'support_officer',staff_id);
  PERFORM vantoris_ledger.create_member_session(m1,decode(repeat('c',64),'hex'),decode(repeat('d',64),'hex'),clock_timestamp()+interval '1 hour',NULL);
  PERFORM vantoris_ledger.create_member_session(m2,decode(repeat('e',64),'hex'),decode(repeat('f',64),'hex'),clock_timestamp()+interval '1 hour',NULL);
  PERFORM vantoris_ledger.create_staff_session(staff_id,decode(repeat('a',64),'hex'),decode(repeat('b',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
+ PERFORM vantoris_ledger.create_staff_session(support_staff_id,decode(repeat('c',64),'hex'),decode(repeat('d',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
 
  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
   (clearing_id,'TEST-CLEARING',NULL,'internal_clearing','USD'),
@@ -90,12 +95,23 @@ DO $$ DECLARE n integer; BEGIN
  IF n<>1 THEN RAISE EXCEPTION 'Member two member scope leaked: % rows',n; END IF;
 END $$;
 SELECT vantoris_ledger.resolve_staff_session(decode(repeat('a',64),'hex'));
-DO $$ DECLARE n integer; BEGIN
+DO $ DECLARE n integer; BEGIN
  SELECT count(*) INTO n FROM vantoris_ledger.members;
- IF n<>2 THEN RAISE EXCEPTION 'MFA staff view should see both test members'; END IF;
+ IF n<>2 THEN RAISE EXCEPTION 'Auditor should see both test members'; END IF;
  SELECT count(*) INTO n FROM vantoris_ledger.audit_events;
- IF n<1 THEN RAISE EXCEPTION 'Staff audit access missing'; END IF;
-END $$;
+ IF n<1 THEN RAISE EXCEPTION 'Auditor audit access missing'; END IF;
+ SELECT count(*) INTO n FROM vantoris_ledger.ledger_accounts;
+ IF n<>3 THEN RAISE EXCEPTION 'Auditor ledger access missing'; END IF;
+END $;
+SELECT vantoris_ledger.resolve_staff_session(decode(repeat('c',64),'hex'));
+DO $ DECLARE n integer; BEGIN
+ SELECT count(*) INTO n FROM vantoris_ledger.members;
+ IF n<>2 THEN RAISE EXCEPTION 'Support officer should see permitted member profiles'; END IF;
+ SELECT count(*) INTO n FROM vantoris_ledger.ledger_accounts;
+ IF n<>0 THEN RAISE EXCEPTION 'Support officer must not see ledger accounts'; END IF;
+ SELECT count(*) INTO n FROM vantoris_ledger.audit_events;
+ IF n<>0 THEN RAISE EXCEPTION 'Support officer must not see institutional audit'; END IF;
+END $;
 RESET ROLE;
 SET CONSTRAINTS ALL IMMEDIATE;
 ROLLBACK;
