@@ -116,6 +116,9 @@ export default function MoveMoney() {
           authentication_required: 'Your session has expired. Sign in again.',
           csrf_invalid: 'Your security token expired. Refresh the page and try again.',
           forbidden: 'This account is not authorized for the requested transfer.',
+          recipient_must_be_another_member: 'Transfers must be sent to another Vantoris member, not another account you own.',
+          recipient_account_not_found: 'The recipient Vantoris account reference could not be found.',
+          member_account_unavailable: 'One of the member accounts is not currently active for transfers.',
         };
         throw new Error(errors[result.error] || 'The transfer could not be posted. No successful posting is confirmed.');
       }
