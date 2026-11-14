@@ -45,3 +45,28 @@ Deno.test('Vantoris has no external payment projection outbox', async () => {
   assert(sql.includes('no provider outbox'), 'Migration must explicitly retire the provider projection outbox.');
   assert(!/CREATE TABLE|ALTER TABLE|payment_outbox|Base44|Plaid|ACH|FEDWIRE/i.test(sql), 'No provider outbox schema may be created.');
 });
+
+Deno.test('Vantoris identity and session records remain first-party', async () => {
+  const sql = await Deno.readTextFile('migrations/006_vantoris_identity_and_sessions.sql');
+  for (const table of ['staff_users','member_credentials','member_legacy_identities','auth_sessions','member_mfa_factors','staff_mfa_factors','member_identity_documents','member_identity_reviews']) {
+    assert(sql.includes('CREATE TABLE vantoris_ledger.' + table), 'Missing Vantoris identity table: ' + table);
+  }
+  assert(sql.includes('secret_ciphertext bytea'), 'MFA secrets must be encrypted at rest.');
+  assert(sql.includes('ciphertext bytea'), 'Identity documents must be encrypted at rest.');
+  assert(sql.includes('source_system text NOT NULL'), 'Legacy identity crosswalk is required to preserve existing member identities.');
+  assert(sql.includes('STAFF_SEPARATION_OF_DUTIES_REQUIRED'), 'A proposer must not approve their own staff action.');
+});
+
+Deno.test('Vantoris sessions enforce MFA and member-scoped PostgreSQL RLS', async () => {
+  const auth = await Deno.readTextFile('migrations/006_vantoris_identity_and_sessions.sql');
+  const rls = await Deno.readTextFile('migrations/007_vantoris_session_rls.sql');
+  assert(auth.includes('c.email_verified_at IS NOT NULL'), 'Member session requires Vantoris-verified email.');
+  assert(auth.includes('c.mfa_required=false OR s.mfa_verified_at IS NOT NULL'), 'Member session must satisfy MFA when required.');
+  assert(auth.includes('s.mfa_verified_at IS NOT NULL AND u.status=\'active\''), 'Staff session must be active and MFA verified.');
+  for (const table of ['members','ledger_accounts','journals','journal_entries','payment_operations','outgoing_funds_holds','audit_events']) {
+    assert(rls.includes('ALTER TABLE vantoris_ledger.' + table + ' ENABLE ROW LEVEL SECURITY'), 'Missing RLS on ' + table);
+  }
+  assert(rls.includes('resolve_member_session'), 'Member session resolver must establish server-side member context.');
+  assert(rls.includes('resolve_staff_session'), 'Staff session resolver must require a staff session.');
+  assert(!/GRANT SELECT ON[^;]*auth_sessions/i.test(rls), 'Runtime must not directly read all raw session token hashes.');
+});
