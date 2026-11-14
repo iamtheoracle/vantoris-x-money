@@ -190,12 +190,6 @@ export default function MoveMoney() {
           <h2 className="mt-3 font-semibold text-navy">No active account with a verified USD currency record</h2>
           <p className="mt-1 text-sm text-slate-500">Only active Vantoris accounts with a recorded USD currency can be used for an internal transfer. Other account records remain unchanged.</p>
         </section>
-      ) : eligibleAccounts.length === 0 ? (
-        <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
-          <Wallet className="mx-auto text-slate-400" size={28} />
-          <h2 className="mt-3 font-semibold text-navy">No eligible transfer account</h2>
-          <p className="mt-1 text-sm text-slate-500">No active account with a verified USD currency record is available for internal transfers.</p>
-        </section>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
