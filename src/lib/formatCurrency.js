@@ -4,7 +4,7 @@
  * Missing or invalid values are shown as unavailable, never silently coerced to zero.
  */
 function formatExactDecimalString(amount, currency) {
-  const match = /^(-?)(\\d+)(?:\\.(\\d{1,2}))?$/.exec(amount);
+  const match = /^(-?)(\d+)(?:\.(\d{1,2}))?$/.exec(amount);
   if (!match) return null;
   const negative = match[1] === '-';
   const whole = BigInt(match[2]);
