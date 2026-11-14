@@ -49,7 +49,7 @@ CREATE OR REPLACE FUNCTION vantoris_ledger.consume_member_activation(p_token_has
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE token_row vantoris_ledger.member_activation_tokens%ROWTYPE;
 BEGIN
- IF p_password_hash !~ '^scrypt\\$16384\\$8\\$1\\$[A-Za-z0-9+/]+={0,2}\\$[A-Za-z0-9+/]+={0,2}$' THEN RAISE EXCEPTION 'INVALID_PASSWORD_HASH'; END IF;
+ IF p_password_hash !~ '^scrypt\$16384\$8\$1\$[A-Za-z0-9+/]+={0,2}\$[A-Za-z0-9+/]+={0,2}$' THEN RAISE EXCEPTION 'INVALID_PASSWORD_HASH'; END IF;
  SELECT * INTO token_row FROM vantoris_ledger.member_activation_tokens WHERE token_hash=p_token_hash AND consumed_at IS NULL AND revoked_at IS NULL AND expires_at>clock_timestamp() FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'ACTIVATION_TOKEN_INVALID_OR_EXPIRED' USING ERRCODE='28000'; END IF;
  UPDATE vantoris_ledger.member_credentials SET password_hash=p_password_hash,email_verified_at=clock_timestamp(),password_reset_required=false,
@@ -84,7 +84,7 @@ CREATE OR REPLACE FUNCTION vantoris_ledger.consume_member_password_reset(p_token
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE token_row vantoris_ledger.member_password_reset_tokens%ROWTYPE;
 BEGIN
- IF p_password_hash !~ '^scrypt\\$16384\\$8\\$1\\$[A-Za-z0-9+/]+={0,2}\\$[A-Za-z0-9+/]+={0,2}$' THEN RAISE EXCEPTION 'INVALID_PASSWORD_HASH'; END IF;
+ IF p_password_hash !~ '^scrypt\$16384\$8\$1\$[A-Za-z0-9+/]+={0,2}\$[A-Za-z0-9+/]+={0,2}$' THEN RAISE EXCEPTION 'INVALID_PASSWORD_HASH'; END IF;
  SELECT * INTO token_row FROM vantoris_ledger.member_password_reset_tokens WHERE token_hash=p_token_hash AND consumed_at IS NULL AND revoked_at IS NULL AND expires_at>clock_timestamp() FOR UPDATE;
  IF NOT FOUND THEN RAISE EXCEPTION 'PASSWORD_RESET_TOKEN_INVALID_OR_EXPIRED' USING ERRCODE='28000'; END IF;
  UPDATE vantoris_ledger.member_credentials SET password_hash=p_password_hash,password_reset_required=false,password_changed_at=clock_timestamp(),updated_at=clock_timestamp()
