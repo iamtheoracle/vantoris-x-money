@@ -1,6 +1,6 @@
 -- VANTORIS migration 002: least-privilege runtime grants.
--- A DBA creates vantoris_backend as a NOLOGIN, NOSUPERUSER, NOCREATEDB,
--- NOCREATEROLE role before this migration. Only the server receives credentials.
+-- A DBA creates vantoris_backend as a LOGIN, NOSUPERUSER, NOCREATEDB,
+-- NOCREATEROLE role with a server-only password before this migration. Only the server receives credentials.
 BEGIN;
 GRANT USAGE ON SCHEMA vantoris_ledger TO vantoris_backend;
 GRANT SELECT ON vantoris_ledger.members, vantoris_ledger.ledger_accounts,
