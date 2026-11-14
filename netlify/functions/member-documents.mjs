@@ -1,5 +1,6 @@
 import postgres from 'postgres';
 import {createCipheriv,createDecipheriv,createHash,randomBytes,timingSafeEqual} from 'node:crypto';
+import { assertVantorisMigrationHistory } from './migration-guard.mjs';
 
 let client;
 function database(){
@@ -99,6 +100,7 @@ function fileResponse(row,plaintext){
 }
 export default async function handler(request){
  try{
+  await assertVantorisMigrationHistory(database());
   const url=new URL(request.url);
   if(request.method==='GET'&&url.searchParams.get('action')==='list'){
    const rows=await database().begin(async tx=>{
