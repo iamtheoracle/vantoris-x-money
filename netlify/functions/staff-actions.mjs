@@ -1,5 +1,5 @@
 import postgres from 'postgres';
-import { createHash, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
 let sql;
 function database() {
@@ -120,6 +120,16 @@ export default async function handler(request) {
       const auth=await authenticateStaff(request,tx);
       if(!auth) return {error:'unauthorized'};
       if(!await verifyCsrf(request,tx,auth)) return {error:'csrf_invalid'};
+      if(body.action==='issue_activation_token'||body.action==='issue_password_reset_token') {
+        const memberId=requireUuid(body.memberId,'member_id');
+        const rawToken=randomBytes(32).toString('base64url');
+        const tokenHash=sha256(rawToken);
+        const expiresAt=new Date(Date.now()+(body.action==='issue_activation_token'?48:0.5)*60*60*1000);
+        const rows=body.action==='issue_activation_token'
+          ? await tx`SELECT vantoris_ledger.issue_member_activation_token(${auth.tokenHash},${memberId},${tokenHash},${expiresAt}) AS token_id`
+          : await tx`SELECT vantoris_ledger.issue_member_password_reset_token(${auth.tokenHash},${memberId},${tokenHash},${expiresAt}) AS token_id`;
+        return {tokenId:rows[0].token_id,oneTimeToken:rawToken,expiresAt:expiresAt.toISOString(),tokenType:body.action==='issue_activation_token'?'member_activation':'password_reset'};
+      }
       if(body.action==='propose') {
         const proposal=normalizeProposal(body);
         const rows=await tx`SELECT vantoris_ledger.create_staff_action_proposal(
