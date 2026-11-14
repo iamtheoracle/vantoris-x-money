@@ -19,12 +19,13 @@ export function transactionPresentation(amount, type) {
   if (raw === 0) return { amount: 0, sign: '', tone: 'text-slate-500' };
 
   const normalizedType = String(type || '').trim().toLowerCase();
+  const displayAmount = typeof amount === 'string' ? amount.trim().replace(/^-/, '') : Math.abs(raw);
   if (DEBIT_TYPES.has(normalizedType)) {
-    return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
+    return { amount: displayAmount, sign: '−', tone: 'text-navy' };
   }
   if (CREDIT_TYPES.has(normalizedType)) {
-    return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
+    return { amount: displayAmount, sign: '+', tone: 'text-emerald-600' };
   }
 
-  return { amount: Math.abs(raw), sign: '', tone: 'text-slate-500' };
+  return { amount: displayAmount, sign: '', tone: 'text-slate-500' };
 }
