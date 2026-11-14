@@ -5,6 +5,7 @@ DO $$
 DECLARE
  m1 uuid:=gen_random_uuid(); m2 uuid:=gen_random_uuid(); m3 uuid:=gen_random_uuid();
  ops_staff uuid:=gen_random_uuid(); finance_staff uuid:=gen_random_uuid(); support_staff uuid:=gen_random_uuid();
+ ops_factor_id uuid:=gen_random_uuid(); finance_factor_id uuid:=gen_random_uuid(); support_factor_id uuid:=gen_random_uuid();
  capital_id uuid:=gen_random_uuid(); clearing_id uuid:=gen_random_uuid(); suspense_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
  capital_journal uuid:=gen_random_uuid(); opening_journal uuid:=gen_random_uuid(); impairment_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid();
  activation_hash bytea:=decode(repeat('1',64),'hex'); reset_hash bytea:=decode(repeat('2',64),'hex'); mfa_challenge_hash bytea:=decode(repeat('3',64),'hex');
@@ -22,9 +23,9 @@ BEGIN
   (finance_staff,'TEST-STAFF-FINANCE','finance@example.test','scrypt-test-hash','active',true),
   (support_staff,'TEST-STAFF-SUPPORT','support@example.test','scrypt-test-hash','active',true);
  INSERT INTO vantoris_ledger.staff_mfa_factors(id,staff_id,factor_type,secret_ciphertext,nonce,auth_tag,encryption_key_version,verified_at) VALUES
-  (gen_random_uuid(),ops_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
-  (gen_random_uuid(),finance_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
-  (gen_random_uuid(),support_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp());
+  (ops_factor_id,ops_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
+  (finance_factor_id,finance_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
+  (support_factor_id,support_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp());
  INSERT INTO vantoris_ledger.staff_role_assignments(staff_id,role_code,assigned_by_staff_id) VALUES
   (ops_staff,'operations_officer',finance_staff),
   (finance_staff,'finance_controller',ops_staff),
@@ -43,7 +44,17 @@ BEGIN
  PERFORM vantoris_ledger.consume_member_password_reset(reset_hash,'scrypt$16384$8$1$YWJjZA==$YWJjZA==');
  PERFORM vantoris_ledger.begin_member_mfa_enrollment(m3,mfa_challenge_hash,mfa_factor_id,
   decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()+interval '10 minutes');
- PERFORM vantoris_ledger.complete_member_mfa_enrollment(mfa_challenge_hash,mfa_session_hash,mfa_csrf_hash,clock_timestamp()+interval '1 hour');
+ PERFORM vantoris_ledger.complete_member_mfa_enrollment(mfa_challenge_hash,mfa_session_hash,mfa_csrf_hash,
+  floor(extract(epoch from clock_timestamp())/30)::bigint,clock_timestamp()+interval '1 hour');
+ IF vantoris_ledger.consume_member_totp_step(mfa_factor_id,floor(extract(epoch from clock_timestamp())/30)::bigint) THEN
+  RAISE EXCEPTION 'Member TOTP step replay was accepted';
+ END IF;
+ IF NOT vantoris_ledger.consume_staff_totp_step(ops_factor_id,floor(extract(epoch from clock_timestamp())/30)::bigint) THEN
+  RAISE EXCEPTION 'First staff TOTP step was rejected';
+ END IF;
+ IF vantoris_ledger.consume_staff_totp_step(ops_factor_id,floor(extract(epoch from clock_timestamp())/30)::bigint) THEN
+  RAISE EXCEPTION 'Staff TOTP step replay was accepted';
+ END IF;
  PERFORM vantoris_ledger.resolve_member_session(mfa_session_hash);
 
  -- Permanent capital floor requires an operations proposer and a separate finance approver.
