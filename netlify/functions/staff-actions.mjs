@@ -170,6 +170,7 @@ export default async function handler(request) {
     if(message.includes('ACCOUNT_NOT_FOUND')||message.includes('JOURNAL_NOT_REVERSIBLE')) return json({error:'referenced_record_not_found_or_reversible'},404);
     if(message.includes('INVALID_')||message.includes('MUST_BALANCE')||message.includes('REQUIRES_TWO')||message.includes('DESCRIPTION_REQUIRED')) return json({error:'invalid_staff_action'},400);
     if(message.includes('CAPITAL_IMPAIRMENT')) return json({error:'permanent_capital_protection_blocked'},409);
+    if(message.includes('CAPITAL_FLOOR_EXCEEDS_VERIFIED_LEDGER_CAPITAL')||message.includes('PERMANENT_CAPITAL_FLOOR_CANNOT_BE_REDUCED')) return json({error:'capital_floor_not_permitted'},409);
     console.error('Vantoris staff action failed:',message.slice(0,180));
     return json({error:'staff_action_unavailable'},503);
   }
