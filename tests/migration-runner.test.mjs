@@ -8,6 +8,7 @@ import {
   stripTransactionBoundaries,
   loadMigrationFiles,
   validateHistoryRows,
+  assertBootstrapAllowed,
 } from '../scripts/apply-vantoris-migrations.mjs';
 
 test('migration transaction boundaries are stripped without altering SQL body', () => {
@@ -53,6 +54,15 @@ test('all repository migrations have unique contiguous versions and explicit tra
   for (const migration of migrations) {
     assert.doesNotThrow(() => stripTransactionBoundaries(migration.content, migration.filename));
   }
+});
+
+test('existing ledger databases without history require controlled baseline', () => {
+  assert.equal(assertBootstrapAllowed({ historyTableExists: false, ledgerSchemaExists: false }), true);
+  assert.equal(assertBootstrapAllowed({ historyTableExists: true, ledgerSchemaExists: true }), true);
+  assert.throws(
+    () => assertBootstrapAllowed({ historyTableExists: false, ledgerSchemaExists: true }),
+    /VANTORIS_MIGRATION_HISTORY_BASELINE_REQUIRED/,
+  );
 });
 
 test('migration history verification rejects missing, changed and unknown rows', () => {
