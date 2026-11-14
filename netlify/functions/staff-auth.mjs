@@ -1,6 +1,7 @@
 import postgres from 'postgres';
 import { createDecipheriv, createHash, createHmac, randomBytes, scrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
+import { assertVantorisMigrationHistory } from './migration-guard.mjs';
 
 const scryptAsync = promisify(scrypt);
 let sql;
@@ -149,6 +150,8 @@ async function login(request,body) {
 }
 
 export default async function handler(request) {
+  try { await assertVantorisMigrationHistory(database()); }
+  catch { return json({ error: 'staff_service_unavailable' }, 503); }
   const url=new URL(request.url),action=url.searchParams.get('action')||'me';
   if(request.method==='GET'&&action==='me') {
     const token=readCookies(request)['__Host-vantoris_staff_session'];
