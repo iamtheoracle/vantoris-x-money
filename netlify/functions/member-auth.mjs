@@ -366,3 +366,5 @@ export default async function handler(request) {
     return json({ error: 'member_service_unavailable' }, 503);
   }
 }
+
+export { base32Decode, verifyPassword, verifyTotp };
