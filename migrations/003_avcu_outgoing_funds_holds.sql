@@ -12,7 +12,7 @@ AS $$
 DECLARE prior vantoris_ledger.payment_operations%ROWTYPE;
 BEGIN
   IF p_operation_id IS NULL OR p_idempotency_key IS NULL OR length(p_idempotency_key)=0 OR
-     p_request_hash IS NULL OR length(p_request_hash)<>64 OR p_request_hash ~ '[^0-9a-f]' THEN
+     p_request_hash IS NULL OR length(p_request_hash)<>64 OR p_request_hash ~ '[^0-9a-f]' OR length(p_idempotency_key)>160 THEN
     RAISE EXCEPTION 'INVALID_TRANSFER_IDEMPOTENCY_INPUT' USING ERRCODE='22023';
   END IF;
   INSERT INTO vantoris_ledger.payment_operations
@@ -52,7 +52,7 @@ DECLARE
   new_hold_id uuid := gen_random_uuid();
   new_journal_id uuid := gen_random_uuid();
 BEGIN
-  IF p_amount_cents IS NULL OR p_amount_cents <= 0 OR p_actor_id IS NULL OR length(p_actor_id)=0 OR p_member_id IS NULL THEN
+  IF p_amount_cents IS NULL OR p_amount_cents <= 0 OR p_actor_id IS NULL OR length(p_actor_id)=0 OR p_member_id IS NULL OR p_description IS NULL THEN
     RAISE EXCEPTION 'INVALID_INTERNAL_TRANSFER_INPUT' USING ERRCODE='22023';
   END IF;
   SELECT * INTO op FROM vantoris_ledger.payment_operations
@@ -78,6 +78,9 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'RECEIVER_ACCOUNT_NOT_FOUND'; END IF;
   IF sender.id=receiver.id THEN RAISE EXCEPTION 'SAME_ACCOUNT_TRANSFER_NOT_ALLOWED'; END IF;
 
+  -- Lock member state first, then account rows, both in deterministic order.
+  PERFORM 1 FROM vantoris_ledger.members
+   WHERE id IN (sender.member_id,receiver.member_id) ORDER BY id FOR SHARE;
   IF sender.id < receiver.id THEN
     PERFORM 1 FROM vantoris_ledger.ledger_accounts WHERE id=sender.id FOR UPDATE;
     PERFORM 1 FROM vantoris_ledger.ledger_accounts WHERE id=receiver.id FOR UPDATE;
