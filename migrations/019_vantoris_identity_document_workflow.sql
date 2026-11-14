@@ -52,24 +52,24 @@ BEGIN
 END $$;
 
 CREATE OR REPLACE FUNCTION vantoris_ledger.read_member_identity_document(p_session_token_hash bytea,p_document_id uuid)
-RETURNS TABLE(id uuid,document_type text,ciphertext bytea,nonce bytea,auth_tag bytea,encryption_key_version integer,media_type text,original_filename text)
+RETURNS TABLE(id uuid,document_type text,ciphertext bytea,nonce bytea,auth_tag bytea,encryption_key_version integer,content_sha256 bytea,media_type text,original_filename text)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE member_id uuid;
 BEGIN
  member_id:=vantoris_ledger.resolve_member_session(p_session_token_hash);
- RETURN QUERY SELECT d.id,d.document_type,d.ciphertext,d.nonce,d.auth_tag,d.encryption_key_version,d.media_type,d.original_filename
+ RETURN QUERY SELECT d.id,d.document_type,d.ciphertext,d.nonce,d.auth_tag,d.encryption_key_version,d.content_sha256,d.media_type,d.original_filename
   FROM vantoris_ledger.member_identity_documents d WHERE d.id=p_document_id AND d.member_id=member_id;
  IF NOT FOUND THEN RAISE EXCEPTION 'IDENTITY_DOCUMENT_NOT_FOUND' USING ERRCODE='P0002'; END IF;
 END $$;
 
 CREATE OR REPLACE FUNCTION vantoris_ledger.read_staff_identity_document(p_session_token_hash bytea,p_document_id uuid)
-RETURNS TABLE(id uuid,member_id uuid,document_type text,ciphertext bytea,nonce bytea,auth_tag bytea,encryption_key_version integer,media_type text,original_filename text)
+RETURNS TABLE(id uuid,member_id uuid,document_type text,ciphertext bytea,nonce bytea,auth_tag bytea,encryption_key_version integer,content_sha256 bytea,media_type text,original_filename text)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE staff_id uuid;
 BEGIN
  staff_id:=vantoris_ledger.resolve_staff_session(p_session_token_hash);
  IF NOT vantoris_ledger.staff_has_capability(staff_id,'identity.review') THEN RAISE EXCEPTION 'STAFF_CAPABILITY_REQUIRED' USING ERRCODE='42501'; END IF;
- RETURN QUERY SELECT d.id,d.member_id,d.document_type,d.ciphertext,d.nonce,d.auth_tag,d.encryption_key_version,d.media_type,d.original_filename
+ RETURN QUERY SELECT d.id,d.member_id,d.document_type,d.ciphertext,d.nonce,d.auth_tag,d.encryption_key_version,d.content_sha256,d.media_type,d.original_filename
   FROM vantoris_ledger.member_identity_documents d WHERE d.id=p_document_id;
  IF NOT FOUND THEN RAISE EXCEPTION 'IDENTITY_DOCUMENT_NOT_FOUND' USING ERRCODE='P0002'; END IF;
  INSERT INTO vantoris_ledger.audit_events(actor_id,action,object_type,object_id,details)
