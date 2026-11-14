@@ -4,40 +4,47 @@ BEGIN;
 DO $$
 DECLARE
  m1 uuid:=gen_random_uuid(); m2 uuid:=gen_random_uuid(); m3 uuid:=gen_random_uuid();
- ops_staff uuid:=gen_random_uuid(); finance_staff uuid:=gen_random_uuid(); support_staff uuid:=gen_random_uuid();
- ops_factor_id uuid:=gen_random_uuid(); finance_factor_id uuid:=gen_random_uuid(); support_factor_id uuid:=gen_random_uuid();
+ ops_staff uuid:=gen_random_uuid(); finance_staff uuid:=gen_random_uuid(); support_staff uuid:=gen_random_uuid(); identity_staff uuid:=gen_random_uuid();
+ ops_factor_id uuid:=gen_random_uuid(); finance_factor_id uuid:=gen_random_uuid(); support_factor_id uuid:=gen_random_uuid(); identity_factor_id uuid:=gen_random_uuid(); m1_factor_id uuid:=gen_random_uuid(); m2_factor_id uuid:=gen_random_uuid();
  capital_id uuid:=gen_random_uuid(); clearing_id uuid:=gen_random_uuid(); suspense_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
  capital_journal uuid:=gen_random_uuid(); opening_journal uuid:=gen_random_uuid(); impairment_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid();
  activation_hash bytea:=decode(repeat('1',64),'hex'); reset_hash bytea:=decode(repeat('2',64),'hex'); mfa_challenge_hash bytea:=decode(repeat('3',64),'hex');
  mfa_session_hash bytea:=decode(repeat('4',64),'hex'); mfa_csrf_hash bytea:=decode(repeat('5',64),'hex'); mfa_factor_id uuid:=gen_random_uuid();
  mfa_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; staff_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid; limit_proposal uuid; limit_history uuid;
- capital_proposal uuid; capital_opening_proposal uuid; opening_proposal uuid;
+ capital_proposal uuid; capital_opening_proposal uuid; opening_proposal uuid; identity_document_id uuid; identity_review_id uuid;
  result record; sender_balance numeric; receiver_balance numeric; captured_status text; journal_count integer;
 BEGIN
  INSERT INTO vantoris_ledger.members(id,member_reference,status) VALUES
   (m1,'TEST-MEMBER-ONE','active'),(m2,'TEST-MEMBER-TWO','active'),(m3,'TEST-MEMBER-THREE','active');
  INSERT INTO vantoris_ledger.member_credentials(member_id,email,password_hash,email_verified_at,password_reset_required,mfa_required)
- VALUES(m1,'member-one@example.test','scrypt-test-hash',clock_timestamp(),false,false),
-       (m2,'member-two@example.test','scrypt-test-hash',clock_timestamp(),false,false),
+ VALUES(m1,'member-one@example.test','scrypt-test-hash',clock_timestamp(),false,true),
+       (m2,'member-two@example.test','scrypt-test-hash',clock_timestamp(),false,true),
        (m3,'member-three@example.test','scrypt-placeholder',NULL,true,true);
  INSERT INTO vantoris_ledger.staff_users(id,staff_reference,email,password_hash,status,mfa_required) VALUES
   (ops_staff,'TEST-STAFF-OPS','ops@example.test','scrypt-test-hash','active',true),
   (finance_staff,'TEST-STAFF-FINANCE','finance@example.test','scrypt-test-hash','active',true),
-  (support_staff,'TEST-STAFF-SUPPORT','support@example.test','scrypt-test-hash','active',true);
+  (support_staff,'TEST-STAFF-SUPPORT','support@example.test','scrypt-test-hash','active',true),
+  (identity_staff,'TEST-STAFF-IDENTITY','identity@example.test','scrypt-test-hash','active',true);
  INSERT INTO vantoris_ledger.staff_mfa_factors(id,staff_id,factor_type,secret_ciphertext,nonce,auth_tag,encryption_key_version,verified_at) VALUES
   (ops_factor_id,ops_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
   (finance_factor_id,finance_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
-  (support_factor_id,support_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp());
+  (support_factor_id,support_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
+  (identity_factor_id,identity_staff,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp());
+ INSERT INTO vantoris_ledger.member_mfa_factors(id,member_id,factor_type,secret_ciphertext,nonce,auth_tag,encryption_key_version,verified_at) VALUES
+  (m1_factor_id,m1,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()),
+  (m2_factor_id,m2,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp());
  INSERT INTO vantoris_ledger.staff_role_assignments(staff_id,role_code,assigned_by_staff_id) VALUES
   (ops_staff,'operations_officer',finance_staff),
   (finance_staff,'finance_controller',ops_staff),
   (support_staff,'support_officer',ops_staff),
-  (support_staff,'membership_officer',ops_staff);
- PERFORM vantoris_ledger.create_member_session(m1,decode(repeat('c',64),'hex'),decode(repeat('d',64),'hex'),clock_timestamp()+interval '1 hour',NULL);
- PERFORM vantoris_ledger.create_member_session(m2,decode(repeat('e',64),'hex'),decode(repeat('f',64),'hex'),clock_timestamp()+interval '1 hour',NULL);
+  (support_staff,'membership_officer',ops_staff),
+  (identity_staff,'identity_reviewer',ops_staff);
+ PERFORM vantoris_ledger.create_member_session(m1,decode(repeat('c',64),'hex'),decode(repeat('d',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
+ PERFORM vantoris_ledger.create_member_session(m2,decode(repeat('e',64),'hex'),decode(repeat('f',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
  PERFORM vantoris_ledger.create_staff_session(ops_staff,decode(repeat('a',64),'hex'),decode(repeat('b',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
  PERFORM vantoris_ledger.create_staff_session(finance_staff,decode(repeat('g',64),'hex'),decode(repeat('h',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
  PERFORM vantoris_ledger.create_staff_session(support_staff,decode(repeat('i',64),'hex'),decode(repeat('j',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
+ PERFORM vantoris_ledger.create_staff_session(identity_staff,decode(repeat('k',64),'hex'),decode(repeat('l',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
 
  -- Member activation, password reset and MFA enrollment are controlled by Vantoris staff.
  PERFORM vantoris_ledger.issue_member_activation_token(decode(repeat('i',64),'hex'),m3,activation_hash,clock_timestamp()+interval '1 hour');
@@ -58,6 +65,28 @@ BEGIN
   RAISE EXCEPTION 'Staff TOTP step replay was accepted';
  END IF;
  PERFORM vantoris_ledger.resolve_member_session(mfa_session_hash);
+
+ -- Vantoris receives encrypted identity evidence and makes the review decision itself.
+ identity_document_id:=vantoris_ledger.store_member_identity_document(
+  decode(repeat('c',64),'hex'),'government_id',decode('255044462d31','hex'),
+  decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,
+  decode(repeat('a',64),'hex'),'application/pdf','test-government-id.pdf'
+ );
+ IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.read_member_identity_document(decode(repeat('c',64),'hex'),identity_document_id)) THEN
+  RAISE EXCEPTION 'Member cannot retrieve own identity document';
+ END IF;
+ BEGIN
+  PERFORM * FROM vantoris_ledger.read_member_identity_document(decode(repeat('e',64),'hex'),identity_document_id);
+  RAISE EXCEPTION 'Member could retrieve another member identity document';
+ EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL;
+ END;
+ identity_review_id:=vantoris_ledger.review_member_identity_document(decode(repeat('k',64),'hex'),identity_document_id,'approved','Synthetic identity review approved by Vantoris staff');
+ IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.member_identity_reviews WHERE id=identity_review_id AND reviewer_staff_id=identity_staff AND decision='approved') THEN
+  RAISE EXCEPTION 'Vantoris identity review was not recorded';
+ END IF;
+ IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.member_identity_documents WHERE id=identity_document_id AND review_status='approved') THEN
+  RAISE EXCEPTION 'Identity document status was not updated';
+ END IF;
 
  -- MFA cannot be disabled for member or staff principals.
  BEGIN
