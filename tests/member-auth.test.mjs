@@ -1,12 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { scryptSync } from 'node:crypto';
-import { base32Decode, verifyPassword, verifyTotp } from '../netlify/functions/member-auth.mjs';
+import { base32Decode, verifyPassword, verifyTotp, verifyTotpStep } from '../netlify/functions/member-auth.mjs';
 
 test('TOTP verifier accepts the RFC 6238 SHA-1 six-digit vector', () => {
   const secret = Buffer.from('12345678901234567890');
   assert.equal(verifyTotp(secret, '287082', 59000), true);
   assert.equal(verifyTotp(secret, '287083', 59000), false);
+  assert.equal(verifyTotpStep(secret, '287082', 59000), 1);
+  assert.equal(verifyTotpStep(secret, '287083', 59000), null);
 });
 
 test('Base32 decoder rejects invalid alphabet characters', () => {
