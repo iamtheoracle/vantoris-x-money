@@ -184,11 +184,11 @@ export default function MoveMoney() {
             </div>
           </div>
         </section>
-      ) : accounts.length === 0 ? (
+      ) : eligibleAccounts.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
           <Wallet className="mx-auto text-slate-400" size={28} />
-          <h2 className="mt-3 font-semibold text-navy">No member accounts are linked</h2>
-          <p className="mt-1 text-sm text-slate-500">Vantoris has not returned an account linked to this member session.</p>
+          <h2 className="mt-3 font-semibold text-navy">No active account with a verified USD currency record</h2>
+          <p className="mt-1 text-sm text-slate-500">Only active Vantoris accounts with a recorded USD currency can be used for an internal transfer. Other account records remain unchanged.</p>
         </section>
       ) : eligibleAccounts.length === 0 ? (
         <section className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
