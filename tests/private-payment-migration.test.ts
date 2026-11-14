@@ -87,7 +87,8 @@ Deno.test('Vantoris staff financial actions require independent capabilities and
   assert(sql.includes('ledger.manual_journal.propose'), 'Manual journal proposal capability missing.');
   assert(sql.includes('ledger.manual_journal.approve'), 'Independent manual journal approval capability missing.');
   const separation = await Deno.readTextFile('migrations/020_vantoris_staff_approval_separation.sql');
-  assert(separation.includes('CREATE TRIGGER staff_action_approval_separation'), 'Database approval separation trigger missing.');
+  assert(separation.includes('CREATE OR REPLACE FUNCTION vantoris_ledger.reject_staff_self_approval'), 'Database approval separation function missing.');
+  assert(separation.includes('FOR UPDATE'), 'Approval separation must serialize against the proposal row.');
   assert(separation.includes('STAFF_SEPARATION_OF_DUTIES_REQUIRED'), 'Proposer must not approve their own action.');
   assert(sql.includes('staff_action_approvals_immutable'), 'Staff approvals must be append-only.');
   assert(sql.includes('protect_staff_proposal_changes'), 'Staff proposal payloads must be immutable.');
