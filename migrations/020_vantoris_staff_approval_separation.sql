@@ -1,8 +1,9 @@
--- VANTORIS migration 020: enforce distinct staff proposer and approver identities in PostgreSQL.
--- Forward-only hardening: migration 009 did not enforce separation at the approval-row boundary.
+-- VANTORIS migration 020: harden the existing database-enforced staff separation trigger.
+-- Migration 006 already installs staff_action_approval_separation; replace its function safely,
+-- preserving the existing trigger and avoiding a duplicate trigger on the same table.
 BEGIN;
 
-CREATE OR REPLACE FUNCTION vantoris_ledger.enforce_staff_action_approval_separation()
+CREATE OR REPLACE FUNCTION vantoris_ledger.reject_staff_self_approval()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -16,11 +17,7 @@ BEGIN
    WHERE p.id=NEW.proposal_id
    FOR UPDATE;
 
-  IF NOT FOUND THEN
-    RAISE EXCEPTION 'STAFF_ACTION_PROPOSAL_NOT_FOUND' USING ERRCODE='P0002';
-  END IF;
-
-  IF proposer_reference IS NULL OR proposer_reference=NEW.staff_id THEN
+  IF NOT FOUND OR proposer_reference IS NULL OR proposer_reference=NEW.staff_id THEN
     RAISE EXCEPTION 'STAFF_SEPARATION_OF_DUTIES_REQUIRED'
       USING ERRCODE='42501';
   END IF;
@@ -29,11 +26,6 @@ BEGIN
 END
 $$;
 
-CREATE TRIGGER staff_action_approval_separation
-BEFORE INSERT ON vantoris_ledger.staff_action_approvals
-FOR EACH ROW
-EXECUTE FUNCTION vantoris_ledger.enforce_staff_action_approval_separation();
-
-REVOKE ALL ON FUNCTION vantoris_ledger.enforce_staff_action_approval_separation() FROM PUBLIC;
+REVOKE ALL ON FUNCTION vantoris_ledger.reject_staff_self_approval() FROM PUBLIC;
 
 COMMIT;
