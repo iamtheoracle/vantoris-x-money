@@ -366,6 +366,99 @@ async function transfer(request, body) {
   return json({ transfer: { journalId: outcome.journalId, duplicate: outcome.duplicate, status: 'posted' } }, 200);
 }
 
+
+async function currentAccount(request, accountId) {
+  if (!/^[0-9a-f-]{36}$/i.test(String(accountId || ''))) return null;
+  return await database().begin(async tx => {
+    const auth = await authenticateMember(request, tx);
+    if (!auth) return null;
+    const rows = await tx`
+      SELECT a.id,a.account_reference,a.account_type,a.currency,
+             CASE WHEN COALESCE(e.entry_count,0)=0 THEN NULL ELSE e.posted_balance_cents END AS posted_balance_cents,
+             CASE WHEN COALESCE(e.entry_count,0)=0 THEN NULL ELSE e.posted_balance_cents-COALESCE(h.active_hold_cents,0) END AS available_balance_cents,
+             COALESCE(h.active_hold_cents,0) AS active_hold_cents
+        FROM vantoris_ledger.ledger_accounts a
+        LEFT JOIN LATERAL (SELECT count(*) AS entry_count,-sum(amount_cents) AS posted_balance_cents FROM vantoris_ledger.journal_entries WHERE ledger_account_id=a.id) e ON true
+        LEFT JOIN LATERAL (SELECT sum(amount_cents) AS active_hold_cents FROM vantoris_ledger.outgoing_funds_holds WHERE ledger_account_id=a.id AND status='active') h ON true
+       WHERE a.id=${accountId} AND a.member_id=${auth.memberId}
+    `;
+    if (!rows.length) return null;
+    const activity = await tx`
+      SELECT j.id,j.journal_type,j.description,j.created_at,e.amount_cents,e.currency,e.id AS entry_id
+        FROM vantoris_ledger.journal_entries e
+        JOIN vantoris_ledger.journals j ON j.id=e.journal_id
+       WHERE e.ledger_account_id=${accountId}
+       ORDER BY j.created_at DESC,e.created_at DESC LIMIT 100
+    `;
+    const a = rows[0];
+    return {
+      account: { id:a.id,accountReference:a.account_reference,account_type:a.account_type,account_name:a.account_type.replace(/_/g,' '),mask:'•••• '+String(a.account_reference).slice(-4),currency:a.currency,balance:a.posted_balance_cents===null?null:centsToDecimal(a.posted_balance_cents),availableBalance:a.available_balance_cents===null?null:centsToDecimal(a.available_balance_cents),postedBalanceCents:a.posted_balance_cents===null?null:String(a.posted_balance_cents),availableBalanceCents:a.available_balance_cents===null?null:String(a.available_balance_cents),activeHoldCents:String(a.active_hold_cents||'0') },
+      transactions: activity.map(item=>({ id:item.entry_id,journalId:item.id,type:item.journal_type,description:item.description,created_date:item.created_at,amount:centsToDecimal(-BigInt(String(item.amount_cents))),currency:item.currency,status:'posted' })),
+    };
+  });
+}
+
+function csvCell(value) {
+  let text = value === null || value === undefined ? '' : String(value);
+  if (/^[=+@-]/.test(text)) text = "'" + text;
+  return '"' + text.replace(/"/g,'""') + '"';
+}
+
+async function currentStatement(request, accountId, from, to) {
+  if (!/^[0-9a-f-]{36}$/i.test(String(accountId || '')) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(String(from||'')) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(String(to||''))) {
+    return json({ error:'invalid_statement_request' },400);
+  }
+  const fromDate = new Date(from+'T00:00:00.000Z');
+  const toExclusive = new Date(Date.parse(to+'T00:00:00.000Z')+86400000);
+  if (!Number.isFinite(fromDate.getTime()) || !Number.isFinite(toExclusive.getTime()) || toExclusive<=fromDate || toExclusive-fromDate>366*86400000) {
+    return json({ error:'invalid_statement_range' },400);
+  }
+  const token = cookies(request).__Host-vantoris_session;
+  if (!token || token.length>200) return json({ error:'authentication_required' },401);
+  const tokenHash = sha256(token);
+  const result = await database().begin(async tx => {
+    const memberId = await tx`SELECT vantoris_ledger.record_member_statement_access(${tokenHash},${accountId},${fromDate},${toExclusive}) AS member_id`;
+    const accounts = await tx`SELECT id,account_reference,currency FROM vantoris_ledger.ledger_accounts WHERE id=${accountId}`;
+    if (!accounts.length) return null;
+    const opening = await tx`
+      SELECT count(*) AS entry_count,COALESCE(sum(e.amount_cents),0) AS amount_cents
+        FROM vantoris_ledger.journal_entries e JOIN vantoris_ledger.journals j ON j.id=e.journal_id
+       WHERE e.ledger_account_id=${accountId} AND j.created_at<${fromDate}
+    `;
+    const entries = await tx`
+      SELECT j.id,j.journal_type,j.description,j.created_at,e.amount_cents,e.currency
+        FROM vantoris_ledger.journal_entries e JOIN vantoris_ledger.journals j ON j.id=e.journal_id
+       WHERE e.ledger_account_id=${accountId} AND j.created_at>=${fromDate} AND j.created_at<${toExclusive}
+       ORDER BY j.created_at,e.created_at,e.id
+    `;
+    let running = BigInt(opening[0].entry_count)>0n ? -BigInt(String(opening[0].amount_cents)) : 0n;
+    const hasAny = BigInt(opening[0].entry_count)>0n || entries.length>0;
+    const lines = [
+      ['Vantoris Member Statement'],
+      ['Account reference',accounts[0].account_reference],
+      ['Currency',accounts[0].currency],
+      ['Period start',from],
+      ['Period end',to],
+      ['Opening balance',BigInt(opening[0].entry_count)>0n?centsToDecimal(running):''],
+      [],
+      ['Date','Journal reference','Type','Description','Debit','Credit','Running balance'],
+    ];
+    for (const entry of entries) {
+      const amount=BigInt(String(entry.amount_cents));
+      running-=amount;
+      lines.push([entry.created_at.toISOString(),entry.id,entry.journal_type,entry.description,amount>0n?centsToDecimal(amount):'',amount<0n?centsToDecimal(-amount):'',centsToDecimal(running)]);
+    }
+    lines.push([],['Closing balance',hasAny?centsToDecimal(running):'']);
+    const csv='\\uFEFF'+lines.map(row=>row.map(csvCell).join(',')).join('\\r\\n');
+    return {csv,accountReference:accounts[0].account_reference};
+  });
+  if (!result) return json({error:'account_not_found'},404);
+  return new Response(result.csv,{status:200,headers:{
+    'content-type':'text/csv; charset=utf-8',
+    'content-disposition':`attachment; filename="vantoris-statement-${accountId}-${from}-${to}.csv"`,
+    'cache-control':'no-store, private','x-content-type-options':'nosniff','referrer-policy':'no-referrer'
+  }});
+}
 export default async function handler(request) {
   const url = new URL(request.url);
   const action = url.searchParams.get('action') || 'me';
