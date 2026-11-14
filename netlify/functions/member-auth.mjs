@@ -283,6 +283,15 @@ async function currentMember(request) {
        WHERE a.member_id=${auth.memberId}
        ORDER BY a.created_at,a.id
     `;
+    const limitRows = await tx`SELECT * FROM vantoris_ledger.get_member_transfer_limits(${auth.tokenHash})`;
+    const transferLimits = limitRows.length ? {
+      singleLimitCents: String(limitRows[0].single_limit_cents),
+      dailyLimitCents: String(limitRows[0].daily_limit_cents),
+      usedTodayCents: String(limitRows[0].used_today_cents),
+      remainingTodayCents: String(limitRows[0].remaining_today_cents),
+      singleLimit: centsToDecimal(limitRows[0].single_limit_cents),
+      remainingToday: centsToDecimal(limitRows[0].remaining_today_cents),
+    } : null;
     const activity = await tx`
       SELECT j.id,j.journal_type,j.description,j.created_at,e.amount_cents,e.currency,a.id AS account_id
         FROM vantoris_ledger.journal_entries e
@@ -308,6 +317,7 @@ async function currentMember(request) {
         availableBalanceCents: account.available_balance_cents === null ? null : String(account.available_balance_cents),
         activeHoldCents: String(account.active_hold_cents || '0'),
       })),
+      transferLimits,
       transactions: activity.map(item => ({
         id: item.id + ':' + item.account_id,
         journalId: item.id,
