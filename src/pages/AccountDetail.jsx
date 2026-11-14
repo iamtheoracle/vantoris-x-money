@@ -11,7 +11,10 @@ function dateInputValue(date) {
 }
 
 function centsToDecimal(value) {
-  const cents = BigInt(String(value || '0'));
+  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return null;
+  const raw = String(value);
+  if (!/^-?\\d+$/.test(raw)) return null;
+  const cents = BigInt(raw);
   return (cents / 100n).toString() + '.' + String(cents % 100n).padStart(2, '0');
 }
 
