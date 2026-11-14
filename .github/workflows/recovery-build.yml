@@ -31,6 +31,8 @@ jobs:
       - run: node --check netlify/functions/member-documents.mjs
       - run: node --check netlify/functions/oracle.mjs
       - run: node --check scripts/apply-vantoris-migrations.mjs
+      - run: node --check scripts/generate-vantoris-migration-manifest.mjs
+      - run: node --check netlify/functions/migration-guard.mjs
       - run: node --test tests/migration-runner.test.mjs
       - uses: denoland/setup-deno@v2
         with:
@@ -52,7 +54,7 @@ jobs:
           deno test --node-modules-dir=auto --allow-read=migrations tests/private-payment-migration.test.ts
           deno test --node-modules-dir=auto --allow-read=src/pages tests/financial-formatting.test.ts
           deno test --node-modules-dir=auto --allow-read=public/card-art,src/components/vantoris,src/pages,src/index.css tests/heritage-and-card-art.test.ts
-          deno test --node-modules-dir=auto --allow-read=base44,src/lib,src/pages,src/components/vantoris,index.html,netlify/functions,docs,src/App.jsx tests/operational-truthfulness.test.ts
+          deno test --node-modules-dir=auto --allow-read=base44,src/lib,src/pages,src/components/vantoris,src/hooks,index.html,netlify/functions,docs,scripts,package.json,src/App.jsx tests/operational-truthfulness.test.ts
       - name: Verify first-party read-only Vantoris assistant boundary
         run: |
           node --input-type=module <<'NODE'
