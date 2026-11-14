@@ -1,29 +1,51 @@
 # Vantoris Private Institution
 
-Vantoris Private Institution client platform with a separated operations workspace. The repository name remains a technical identifier; the customer-facing identity is Vantoris Private Institution.
+Vantoris is the institution. This repository contains its member-facing application and restricted staff workspace. The application is not the institution's source of truth.
 
-- Repository: https://github.com/iamtheoracle/vantoris-x-money
-- Recovery branch: `recovery/merge-vantoris-live`
-- Recovery pull request: https://github.com/iamtheoracle/vantoris-x-money/pull/2
+## Institutional authority
 
-## Recovery status
+- Vantoris administers its own PostgreSQL database and the `vantoris_ledger` schema.
+- Vantoris journals are the only source of member posted balances and holds.
+- Member balances are liabilities of Vantoris; permanent institutional capital is separately recorded and protected.
+- Internal member transfers are Vantoris-to-Vantoris ledger operations. No sponsor bank, Plaid, ACH, Fedwire, card processor, Base44 or assistant is in that path.
+- Staff authentication is separate from member authentication. Financial changes use server-side capability checks, independent approval and immutable journals.
+- The assistant is optional and isolated. It has no ledger posting permissions.
 
-This branch restores the original application entry point, route definitions, authentication context, Base44 client, member and operations screens, shared UI primitives, and the private LLM gateway/proxy files from `The-Oracle-Arc/vantoris-live`.
+## Current migration branch
 
-**This is still a recovery-in-progress branch, not a production release.** The source repository contains substantially more files than have been restored so far. Remaining shared components, Base44 entity/function/workflow definitions, and other supporting modules still need to be recovered and audited. Original source contains no standalone raster card-image assets in its Git tree; visual assets appear to be implemented through components/styles or external references, which should be verified during UI QA.
+Work is taking place on `migration/remove-base44-and-codex`. `main` and production have not been changed.
 
-## Safety and release rules
+Implemented in this branch:
+- First-party member sign-in, activation, password recovery, mandatory TOTP MFA and replay prevention.
+- First-party staff sign-in, MFA session validation, capability resolution and a restricted staff workspace.
+- PostgreSQL-backed member account/activity/statement APIs and internal transfer posting.
+- Dual-approved manual journals, reversals, transfer limits and permanent capital floor proposals.
+- No Base44 Vite plugin, Base44 SDK dependency, Stripe SDK dependency, Base44 API proxy or Codex GitHub Actions workflow in the active application configuration.
 
-- Do not merge or deploy until the build, route coverage, authentication and authorization boundaries, backend integrations, and AI gateway have been verified.
-- Do not enter live member credentials or payment details into an unverified deployment.
-- The recovery UI and code do not establish that any bank, payment processor, or settlement integration is live.
-- Never force-push over `main`. Recover through the reviewable pull request and preserve the existing branch history.
-- Keep all provider/API secrets server-side in deployment environment variables; never commit secrets to the repository.
+Not yet complete:
+- Existing member/account/transaction import and reconciliation; no member data has been migrated.
+- Application of migrations 001–017 to a Vantoris-administered database; no live database has been changed.
+- Staff account/MFA provisioning and staff role-management workflow.
+- First-party identity document intake/review, account opening, member messaging and service-case workflows.
+- Replacement or archival of all remaining legacy Base44 function and page source files.
+- Disposable PostgreSQL integration execution, concurrency testing, browser QA, backup/restore proof and external-network-blocked acceptance testing.
+- Production deployment and release approval.
 
-## Validation
+The member/staff UI intentionally shows unavailable states where the Vantoris-owned workflow is not ready. It must not fabricate accounts, balances, identity decisions, messages, cards, investment holdings, orders or provider statuses.
 
-A GitHub Actions build workflow is included at `.github/workflows/recovery-build.yml`. Check the pull request's latest workflow run for the current build result. A successful compile alone is not a substitute for security review, integration testing, or end-to-end browser QA.
+## PostgreSQL setup
 
-## Migration status
+Use a new disposable PostgreSQL database for tests. Create the restricted runtime role before migration 002 and apply migrations 001–017 in numeric order. Follow [the institutional ledger runbook](docs/VANTORIS-INSTITUTIONAL-LEDGER.md).
 
-The Codex GitHub Actions workflow has been removed from this migration branch. Base44 runtime services are being replaced in controlled stages; the legacy SDK remains until authentication, member data access, backend functions, and integrations have independent equivalents. Do not deploy this branch or remove the remaining SDK until those replacements and existing-member data reconciliation are verified.
+Required server-side secrets:
+- `VANTORIS_LEDGER_DATABASE_URL`
+- `VANTORIS_MFA_ENCRYPTION_KEY` (32 random bytes, base64 encoded)
+- `VANTORIS_MFA_KEY_VERSION`
+
+Never use a `VITE_` prefix for credentials. Never point integration tests at production.
+
+## Validation and release
+
+The repository contains a PostgreSQL integration script, migration contract tests and syntax/authentication tests. A workflow file exists, but no successful run has been verified for this branch yet. Do not claim tests pass until the run output is observed.
+
+Do not merge or deploy without explicit authorization. Do not import or replace existing member records until a source export, stable identity crosswalk, financial reconciliation, permissions mapping and rollback plan have been verified.
