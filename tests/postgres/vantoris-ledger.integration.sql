@@ -35,6 +35,7 @@ BEGIN
   (m2_factor_id,m2,'totp',decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp());
  INSERT INTO vantoris_ledger.staff_role_assignments(staff_id,role_code,assigned_by_staff_id) VALUES
   (ops_staff,'operations_officer',finance_staff),
+  (ops_staff,'finance_controller',finance_staff),
   (finance_staff,'finance_controller',ops_staff),
   (support_staff,'support_officer',ops_staff),
   (support_staff,'membership_officer',ops_staff),
@@ -165,6 +166,13 @@ BEGIN
    jsonb_build_object('account_reference','TEST-SUSPENSE','amount_cents',-100)
   ))
  );
+ -- Even when a test staff identity holds both capabilities, the database rejects self-approval.
+ BEGIN
+  PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('a',64),'hex'),manual_proposal,'approve');
+  RAISE EXCEPTION 'Staff proposer approved their own action';
+ EXCEPTION WHEN SQLSTATE '42501' THEN
+  IF SQLERRM<>'STAFF_SEPARATION_OF_DUTIES_REQUIRED' THEN RAISE; END IF;
+ END;
  PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),manual_proposal,'approve');
  manual_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('60',32),'hex'),manual_proposal);
  IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.staff_action_proposals WHERE id=manual_proposal AND status='executed') THEN
