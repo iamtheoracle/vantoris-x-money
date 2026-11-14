@@ -177,3 +177,9 @@ Deno.test('Permanent capital floor is a dual-approved staff action', async () =>
   assert(sql.includes('post_approved_capital_floor'), 'Approved capital floor poster missing.');
   assert(sql.includes('REVOKE EXECUTE ON FUNCTION vantoris_ledger.set_institutional_capital_floor'), 'Legacy two-token setter must not be callable by the app role.');
 });
+
+Deno.test('MFA cannot be disabled for member or staff credentials', async () => {
+  const sql = await Deno.readTextFile('migrations/017_vantoris_mfa_mandatory.sql');
+  assert(sql.includes('member_credentials_mfa_required_true'), 'Member MFA must be mandatory.');
+  assert(sql.includes('staff_users_mfa_required_true'), 'Staff MFA must be mandatory.');
+});
