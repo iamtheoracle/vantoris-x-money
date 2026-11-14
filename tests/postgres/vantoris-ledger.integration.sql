@@ -42,14 +42,14 @@ BEGIN
  PERFORM vantoris_ledger.create_member_session(m1,decode(repeat('c',64),'hex'),decode(repeat('d',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
  PERFORM vantoris_ledger.create_member_session(m2,decode(repeat('e',64),'hex'),decode(repeat('f',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
  PERFORM vantoris_ledger.create_staff_session(ops_staff,decode(repeat('a',64),'hex'),decode(repeat('b',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
- PERFORM vantoris_ledger.create_staff_session(finance_staff,decode(repeat('g',64),'hex'),decode(repeat('h',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
- PERFORM vantoris_ledger.create_staff_session(support_staff,decode(repeat('i',64),'hex'),decode(repeat('j',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
- PERFORM vantoris_ledger.create_staff_session(identity_staff,decode(repeat('k',64),'hex'),decode(repeat('l',64),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
+ PERFORM vantoris_ledger.create_staff_session(finance_staff,decode(repeat('60',32),'hex'),decode(repeat('61',32),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
+ PERFORM vantoris_ledger.create_staff_session(support_staff,decode(repeat('62',32),'hex'),decode(repeat('63',32),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
+ PERFORM vantoris_ledger.create_staff_session(identity_staff,decode(repeat('64',32),'hex'),decode(repeat('65',32),'hex'),clock_timestamp()+interval '1 hour',clock_timestamp());
 
  -- Member activation, password reset and MFA enrollment are controlled by Vantoris staff.
- PERFORM vantoris_ledger.issue_member_activation_token(decode(repeat('i',64),'hex'),m3,activation_hash,clock_timestamp()+interval '1 hour');
+ PERFORM vantoris_ledger.issue_member_activation_token(decode(repeat('62',32),'hex'),m3,activation_hash,clock_timestamp()+interval '1 hour');
  PERFORM vantoris_ledger.consume_member_activation(activation_hash,'scrypt$16384$8$1$YWJjZA==$YWJjZA==');
- PERFORM vantoris_ledger.issue_member_password_reset_token(decode(repeat('i',64),'hex'),m3,reset_hash,clock_timestamp()+interval '1 hour');
+ PERFORM vantoris_ledger.issue_member_password_reset_token(decode(repeat('62',32),'hex'),m3,reset_hash,clock_timestamp()+interval '1 hour');
  PERFORM vantoris_ledger.consume_member_password_reset(reset_hash,'scrypt$16384$8$1$YWJjZA==$YWJjZA==');
  PERFORM vantoris_ledger.begin_member_mfa_enrollment(m3,mfa_challenge_hash,mfa_factor_id,
   decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()+interval '10 minutes');
@@ -80,7 +80,7 @@ BEGIN
   RAISE EXCEPTION 'Member could retrieve another member identity document';
  EXCEPTION WHEN SQLSTATE 'P0002' THEN NULL;
  END;
- identity_review_id:=vantoris_ledger.review_member_identity_document(decode(repeat('k',64),'hex'),identity_document_id,'approved','Synthetic identity review approved by Vantoris staff');
+ identity_review_id:=vantoris_ledger.review_member_identity_document(decode(repeat('64',32),'hex'),identity_document_id,'approved','Synthetic identity review approved by Vantoris staff');
  IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.member_identity_reviews WHERE id=identity_review_id AND reviewer_staff_id=identity_staff AND decision='approved') THEN
   RAISE EXCEPTION 'Vantoris identity review was not recorded';
  END IF;
@@ -88,7 +88,7 @@ BEGIN
   RAISE EXCEPTION 'Identity document status was not updated';
  END IF;
  BEGIN
-  PERFORM * FROM vantoris_ledger.read_staff_identity_document(decode(repeat('i',64),'hex'),identity_document_id);
+  PERFORM * FROM vantoris_ledger.read_staff_identity_document(decode(repeat('62',32),'hex'),identity_document_id);
   RAISE EXCEPTION 'Support staff without identity.review could read identity evidence';
  EXCEPTION WHEN insufficient_privilege THEN NULL;
  END;
@@ -110,8 +110,8 @@ BEGIN
   decode(repeat('a',64),'hex'),'capital_floor','institutional-capital',
   jsonb_build_object('minimum_unimpaired_cents',5000)
  );
- PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),capital_proposal,'approve');
- PERFORM vantoris_ledger.execute_approved_staff_action(decode(repeat('g',64),'hex'),capital_proposal);
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),capital_proposal,'approve');
+ PERFORM vantoris_ledger.execute_approved_staff_action(decode(repeat('60',32),'hex'),capital_proposal);
 
  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
   (capital_id,'TEST-PERMANENT-CAPITAL',NULL,'institutional_capital','USD'),
@@ -126,8 +126,8 @@ BEGIN
    jsonb_build_object('account_reference','TEST-PERMANENT-CAPITAL','amount_cents',-5000)
   ))
  );
- PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),capital_opening_proposal,'approve');
- capital_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('g',64),'hex'),capital_opening_proposal);
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),capital_opening_proposal,'approve');
+ capital_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('60',32),'hex'),capital_opening_proposal);
 
  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
   (a1,'TEST-MEMBER-ONE-USD',m1,'member_liability','USD'),
@@ -141,8 +141,8 @@ BEGIN
    jsonb_build_object('account_reference','TEST-MEMBER-ONE-USD','amount_cents',-10000)
   ))
  );
- PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),opening_proposal,'approve');
- opening_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('g',64),'hex'),opening_proposal);
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),opening_proposal,'approve');
+ opening_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('60',32),'hex'),opening_proposal);
 
  -- A balanced journal that would reduce permanent capital below its floor must fail at commit.
  BEGIN
@@ -165,8 +165,8 @@ BEGIN
    jsonb_build_object('account_reference','TEST-SUSPENSE','amount_cents',-100)
   ))
  );
- PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),manual_proposal,'approve');
- manual_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('g',64),'hex'),manual_proposal);
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),manual_proposal,'approve');
+ manual_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('60',32),'hex'),manual_proposal);
  IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.staff_action_proposals WHERE id=manual_proposal AND status='executed') THEN
   RAISE EXCEPTION 'Approved manual journal proposal was not executed';
  END IF;
@@ -176,8 +176,8 @@ BEGIN
   decode(repeat('a',64),'hex'),'reverse_journal',manual_journal::text,
   jsonb_build_object('reason','Synthetic test reversal')
  );
- PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),reversal_proposal,'approve');
- reversal_journal:=vantoris_ledger.post_approved_reversal(decode(repeat('g',64),'hex'),reversal_proposal);
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),reversal_proposal,'approve');
+ reversal_journal:=vantoris_ledger.post_approved_reversal(decode(repeat('60',32),'hex'),reversal_proposal);
  IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.journals WHERE id=reversal_journal AND reversal_of=manual_journal) THEN
   RAISE EXCEPTION 'Reversal journal was not linked to original';
  END IF;
@@ -187,8 +187,8 @@ BEGIN
   decode(repeat('a',64),'hex'),'change_limit',m1::text,
   jsonb_build_object('member_id',m1,'single_limit_cents',9000,'daily_limit_cents',10000)
  );
- PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),limit_proposal,'approve');
- limit_history:=vantoris_ledger.post_approved_limit_change(decode(repeat('g',64),'hex'),limit_proposal);
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),limit_proposal,'approve');
+ limit_history:=vantoris_ledger.post_approved_limit_change(decode(repeat('60',32),'hex'),limit_proposal);
 
  SELECT * INTO result FROM vantoris_ledger.create_member_internal_transfer_operation(
   op_id,decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-transfer:'||op_id,repeat('a',64));
@@ -225,8 +225,8 @@ BEGIN
   decode(repeat('a',64),'hex'),'change_limit',m1::text,
   jsonb_build_object('member_id',m1,'single_limit_cents',9000,'daily_limit_cents',15000)
  );
- PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),limit_proposal,'approve');
- limit_history:=vantoris_ledger.post_approved_limit_change(decode(repeat('g',64),'hex'),limit_proposal);
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('60',32),'hex'),limit_proposal,'approve');
+ limit_history:=vantoris_ledger.post_approved_limit_change(decode(repeat('60',32),'hex'),limit_proposal);
 
  SELECT * INTO result FROM vantoris_ledger.create_member_internal_transfer_operation(
   gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,'test-insufficient:'||m1,repeat('d',64));
@@ -264,7 +264,7 @@ DO $$ DECLARE n integer; BEGIN
  SELECT count(*) INTO n FROM vantoris_ledger.audit_events; IF n<1 THEN RAISE EXCEPTION 'Operations staff audit access missing'; END IF;
  SELECT count(*) INTO n FROM vantoris_ledger.ledger_accounts; IF n<>5 THEN RAISE EXCEPTION 'Operations staff ledger access missing: %',n; END IF;
 END $$;
-SELECT vantoris_ledger.resolve_staff_session(decode(repeat('i',64),'hex'));
+SELECT vantoris_ledger.resolve_staff_session(decode(repeat('62',32),'hex'));
 DO $$ DECLARE n integer; BEGIN
  SELECT count(*) INTO n FROM vantoris_ledger.members; IF n<>3 THEN RAISE EXCEPTION 'Support officer member profile access missing'; END IF;
  SELECT count(*) INTO n FROM vantoris_ledger.ledger_accounts; IF n<>0 THEN RAISE EXCEPTION 'Support officer must not see ledger accounts'; END IF;
