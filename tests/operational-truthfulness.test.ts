@@ -150,8 +150,10 @@ Deno.test("external ACH and Fedwire submission remains disabled without explicit
 
 Deno.test("member bank transfer form only offers active accounts with verified USD currency", async () => {
   const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
-  assert(source.includes("accounts.filter(account => account.currency === 'USD' && account.account_type === 'member_liability' && account.memberStatus === 'active')"), "bank transfer form must filter to active verified USD accounts");
+  const memberAuth = await Deno.readTextFile("netlify/functions/member-auth.mjs");
+  assert(source.includes("accounts.filter(account => account.currency === 'USD' && account.account_type === 'member_liability' && account.memberStatus === 'active')"), "internal transfer form must filter to active verified USD member-liability accounts");
   assert(source.includes("No active account with a verified USD currency record"), "member must see why no eligible account is available");
+  assert(memberAuth.includes("memberStatus: rows[0].status"), "eligibility status must originate from the authenticated server-side member record");
 });
 
 Deno.test("public brand uses Vantoris Private Institution and the arch-over-river identity", async () => {
@@ -177,16 +179,20 @@ Deno.test("member QR screen clearly reports that QR payments are unavailable", a
   assert(!source.includes("api.qrserver.com") && !source.includes("vantage://pay"), "member identifiers must not be sent to external QR services or legacy schemes");
 });
 
-Deno.test("Vantoris assistant remains optional, disabled and isolated from Base44", async () => {
-  const ask = await Deno.readTextFile("netlify/functions/ask.mjs");
-  const client = await Deno.readTextFile("src/lib/privateLlm.js");
+Deno.test("Vantoris Intelligence is first-party, member-authenticated and informational only", async () => {
+  const client = await Deno.readTextFile("src/lib/oracleAssistant.js");
+  const adapter = await Deno.readTextFile("src/lib/privateLlm.js");
+  const server = await Deno.readTextFile("netlify/functions/oracle.mjs");
   const chat = await Deno.readTextFile("src/components/vantoris/AgentChat.jsx");
-  assert(ask.includes("assistant_disabled") && ask.includes("}, 503)"), "assistant endpoint must fail closed while disabled");
-  assert(client.includes("assistant_disabled") && client.includes("return false"), "browser client must report the assistant as unavailable");
-  assert(!ask.includes("@base44/sdk") && !ask.includes("BASE44_") && !ask.includes("UPSTASH_"), "assistant endpoint must not depend on Base44 or external usage infrastructure");
-  assert(!client.includes("fetch(") && !chat.includes("base44"), "assistant must not perform direct browser provider calls or access Base44");
-  assert(chat.includes("Vantoris Intelligence is unavailable"), "legacy chat surface must clearly disclose that the optional assistant is disabled");
+  assert(client.includes("fetch('/api/oracle'") && !client.includes("base44"), "browser assistant must call only the first-party Vantoris endpoint");
+  assert(adapter.includes("askOracle") && !adapter.includes("base44"), "legacy assistant adapter must delegate to the Vantoris client");
+  assert(server.includes("resolve_member_session") && server.includes("verify_auth_csrf"), "assistant requests must require a verified member session and CSRF");
+  assert(server.includes("consume_member_assistant_request"), "assistant requests must use database-owned rate limits");
+  assert(server.includes("VANTORIS_PRIVATE_LLM_URL") && server.includes("VANTORIS_PRIVATE_LLM_MODEL"), "only the configured Vantoris private model may be used");
+  assert(!server.includes("@base44/sdk") && !server.includes("UPSTASH_"), "assistant server must not depend on Base44 or an external usage store");
+  assert(!chat.includes("base44") && !chat.includes("executeElevatedCommand") && !chat.includes("inspectCommandInput"), "assistant UI must not access Base44 or execute privileged commands");
 });
+
 Deno.test("investment workspace does not invent unverified holdings or balances", async () => {
   const source = await Deno.readTextFile("src/pages/Investment.jsx");
   assert(source.includes("No investment balance is currently available"), "unverified holdings must remain explicitly unavailable");
