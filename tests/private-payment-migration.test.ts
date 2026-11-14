@@ -138,3 +138,14 @@ Deno.test('Vantoris transfer limit changes require two-person approval and immut
   assert(sql.includes('MEMBER_TRANSFER_LIMIT_NOT_CONFIGURED'), 'Missing limits must fail closed.');
   assert(sql.includes('member_transfer_limit_history_immutable'), 'Limit history must be append-only.');
 });
+
+Deno.test('Vantoris member activation, password recovery and MFA are first-party', async () => {
+  const sql = await Deno.readTextFile('migrations/013_vantoris_member_activation_mfa.sql');
+  assert(sql.includes('issue_member_activation_token'), 'Vantoris-issued activation token function missing.');
+  assert(sql.includes('consume_member_activation'), 'One-time member activation function missing.');
+  assert(sql.includes('issue_member_password_reset_token'), 'Staff-issued password reset function missing.');
+  assert(sql.includes('consume_member_password_reset'), 'One-time password reset function missing.');
+  assert(sql.includes('begin_member_mfa_enrollment'), 'Encrypted MFA enrollment function missing.');
+  assert(sql.includes('complete_member_mfa_enrollment'), 'MFA confirmation must create the authenticated session.');
+  assert(sql.includes('secret_ciphertext'), 'MFA secret must remain encrypted at rest.');
+});
