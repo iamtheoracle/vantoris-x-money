@@ -1,5 +1,5 @@
 import React from 'react';
-import { Headphones, ShieldCheck } from 'lucide-react';
+import { Headphones } from 'lucide-react';
 
 export default function Services(){
  return <main className="mx-auto max-w-4xl px-5 py-8">
