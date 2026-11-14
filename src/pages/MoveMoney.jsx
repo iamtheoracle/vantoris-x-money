@@ -33,6 +33,7 @@ export default function MoveMoney() {
   const [searchParams] = useSearchParams();
   const { refreshMemberData } = useAuth();
   const [accounts, setAccounts] = useState([]);
+  const [transferLimits, setTransferLimits] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [sourceAccountId, setSourceAccountId] = useState('');
@@ -60,6 +61,7 @@ export default function MoveMoney() {
       const data = await response.json();
       if (!Array.isArray(data.accounts)) throw new Error('Vantoris returned an invalid account response.');
       setAccounts(data.accounts);
+      setTransferLimits(data.transferLimits || null);
       setSourceAccountId(current => current && data.accounts.some(account => account.id === current)
         ? current
         : data.accounts[0]?.id || '');
@@ -119,6 +121,9 @@ export default function MoveMoney() {
           recipient_must_be_another_member: 'Transfers must be sent to another Vantoris member, not another account you own.',
           recipient_account_not_found: 'The recipient Vantoris account reference could not be found.',
           member_account_unavailable: 'One of the member accounts is not currently active for transfers.',
+          member_transfer_limit_not_configured: 'Vantoris has not approved a transfer limit for this account yet.',
+          member_single_transfer_limit_exceeded: 'This amount exceeds your approved single-transfer limit.',
+          member_daily_transfer_limit_exceeded: 'This transfer would exceed your approved daily limit.',
         };
         throw new Error(errors[result.error] || 'The transfer could not be posted. No successful posting is confirmed.');
       }
@@ -242,6 +247,21 @@ export default function MoveMoney() {
                 className="w-full border-0 bg-transparent px-2 py-3 text-lg font-semibold tabular-nums text-navy outline-none" />
             </div>
 
+            {transferLimits ? (
+              <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="flex justify-between gap-3 text-xs text-slate-600">
+                  <span>Approved single-transfer limit</span><span className="font-semibold tabular-nums text-navy">{formatCurrency(transferLimits.singleLimit, 'USD')}</span>
+                </div>
+                <div className="mt-2 flex justify-between gap-3 text-xs text-slate-600">
+                  <span>Remaining daily limit</span><span className="font-semibold tabular-nums text-navy">{formatCurrency(centsToDecimal(transferLimits.remainingTodayCents), 'USD')}</span>
+                </div>
+              </div>
+            ) : (
+              <div role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs leading-5 text-amber-900">
+                A Vantoris-approved transfer limit is not configured for this member. Transfers remain unavailable until staff approve one.
+              </div>
+            )}
+
             {sourceAccount && (
               <div className="mb-5 rounded-xl bg-slate-50 p-3">
                 <div className="flex justify-between gap-3 text-xs text-slate-600">
@@ -265,7 +285,7 @@ export default function MoveMoney() {
               </div>
             )}
 
-            <button type="submit" disabled={submitting || !sourceAccount || sourceAccount.availableBalanceCents === null}
+            <button type="submit" disabled={submitting || !sourceAccount || sourceAccount.availableBalanceCents === null || !transferLimits}
               className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-navy py-3.5 text-sm font-semibold text-white transition hover:bg-[#17365C] disabled:cursor-not-allowed disabled:opacity-45">
               {submitting ? <Loader2 size={17} className="animate-spin" /> : <Send size={17} />}
               {submitting ? 'Posting transfer…' : 'Confirm internal transfer'}
