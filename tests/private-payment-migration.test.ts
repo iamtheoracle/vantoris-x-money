@@ -223,3 +223,15 @@ Deno.test('Vantoris assistant rate limits are member-scoped and database-enforce
   const tableDefinition = sql.slice(sql.indexOf('CREATE TABLE'), sql.indexOf('REVOKE ALL ON TABLE'));
   assert(!/prompt|response|message_body/i.test(tableDefinition), 'Assistant prompts and responses must not be stored by the rate-limit table.');
 });
+
+Deno.test('approved manual journals derive one currency from their ledger accounts', async () => {
+  const sql = await Deno.readTextFile('migrations/023_vantoris_manual_journal_currency_integrity.sql');
+  assert(sql.includes('count(DISTINCT a.currency)') && sql.includes('min(a.currency)'), 'manual journal currency must be derived from all referenced ledger accounts');
+  assert(sql.includes('MANUAL_JOURNAL_CURRENCY_MISMATCH'), 'mixed-currency journal lines must be rejected');
+  assert(sql.includes('journal_currency') && sql.includes('a.id,journal_currency'), 'posted journal entries must use the derived currency');
+  assert(sql.includes('MANUAL_JOURNAL_AMOUNT_OUT_OF_RANGE'), 'manual journal cents must fit PostgreSQL bigint');
+  assert(sql.includes('MANUAL_JOURNAL_IDEMPOTENCY_CONFLICT') && sql.includes('RETURN existing_journal_id'), 'retries must return the original posted journal');
+  assert(sql.includes('poster_id IS NULL OR NOT COALESCE'), 'missing staff sessions must fail closed');
+  assert(sql.includes('GRANT EXECUTE ON FUNCTION vantoris_ledger.post_approved_manual_journal'), 'runtime posting permission must remain explicit');
+  assert(!/\x27USD\x27/.test(sql), 'manual journal posting must not hardcode USD');
+});
