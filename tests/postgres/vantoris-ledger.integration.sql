@@ -53,7 +53,7 @@ BEGIN
  IF NOT vantoris_ledger.consume_staff_totp_step(ops_factor_id,staff_totp_step) THEN
   RAISE EXCEPTION 'First staff TOTP step was rejected';
  END IF;
- IF vantoris_ledger.consume_staff_totp_step(ops_factor_id,floor(extract(epoch from clock_timestamp())/30)::bigint) THEN
+ IF vantoris_ledger.consume_staff_totp_step(ops_factor_id,staff_totp_step) THEN
   RAISE EXCEPTION 'Staff TOTP step replay was accepted';
  END IF;
  PERFORM vantoris_ledger.resolve_member_session(mfa_session_hash);
