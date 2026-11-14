@@ -14,6 +14,11 @@
   force = true
 
 [[redirects]]
+  from = "/api/member-documents"
+  to = "/.netlify/functions/member-documents"
+  status = 200
+
+[[redirects]]
   from = "/api/staff-actions"
   to = "/.netlify/functions/staff-actions"
   status = 200
