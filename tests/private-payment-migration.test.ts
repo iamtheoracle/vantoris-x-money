@@ -211,3 +211,14 @@ Deno.test('Deferred journal balance trigger handles each table row shape safely'
   assert(!sql.includes("CASE WHEN TG_TABLE_NAME = 'journals' THEN NEW.id ELSE NEW.journal_id END"), 'Trigger must not resolve fields absent from the active record type.');
   assert(sql.includes('UNSUPPORTED_JOURNAL_BALANCE_TRIGGER_TABLE'), 'Unexpected trigger table names must fail closed.');
 });
+
+Deno.test('Vantoris assistant rate limits are member-scoped and database-enforced', async () => {
+  const sql = await Deno.readTextFile('migrations/022_vantoris_member_assistant_rate_limits.sql');
+  assert(sql.includes('member_assistant_usage'), 'Assistant usage counters must be stored by Vantoris.');
+  assert(sql.includes('resolve_member_session(p_session_token_hash)'), 'Assistant rate limits must bind to a verified member session.');
+  assert(sql.includes('FOR UPDATE'), 'Concurrent assistant requests must serialize the member counter.');
+  assert(sql.includes('p_per_minute_limit') && sql.includes('p_per_day_limit'), 'Minute and daily request limits must both be enforced.');
+  assert(sql.includes('REVOKE ALL ON TABLE vantoris_ledger.member_assistant_usage FROM vantoris_backend'), 'Runtime must not read or mutate raw assistant counters.');
+  assert(sql.includes('GRANT EXECUTE ON FUNCTION vantoris_ledger.consume_member_assistant_request'), 'Runtime must consume limits only through the controlled function.');
+  assert(!/prompt|response|message_body/i.test(sql), 'Assistant prompts and responses must not be stored by the rate-limit table.');
+});
