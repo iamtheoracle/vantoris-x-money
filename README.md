@@ -41,6 +41,8 @@ Required server-side secrets:
 - `VANTORIS_LEDGER_DATABASE_URL`
 - `VANTORIS_MFA_ENCRYPTION_KEY` (32 random bytes, base64 encoded)
 - `VANTORIS_MFA_KEY_VERSION`
+- `VANTORIS_DOCUMENT_ENCRYPTION_KEY_V1` (32 random bytes, base64 encoded)
+- `VANTORIS_DOCUMENT_KEY_VERSION`
 
 Never use a `VITE_` prefix for credentials. Never point integration tests at production.
 
