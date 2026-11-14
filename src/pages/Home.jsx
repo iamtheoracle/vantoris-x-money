@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
-import { formatCurrency } from '@/lib/currency';
+import { formatCurrency } from '@/lib/formatCurrency';
 import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
 import FounderStories from '@/components/vantoris/FounderStories';
 import { useNavigate, useSearchParams } from 'react-router-dom';
