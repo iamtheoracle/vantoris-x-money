@@ -9,10 +9,10 @@ CREATE TRIGGER audit_events_immutable
 BEFORE UPDATE OR DELETE ON vantoris_ledger.audit_events
 FOR EACH ROW EXECUTE FUNCTION vantoris_ledger.reject_audit_mutation();
 CREATE OR REPLACE FUNCTION vantoris_ledger.reject_audit_truncate()
-RETURNS trigger LANGUAGE plpgsql AS $
+RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
   RAISE EXCEPTION 'Vantoris audit events cannot be truncated';
-END $;
+END $$;
 CREATE TRIGGER audit_events_no_truncate
 BEFORE TRUNCATE ON vantoris_ledger.audit_events
 FOR EACH STATEMENT EXECUTE FUNCTION vantoris_ledger.reject_audit_truncate();
