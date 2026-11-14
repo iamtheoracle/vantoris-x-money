@@ -106,7 +106,7 @@ GRANT EXECUTE ON FUNCTION vantoris_ledger.post_approved_limit_change(bytea,uuid)
 REVOKE ALL ON ALL TABLES IN SCHEMA vantoris_ledger FROM PUBLIC;
 CREATE OR REPLACE FUNCTION vantoris_ledger.get_member_transfer_limits(p_session_token_hash bytea)
 RETURNS TABLE(single_limit_cents bigint,daily_limit_cents bigint,used_today_cents numeric,remaining_today_cents numeric)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE v_member_id uuid; day_start timestamptz; current_limit vantoris_ledger.member_transfer_limit_history%ROWTYPE; used numeric;
 BEGIN
  v_member_id:=vantoris_ledger.resolve_member_session(p_session_token_hash);
@@ -120,7 +120,7 @@ BEGIN
     AND status='posted' AND created_at>=day_start;
  RETURN QUERY SELECT current_limit.single_limit_cents,current_limit.daily_limit_cents,used,
   GREATEST(current_limit.daily_limit_cents-used,0);
-END $;
+END $$;
 REVOKE ALL ON FUNCTION vantoris_ledger.get_member_transfer_limits(bytea) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION vantoris_ledger.get_member_transfer_limits(bytea) TO vantoris_backend;
 COMMIT;
