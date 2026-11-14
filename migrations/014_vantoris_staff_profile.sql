@@ -19,4 +19,21 @@ BEGIN
 END $$;
 REVOKE ALL ON FUNCTION vantoris_ledger.get_staff_profile(bytea) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION vantoris_ledger.get_staff_profile(bytea) TO vantoris_backend;
+CREATE OR REPLACE FUNCTION vantoris_ledger.execute_approved_staff_action(p_session_token_hash bytea,p_proposal_id uuid)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $
+DECLARE proposal vantoris_ledger.staff_action_proposals%ROWTYPE; result_id uuid; actor_id uuid;
+BEGIN
+ actor_id:=vantoris_ledger.resolve_staff_session(p_session_token_hash);
+ SELECT * INTO proposal FROM vantoris_ledger.staff_action_proposals WHERE id=p_proposal_id;
+ IF NOT FOUND OR proposal.status<>'approved' THEN RAISE EXCEPTION 'STAFF_ACTION_NOT_APPROVED'; END IF;
+ CASE proposal.action_type
+  WHEN 'manual_journal' THEN result_id:=vantoris_ledger.post_approved_manual_journal(p_session_token_hash,p_proposal_id);
+  WHEN 'reverse_journal' THEN result_id:=vantoris_ledger.post_approved_reversal(p_session_token_hash,p_proposal_id);
+  WHEN 'change_limit' THEN result_id:=vantoris_ledger.post_approved_limit_change(p_session_token_hash,p_proposal_id);
+  ELSE RAISE EXCEPTION 'STAFF_ACTION_TYPE_NOT_SUPPORTED';
+ END CASE;
+ RETURN jsonb_build_object('proposalId',p_proposal_id,'actionType',proposal.action_type,'resultId',result_id,'status','executed');
+END $;
+REVOKE ALL ON FUNCTION vantoris_ledger.execute_approved_staff_action(bytea,uuid) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION vantoris_ledger.execute_approved_staff_action(bytea,uuid) TO vantoris_backend;
 COMMIT;
