@@ -52,13 +52,15 @@ function requireUuid(value,label) {
 function normalizeProposal(body) {
   if(body.proposalType==='reverse_journal') {
     const journalId=requireUuid(body.journalId,'journal_id');
-    return {type:'reverse_journal',objectReference:journalId,payload:{reason:String(body.reason||'').trim().slice(0,500)}};
+    const reason=String(body.reason||'').trim().slice(0,500);
+    if(!reason) throw new Error('INVALID_REVERSAL_REASON');
+    return {type:'reverse_journal',objectReference:journalId,payload:{reason}};
   }
   if(body.proposalType==='change_limit') {
     const memberId=requireUuid(body.memberId,'member_id');
     const single=String(body.singleLimitCents||'');
     const daily=String(body.dailyLimitCents||'');
-    if(!/^[1-9][0-9]{0,18}$/.test(single)||!/^[1-9][0-9]{0,18}$/.test(daily)) throw new Error('INVALID_LIMIT_VALUES');
+    if(!/^[1-9][0-9]{0,18}$/.test(single)||!/^[1-9][0-9]{0,18}$/.test(daily)||BigInt(single)>BigInt(daily)) throw new Error('INVALID_LIMIT_VALUES');
     return {type:'change_limit',objectReference:memberId,payload:{member_id:memberId,single_limit_cents:single,daily_limit_cents:daily}};
   }
   if(body.proposalType==='capital_floor') {
@@ -75,6 +77,8 @@ function normalizeProposal(body) {
       if(!accountReference||accountReference.length>160||! /^-?[1-9][0-9]{0,18}$/.test(amountCents)) throw new Error('INVALID_MANUAL_JOURNAL_LINE');
       return {account_reference:accountReference,amount_cents:amountCents};
     });
+    const total=entries.reduce((sum,line)=>sum+BigInt(line.amount_cents),0n);
+    if(total!==0n||new Set(entries.map(line=>line.account_reference)).size<2) throw new Error('INVALID_MANUAL_JOURNAL_BALANCE');
     return {type:'manual_journal',objectReference:'manual-journal',payload:{description,entries}};
   }
   throw new Error('UNSUPPORTED_PROPOSAL_TYPE');
