@@ -129,7 +129,8 @@ export default async function handler(request) {
       }
       if(body.action==='approve') {
         const proposalId=requireUuid(body.proposalId,'proposal_id');
-        const decision=body.decision==='reject'?'reject':'approve';
+        if(!['approve','reject'].includes(body.decision)) return {error:'invalid_decision'};
+        const decision=body.decision;
         const rows=await tx`SELECT vantoris_ledger.approve_staff_action_proposal(${auth.tokenHash},${proposalId},${decision}) AS status`;
         return {proposalId,status:rows[0].status};
       }
@@ -142,6 +143,7 @@ export default async function handler(request) {
     });
     if(result.error==='unauthorized') return json({error:'authentication_required'},401);
     if(result.error==='csrf_invalid') return json({error:'csrf_invalid'},403);
+    if(result.error==='invalid_decision') return json({error:'invalid_decision'},400);
     return json(result);
   } catch(error) {
     const message=String(error?.message||'');
