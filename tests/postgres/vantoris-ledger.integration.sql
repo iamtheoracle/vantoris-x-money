@@ -76,7 +76,7 @@ BEGIN
  IF captured_status<>'captured' THEN RAISE EXCEPTION 'Transfer hold was not captured'; END IF;
  SELECT count(*) INTO journal_count FROM vantoris_ledger.journals WHERE journal_type='internal_transfer' AND source_reference=op_id::text;
  IF journal_count<>1 THEN RAISE EXCEPTION 'Expected exactly one transfer journal, got %',journal_count; END IF;
- SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(op_id,m1);
+ SELECT * INTO result FROM vantoris_ledger.execute_member_internal_transfer(op_id,decode(repeat('c',64),'hex'));
  IF NOT result.duplicate THEN RAISE EXCEPTION 'Transfer retry was not idempotent'; END IF;
  BEGIN
   PERFORM * FROM vantoris_ledger.create_member_internal_transfer_operation(gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3100,'test-transfer:'||op_id,repeat('a',64));
