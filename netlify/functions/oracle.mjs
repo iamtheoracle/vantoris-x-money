@@ -1,5 +1,6 @@
 import postgres from 'postgres';
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { assertVantorisMigrationHistory } from './migration-guard.mjs';
 
 let sql;
 function database() {
@@ -101,6 +102,8 @@ async function readBody(request) {
 }
 
 export default async function handler(request) {
+  try { await assertVantorisMigrationHistory(database()); }
+  catch { return json({ error: 'migration_history_unavailable', text: 'Vantoris services are temporarily unavailable.' }, 503); }
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
   if (!sameOrigin(request)) return json({ error: 'origin_not_allowed' }, 403);
 
