@@ -95,6 +95,7 @@ export default async function handler(request) {
         let proposals=[];
         let members=[];
         let accounts=[];
+        let audit=[];
         if(caps.has('staff.action.read')) {
           proposals=await tx`
             SELECT p.id,p.action_type,p.object_reference,p.proposed_by,p.payload,p.status,p.created_at,
@@ -109,7 +110,10 @@ export default async function handler(request) {
         if(caps.has('ledger.read')) {
           accounts=await tx`SELECT id,account_reference,account_type,currency,member_id FROM vantoris_ledger.ledger_accounts ORDER BY created_at DESC LIMIT 500`;
         }
-        return {staff:auth.profile,proposals,members,accounts};
+        if(caps.has('audit.read')) {
+          audit=await tx`SELECT id,actor_id,action,object_type,object_id,details,created_at FROM vantoris_ledger.audit_events ORDER BY created_at DESC,id DESC LIMIT 100`;
+        }
+        return {staff:auth.profile,proposals,members,accounts,audit};
       });
       return result?json(result):json({error:'authentication_required'},401);
     } catch(error) {
