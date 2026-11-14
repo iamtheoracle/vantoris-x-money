@@ -207,3 +207,11 @@ Deno.test('Identity evidence is encrypted, member-scoped and reviewed by Vantori
   assert(sql.includes('identity_document_content_immutable'), 'Identity evidence content must be immutable.');
   assert(sql.includes('identity_reviews_immutable'), 'Identity review history must be append-only.');
 });
+
+Deno.test('Deferred journal balance trigger handles each table row shape safely', async () => {
+  const sql = await Deno.readTextFile('migrations/021_vantoris_journal_balance_trigger_row_fix.sql');
+  assert(sql.includes("IF TG_TABLE_NAME='journals' THEN"), 'Journal trigger must read NEW.id only for journal rows.');
+  assert(sql.includes("ELSIF TG_TABLE_NAME='journal_entries' THEN"), 'Entry trigger must read NEW.journal_id only for entry rows.');
+  assert(!sql.includes("CASE WHEN TG_TABLE_NAME = 'journals' THEN NEW.id ELSE NEW.journal_id END"), 'Trigger must not resolve fields absent from the active record type.');
+  assert(sql.includes('UNSUPPORTED_JOURNAL_BALANCE_TRIGGER_TABLE'), 'Unexpected trigger table names must fail closed.');
+});
