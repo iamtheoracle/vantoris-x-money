@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 
 export default function Profile() {
   const { user, accounts } = useAuth();
+  const relationshipTier = user?.relationshipTier || user?.relationship_tier || null;
   return (
     <main className="mx-auto max-w-5xl px-5 py-8">
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Member profile</p>
@@ -15,6 +16,7 @@ export default function Profile() {
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <div className="rounded-xl bg-slate-50 p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Mail size={15}/> Verified sign-in email</div><p className="mt-2 break-all text-sm font-semibold text-navy">{user?.email || '—'}</p></div>
           <div className="rounded-xl bg-slate-50 p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><ShieldCheck size={15}/> Membership status</div><p className="mt-2 text-sm font-semibold capitalize text-navy">{user?.status || '—'}</p></div>
+          <div className="rounded-xl bg-slate-50 p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><ShieldCheck size={15}/> Relationship tier</div><p className="mt-2 text-sm font-semibold text-navy">{relationshipTier || 'Tier not assigned'}</p></div>
         </div>
       </section>
       <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
