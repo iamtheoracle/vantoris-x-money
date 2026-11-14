@@ -32,14 +32,14 @@ async function readBody(request) {
   return JSON.parse(raw||'{}');
 }
 async function authenticateStaff(request,tx) {
-  const token=readCookies(request).__Host-vantoris_staff_session||'';
+  const token=readCookies(request)['__Host-vantoris_staff_session']||'';
   if(!token||token.length>200) return null;
   const tokenHash=sha256(token);
   const rows=await tx`SELECT vantoris_ledger.get_staff_profile(${tokenHash}) AS profile`;
   return rows[0]?.profile?{tokenHash,profile:rows[0].profile}:null;
 }
 async function verifyCsrf(request,tx,auth) {
-  const csrf=readCookies(request).__Host-vantoris_staff_csrf||'';
+  const csrf=readCookies(request)['__Host-vantoris_staff_csrf']||'';
   const header=request.headers.get('x-csrf-token')||'';
   if(!csrf||!header||csrf.length!==header.length||!timingSafeEqual(Buffer.from(csrf),Buffer.from(header))) return false;
   const rows=await tx`SELECT vantoris_ledger.verify_auth_csrf(${auth.tokenHash},${sha256(csrf)}) AS valid`;
