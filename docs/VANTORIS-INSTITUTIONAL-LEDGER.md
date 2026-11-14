@@ -22,6 +22,7 @@ The twelve files are ordered and must be applied once, in order, to an empty Van
 10. `migrations/010_vantoris_permanent_capital_protection.sql` — append-only, dual-approved permanent-capital floor; blocks member-liability account creation before capital is funded and rejects journals that impair it.
 11. `migrations/011_vantoris_approved_journal_posting.sql` — posts approved manual journals and reversals through immutable, balanced journal entries; no balance-edit operation exists.
 12. `migrations/012_vantoris_member_transfer_limits.sql` — append-only, dual-approved member limits; single and UTC-day totals are enforced under a per-member lock before a transfer is claimed.
+12. `migrations/012_vantoris_member_transfer_limits.sql` — append-only, dual-approved member limits; single and UTC-day totals are enforced under a per-member lock before a transfer is claimed.
 
 These migrations have **not been verified as applied** to any live Vantoris database. A file in Git is not an applied migration. Record the actual database name, server identity, migration owner, execution timestamp and checksums in the institution's controlled change record after a successful application.
 
