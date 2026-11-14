@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, AlertTriangle, Download, FileText, Loader2, RefreshCw } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatCurrency';
+import { centsToDecimal, formatCurrency } from '@/lib/formatCurrency';
 
 function dateInputValue(date) {
   const year = date.getFullYear();
@@ -10,13 +10,7 @@ function dateInputValue(date) {
   return `${year}-${month}-${day}`;
 }
 
-function centsToDecimal(value) {
-  if (value === null || value === undefined || (typeof value === 'string' && value.trim() === '')) return null;
-  const raw = String(value);
-  if (!/^-?\\d+$/.test(raw)) return null;
-  const cents = BigInt(raw);
-  return (cents / 100n).toString() + '.' + String(cents % 100n).padStart(2, '0');
-}
+
 
 function readCsrfCookie() {
   const item = document.cookie.split(';').map(value => value.trim()).find(value => value.startsWith('__Host-vantoris_csrf='));
