@@ -66,7 +66,7 @@ export function validateHistoryRows(expected, actual) {
 }
 
 function connectionString() {
-  const value = process.env.VANTORIS_LEDGER_DATABASE_URL || process.env.DATABASE_URL;
+  const value = process.env.VANTORIS_LEDGER_DATABASE_URL || process.env.VANTORIS_LEDGER_TEST_DATABASE_URL || process.env.DATABASE_URL;
   if (!value) throw new Error('VANTORIS_LEDGER_DATABASE_URL_OR_DATABASE_URL_REQUIRED');
   return value;
 }
