@@ -54,9 +54,9 @@ function setLabel(convId, label) {
 export default function AgentChat({
   agentName = 'vantoris_assistant',
   title = 'Vantoris Assistant',
-  subtitle = 'Private client assistance',
+  subtitle = 'Informational only · no account or payment access',
   suggestions = null,
-  inputPlaceholder = 'Ask about platform features, available services, or general investment concepts...',
+  inputPlaceholder = 'Ask a general question. Do not enter account, payment, or identity information.',
   singleColumn = false,
   onClose = null,
   renderActionSuggestions = null
