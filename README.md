@@ -25,7 +25,7 @@ Implemented in this branch:
 
 Not yet complete:
 - Existing member/account/transaction import and reconciliation; no member data has been migrated.
-- Application of migrations 001–023 to a Vantoris-administered database; disposable CI has passed 001–022. Migration 023 adds manual-journal currency integrity and is awaiting its own CI run. No live database has been changed.
+- Application of migrations 001–023 to a Vantoris-administered database; disposable CI has passed the full 001–023 sequence and integration suite. No live database has been changed.
 - Staff account/MFA provisioning and staff role-management workflow.
 - Identity-document encryption key provisioning, retention/rotation procedures and live database/browser verification; member account opening, messaging and service-case workflows.
 - Replacement or archival of all remaining legacy Base44 function and page source files.
@@ -38,6 +38,7 @@ The member/staff UI intentionally shows unavailable states where the Vantoris-ow
 ### Existing feature availability — not changed in this implementation batch
 
 - The Home action guard currently keeps Deposit, Request and QR actions unavailable; the Send action remains the internal member-to-member transfer path.
+- The current ledger schema is USD-only. Migration 023 derives journal currency from its ledger accounts but does not enable EUR or multi-currency banking.
 - The Member QR page states that payment QR is not enabled and links to internal transfers.
 - Card information and investment holdings remain unavailable until genuine issuance/verified asset records exist.
 - Staff withdrawal decisions remain unavailable; no replacement balance or manual client-side posting was added.
@@ -55,14 +56,15 @@ Required server-side secrets:
 - `VANTORIS_MFA_KEY_VERSION`
 - `VANTORIS_DOCUMENT_ENCRYPTION_KEY_V1` (32 random bytes, base64 encoded)
 - `VANTORIS_DOCUMENT_KEY_VERSION`
+- Optional Vantoris Intelligence: `VANTORIS_PRIVATE_LLM_URL`, `VANTORIS_PRIVATE_LLM_MODEL`, `VANTORIS_PRIVATE_LLM_KEY` (server-side only; no external-provider fallback; if unset, the assistant reports unavailable)
 
 Never use a `VITE_` prefix for credentials. Never point integration tests at production.
 
 ## Validation and release
 
-Latest verified CI on branch HEAD ca96080d9ebe8d4ddc2ca76b3168fe8393a163b9:
-- PostgreSQL run 43618034707: passed migrations 001–022, restricted runtime-role verification, disposable ledger integration (including member assistant limits), member/staff syntax checks, MFA cryptography tests and migration contract tests. Migration 023 and its EUR/mixed-currency/idempotency scenarios are pending CI.
-- Recovery build run 43618034865: passed Oracle/runtime tests, assistant security-boundary checks, browser financial-mutation checks, internal-transfer truthfulness checks, entity/security rules, lint, typecheck and production Vite build.
+Latest verified CI on the migration branch:
+- PostgreSQL run 43618747104: passed migrations 001–023, restricted runtime-role verification, disposable ledger integration (including assistant limits, manual-journal currency derivation, idempotent retry, reversal currency preservation and the current USD-only account constraint), member/staff syntax checks, MFA cryptography tests and migration contract tests.
+- Recovery build run 43618747097: passed Oracle/runtime tests, assistant security-boundary checks, browser financial-mutation checks, internal-transfer truthfulness checks, entity/security rules, lint, typecheck and production Vite build.
 These are CI/disposable-environment results only. No institutional database, production deployment, merge or external money rail was changed.
 
 Do not merge or deploy without explicit authorization. Do not import or replace existing member records until a source export, stable identity crosswalk, financial reconciliation, permissions mapping and rollback plan have been verified.
