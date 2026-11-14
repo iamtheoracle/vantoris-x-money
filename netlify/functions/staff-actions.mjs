@@ -61,6 +61,11 @@ function normalizeProposal(body) {
     if(!/^[1-9][0-9]{0,18}$/.test(single)||!/^[1-9][0-9]{0,18}$/.test(daily)) throw new Error('INVALID_LIMIT_VALUES');
     return {type:'change_limit',objectReference:memberId,payload:{member_id:memberId,single_limit_cents:single,daily_limit_cents:daily}};
   }
+  if(body.proposalType==='capital_floor') {
+    const floor=String(body.minimumUnimpairedCents||'');
+    if(!/^[1-9][0-9]{0,18}$/.test(floor)) throw new Error('INVALID_CAPITAL_FLOOR');
+    return {type:'capital_floor',objectReference:'institutional-capital',payload:{minimum_unimpaired_cents:floor}};
+  }
   if(body.proposalType==='manual_journal') {
     const description=String(body.description||'').trim().slice(0,300);
     if(!description||!Array.isArray(body.entries)||body.entries.length<2||body.entries.length>50) throw new Error('INVALID_MANUAL_JOURNAL');
