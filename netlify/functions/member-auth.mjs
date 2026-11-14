@@ -137,8 +137,8 @@ async function startMfaEnrollment(memberId, email) {
 
 async function confirmMfaEnrollment(request, body) {
   const cookie = cookies(request);
-  const challenge = cookie.__Host-vantoris_mfa_challenge || '';
-  const csrf = cookie.__Host-vantoris_mfa_csrf || '';
+  const challenge = cookie['__Host-vantoris_mfa_challenge'] || '';
+  const csrf = cookie['__Host-vantoris_mfa_csrf'] || '';
   const header = request.headers.get('x-csrf-token') || '';
   if (!challenge || !csrf || !header || csrf.length !== header.length ||
       !timingSafeEqual(Buffer.from(csrf), Buffer.from(header))) {
@@ -348,7 +348,7 @@ async function login(request, body) {
 
 async function authenticateMember(request, tx) {
   const cookie = cookies(request);
-  const token = cookie.__Host-vantoris_session;
+  const token = cookie['__Host-vantoris_session'];
   if (!token || token.length > 200) return null;
   const tokenHash = sha256(token);
   const resolved = await tx`SELECT vantoris_ledger.resolve_member_session(${tokenHash}) AS member_id`;
@@ -356,7 +356,7 @@ async function authenticateMember(request, tx) {
 }
 
 async function verifyCsrf(request, tx, auth) {
-  const csrf = auth.cookie.__Host-vantoris_csrf || '';
+  const csrf = auth.cookie['__Host-vantoris_csrf'] || '';
   const header = request.headers.get('x-csrf-token') || '';
   if (!csrf || !header || csrf.length > 200 || header.length !== csrf.length) return false;
   if (!timingSafeEqual(Buffer.from(header), Buffer.from(csrf))) return false;
@@ -551,11 +551,11 @@ async function currentStatement(request, accountId, from, to) {
   if (!Number.isFinite(fromDate.getTime()) || !Number.isFinite(toExclusive.getTime()) || toExclusive<=fromDate || toExclusive-fromDate>366*86400000) {
     return json({ error:'invalid_statement_range' },400);
   }
-  const token = cookies(request).__Host-vantoris_session;
+  const token = cookies(request)['__Host-vantoris_session'];
   if (!token || token.length>200) return json({ error:'authentication_required' },401);
   const tokenHash = sha256(token);
   const result = await database().begin(async tx => {
-    const csrf = cookies(request).__Host-vantoris_csrf || '';
+    const csrf = cookies(request)['__Host-vantoris_csrf'] || '';
     const header = request.headers.get('x-csrf-token') || '';
     if (!csrf || !header || csrf.length !== header.length || !timingSafeEqual(Buffer.from(csrf),Buffer.from(header))) return { error:'csrf_invalid' };
     const csrfHash = sha256(csrf);
