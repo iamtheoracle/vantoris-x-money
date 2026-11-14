@@ -8,7 +8,7 @@ The current migration set is a replacement foundation. It does **not** import ex
 
 ## Migration state
 
-The nineteen files are ordered and must be applied once, in order, to an empty Vantoris-administered PostgreSQL database:
+The twenty-two files are ordered and must be applied once, in order, to an empty Vantoris-administered PostgreSQL database:
 
 1. `migrations/001_avcu_payment_control_plane.sql` — Vantoris ledger schema, member/account registry, immutable journals and entries, operations, holds, audit and staff approval records.
 2. `migrations/002_avcu_backend_grants.sql` — least-privilege runtime grants. Requires the runtime role to exist.
