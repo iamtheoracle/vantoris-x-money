@@ -12,13 +12,17 @@ export function sha256(content) {
 }
 
 export function stripTransactionBoundaries(content, filename = 'migration.sql') {
+  const uncommented = content.replace(/^\s*--.*$/gm, '');
+  const beginMatches = uncommented.match(/\bBEGIN\s*;/gi) || [];
+  const commitMatches = uncommented.match(/\bCOMMIT\s*;/gi) || [];
   const beginIndex = content.indexOf('BEGIN;');
   const commitIndex = content.lastIndexOf('COMMIT;');
-  if (beginIndex < 0 || commitIndex <= beginIndex) {
-    throw new Error(filename + ' must contain one outer BEGIN; and COMMIT; boundary');
+  if (beginMatches.length !== 1 || commitMatches.length !== 1 || beginIndex < 0 || commitIndex <= beginIndex) {
+    throw new Error(filename + ' must contain exactly one outer BEGIN; and COMMIT; boundary');
   }
+  const prefix = content.slice(0, beginIndex).replace(/^\s*--.*$/gm, '').trim();
   const trailing = content.slice(commitIndex + 'COMMIT;'.length).replace(/^\s*--.*$/gm, '').trim();
-  if (trailing) throw new Error(filename + ' contains SQL after its outer COMMIT');
+  if (prefix || trailing) throw new Error(filename + ' contains SQL outside its outer transaction');
   return content.slice(beginIndex + 'BEGIN;'.length, commitIndex);
 }
 
@@ -74,7 +78,7 @@ function connectionString() {
 function psql(query, tuples = false) {
   const args = ['-X', '-q', '-v', 'ON_ERROR_STOP=1'];
   if (tuples) args.push('-t', '-A', '-F', '|');
-  args.push(connectionString(), '-c', query);
+  args.push('-d', connectionString(), '-c', query);
   return execFileSync('psql', args, {
     cwd: ROOT,
     encoding: 'utf8',
