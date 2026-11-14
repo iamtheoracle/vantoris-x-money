@@ -62,7 +62,8 @@ jobs:
             migrations/014_vantoris_staff_profile.sql \
             migrations/015_vantoris_totp_replay_protection.sql \
             migrations/016_vantoris_capital_floor_workflow.sql \
-            migrations/017_vantoris_mfa_mandatory.sql
+            migrations/017_vantoris_mfa_mandatory.sql \\
+            migrations/018_vantoris_reversal_reason_audit.sql
           do
             psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
