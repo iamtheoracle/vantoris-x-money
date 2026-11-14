@@ -109,11 +109,13 @@ Deno.test("referral operations do not expose referred members' financial balance
 });
 
 
-Deno.test("member-to-member transfer screen does not depend on an external payment network", async () => {
+Deno.test("member-to-member transfer uses Vantoris internal ledger posting", async () => {
   const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
   assert(!source.includes("findZelleRecipient") && !source.includes("ZelleProfile"), "member transfers must not use an external-network recipient directory");
-  assert(source.includes("Private member-to-member transfers are not enabled yet"), "member transfer availability must be explicit");
-  assert(source.replace(/\s+/g, " ").includes("No recipient search, payment instruction, transfer request, or account change has been created from this screen."), "unavailable member transfers must not imply a request was recorded");
+  assert(source.includes("action: 'transfer'"), "member transfers must call the Vantoris-owned internal transfer endpoint");
+  assert(source.includes("result.transfer?.status !== 'posted'") && source.includes("result.transfer?.journalId"), "the UI must require a confirmed posted journal before reporting success");
+  assert(source.includes("idempotency-key"), "member transfer retries must carry an idempotency key");
+  assert(source.includes("This transfer does not use a sponsor bank, Plaid, ACH, Fedwire"), "member transfers must disclose that they remain internal to Vantoris");
 });
 
 Deno.test("payment functions cannot read another product's clearing or database secrets", async () => {
@@ -169,11 +171,10 @@ Deno.test("public brand uses Vantoris Private Institution and the arch-over-rive
   assert(html.includes("Vantoris Private Institution") && !html.includes("Vantage Private Investment"), "document metadata must use Vantoris identity");
 });
 
-Deno.test("member QR does not send member identifiers to third-party image services", async () => {
+Deno.test("member QR screen clearly reports that QR payments are unavailable", async () => {
   const source = await Deno.readTextFile("src/pages/MemberQR.jsx");
-  assert(source.includes("vantage://pay"), "new member pay links must use the Vantage scheme");
-  assert(!source.includes("api.qrserver.com"), "member identifiers must not be sent to external QR image services");
-  assert(source.includes("user.id") && !source.includes("user.id || user.email"), "QR payload must not fall back to personal email");
+  assert(source.includes("A payment QR is not enabled"), "the QR screen must state its actual availability");
+  assert(!source.includes("api.qrserver.com") && !source.includes("vantage://pay"), "member identifiers must not be sent to external QR services or legacy schemes");
 });
 
 Deno.test("Vantage assistant uses only the configured private AI endpoint", async () => {
@@ -186,35 +187,40 @@ Deno.test("Vantage assistant uses only the configured private AI endpoint", asyn
   assert(chat.includes("Messages are saved in your assistant history") && !chat.includes("List the top 10 accounts by balance"), "assistant UI must disclose storage and avoid inviting private data queries");
 });
 
-Deno.test("investment workspace imports its heritage panel and does not invent unknown activity direction", async () => {
+Deno.test("investment workspace does not invent unverified holdings or balances", async () => {
   const source = await Deno.readTextFile("src/pages/Investment.jsx");
-  assert(source.includes("import FinancialHeritage from '@/components/vantoris/FinancialHeritage';"), "investment heritage panel must be imported before rendering");
-  assert(source.includes("function investmentActivityPresentation(type)"), "investment activity must use an explicit direction classifier");
-  assert(source.includes("return { sign: '', tone: 'text-gray' };"), "unknown activity types must not be presented as positive or negative");
-  assert(source.includes("presentation.sign") && source.includes("presentation.tone"), "activity rows must render the classified sign and neutral fallback");
+  assert(source.includes("No investment balance is currently available"), "unverified holdings must remain explicitly unavailable");
+  assert(source.includes("verified underlying asset records"), "investment figures require verified underlying assets");
+  assert(source.includes("No third-party portfolio figure is treated as a Vantoris balance"), "third-party portfolio totals must not be represented as institutional balances");
+  assert(!/\\$[0-9]|€[0-9]|£[0-9]/.test(source), "investment page must not contain fabricated balances");
 });
 
-Deno.test("transaction history preserves source currency and does not invent missing status", async () => {
+Deno.test("transaction history preserves source currency and neutral direction", async () => {
   const source = await Deno.readTextFile("src/pages/Transactions.jsx");
-  assert(source.includes('import { formatCurrency } from "@/lib/formatCurrency";'), "transaction history must use the shared currency formatter");
-  assert(source.includes("formatCurrency(tx.amount, tx.currency || tx.currency_code || null)"), "transaction amounts must retain their source currency");
-  assert(source.includes('"Status not supplied"'), "missing transaction status must not be labelled recorded");
-  assert(source.includes('"Date not supplied"'), "missing transaction dates must remain explicit");
-  assert(!source.includes("`$${Number(tx.amount).toFixed(2)}`"), "transaction history must not hard-code USD");
-});
-Deno.test("member payment card uses the approved Vantoris wordmark", async () => {
-  const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
-  assert(source.includes(">VANTORIS</span>"), "member card face must use Vantoris identity");
-  assert(!source.includes(">VANTAGE</span>"), "legacy Vantage wordmark must not remain on member card face");
+  assert(source.includes("formatCurrency(presentation.amount, item.currency || item.currency_code || null)"), "transaction amounts must retain their source currency without a default");
+  assert(source.includes("Status not supplied"), "missing transaction status must remain explicit");
+  assert(source.includes("Date not supplied"), "missing transaction dates must remain explicit");
+  assert(source.includes("transactionPresentation(decimalAmount, item.type)"), "unknown transaction direction must remain neutral");
+  assert(source.includes("centsToDecimal(cents)"), "ledger cents must be converted without floating-point arithmetic");
 });
 
-Deno.test("all inventoried public, member, and operations routes remain registered", async () => {
+Deno.test("card artwork does not claim payment-card issuance", async () => {
+  const source = await Deno.readTextFile("src/components/vantoris/PrivateInvestmentCardGallery.jsx");
+  assert(source.includes("Illustrative design artwork only"), "card artwork must be distinguished from issued payment cards");
+  assert(source.includes("It does not represent an issued payment card"), "card artwork must not imply issuance");
+  assert(!source.includes("VANTAGE"), "legacy Vantage branding must not remain on card artwork");
+});
+
+Deno.test("inventoried public, member and operations routes remain registered or behind the staff gate", async () => {
   const register = await Deno.readTextFile("docs/route-preservation-register.md");
   const app = await Deno.readTextFile("src/App.jsx");
-  const inventoriedRoutes = [...register.matchAll(/^\|\s*`([^\`]+)`\s*\|/gm)].map((match) => match[1]);
+  const inventoriedRoutes = [...register.matchAll(/^\|\s*`([^`]+)`\s*\|/gm)].map((match) => match[1]);
   const registeredRoutes = new Set([...app.matchAll(/<Route path="([^"]+)"/g)].map((match) => match[1]));
   assert(inventoriedRoutes.length >= 100, "route preservation register must retain the full public/member/operations inventory");
   for (const route of inventoriedRoutes) {
-    assert(registeredRoutes.has(route), `inventoried route must remain registered: ${route}`);
+    const explicitlyRegistered = registeredRoutes.has(route);
+    const coveredByOperationsGate = route.startsWith("/operations/") && registeredRoutes.has("/operations/*");
+    assert(explicitlyRegistered || coveredByOperationsGate, `inventoried route must remain registered or covered by the staff authorization gate: ${route}`);
   }
 });
+
