@@ -37,7 +37,7 @@ export default function MoveMoney() {
   const idempotencyKey = useRef(null);
 
   const eligibleAccounts = useMemo(
-    () => accounts.filter(account => account.currency === 'USD' && account.status === 'active'),
+    () => accounts.filter(account => account.currency === 'USD' && account.account_type === 'member_liability' && account.memberStatus === 'active'),
     [accounts],
   );
 
