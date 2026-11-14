@@ -103,10 +103,11 @@ export default function StaffPortal(){
     </section>
     <section className="rounded-2xl border border-slate-200 bg-white p-5 lg:col-span-2">
      <div className="flex items-center gap-2"><ClipboardList size={18} className="text-navy"/><h2 className="font-semibold text-navy">Institutional records</h2></div>
-     <div className="mt-4 grid gap-3 sm:grid-cols-3">
+     <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <div className="rounded-xl bg-slate-50 p-3"><Users size={17} className="text-slate-500"/><p className="mt-2 text-2xl font-semibold text-navy">{data?.members?.length??'—'}</p><p className="text-xs text-slate-500">Member records in view</p></div>
       <div className="rounded-xl bg-slate-50 p-3"><Wallet size={17} className="text-slate-500"/><p className="mt-2 text-2xl font-semibold text-navy">{data?.accounts?.length??'—'}</p><p className="text-xs text-slate-500">Ledger accounts in view</p></div>
       <div className="rounded-xl bg-slate-50 p-3"><FileText size={17} className="text-slate-500"/><p className="mt-2 text-2xl font-semibold text-navy">{data?.proposals?.length??'—'}</p><p className="text-xs text-slate-500">Action proposals in view</p></div>
+      <div className="rounded-xl bg-slate-50 p-3"><ShieldCheck size={17} className="text-slate-500"/><p className="mt-2 text-2xl font-semibold text-navy">{data?.audit?.length??'—'}</p><p className="text-xs text-slate-500">Audit events loaded</p></div>
      </div>
     </section>
    </div>
@@ -172,6 +173,16 @@ export default function StaffPortal(){
      </article>)}
     </div>}
    </section>
+   {can('audit.read')&&<section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+    <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold text-navy">Vantoris append-only audit log</h2><span className="text-xs text-slate-500">Latest 100 events</span></div>
+    {!data?.audit?.length?<p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">No audit events are visible to this capability set.</p>:<div className="space-y-2">
+     {data.audit.map(event=><article key={event.id} className="rounded-xl bg-slate-50 p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-semibold text-navy">{event.action.replace(/_/g,' ')}</p><time className="text-xs text-slate-500">{new Date(event.created_at).toLocaleString()}</time></div>
+      <p className="mt-1 break-all text-xs text-slate-600">{event.actor_id} · {event.object_type} · {event.object_id}</p>
+      <pre className="mt-2 overflow-x-auto whitespace-pre-wrap break-all text-[11px] leading-4 text-slate-500">{JSON.stringify(event.details)}</pre>
+     </article>)}
+    </div>}
+   </section>}
    <p className="mt-6 text-center text-xs leading-5 text-slate-500">All financial changes are recorded as immutable Vantoris journals. No staff screen or API accepts a replacement balance.</p>
   </div>
  </main>;
