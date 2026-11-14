@@ -118,3 +118,13 @@ Deno.test('Manual journals and reversals are posted only after independent appro
   assert(sql.includes('INSERT INTO vantoris_ledger.journal_entries'), 'Staff actions must post ledger entries, not mutate balances.');
   assert(sql.includes("SET status='executed'"), 'Approved proposal must move through its executed lifecycle.');
 });
+
+Deno.test('Member transfer limits require dual approval and serialize concurrent requests', async () => {
+  const sql = await Deno.readTextFile('migrations/012_vantoris_member_transfer_limits.sql');
+  assert(sql.includes('member_transfer_limit_history'), 'Append-only member limit history missing.');
+  assert(sql.includes('post_approved_limit_change'), 'Approved limit change poster missing.');
+  assert(sql.includes('MEMBER_SINGLE_TRANSFER_LIMIT_EXCEEDED'), 'Single transfer limit check missing.');
+  assert(sql.includes('MEMBER_DAILY_TRANSFER_LIMIT_EXCEEDED'), 'Daily transfer limit check missing.');
+  assert(sql.includes('FOR UPDATE'), 'Per-member limit row must serialize concurrent transfer claims.');
+  assert(sql.includes('MEMBER_TRANSFER_LIMIT_NOT_CONFIGURED'), 'No invented default limit may be assumed.');
+});
