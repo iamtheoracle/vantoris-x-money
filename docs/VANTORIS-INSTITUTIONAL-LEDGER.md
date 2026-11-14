@@ -24,7 +24,6 @@ The fourteen files are ordered and must be applied once, in order, to an empty V
 12. `migrations/012_vantoris_member_transfer_limits.sql` — append-only, dual-approved member limits; single and UTC-day totals are enforced under a per-member lock before a transfer is claimed.
 13. `migrations/013_vantoris_member_activation_mfa.sql` — staff-issued one-time member activation and password-reset tokens, plus encrypted TOTP enrollment and session creation after successful code verification.
 14. `migrations/014_vantoris_staff_profile.sql` — session-bound staff profile/capability resolution and dispatch of approved manual journals, reversals and limit changes.
-12. `migrations/012_vantoris_member_transfer_limits.sql` — append-only, dual-approved member limits; single and UTC-day totals are enforced under a per-member lock before a transfer is claimed.
 
 These migrations have **not been verified as applied** to any live Vantoris database. A file in Git is not an applied migration. Record the actual database name, server identity, migration owner, execution timestamp and checksums in the institution's controlled change record after a successful application.
 
@@ -57,6 +56,10 @@ psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/007_v
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/008_vantoris_auth_rate_limits.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/009_vantoris_staff_controls.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/010_vantoris_permanent_capital_protection.sql
+psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/011_vantoris_approved_journal_posting.sql
+psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/012_vantoris_member_transfer_limits.sql
+psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/013_vantoris_member_activation_mfa.sql
+psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/014_vantoris_staff_profile.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/postgres/vantoris-ledger.integration.sql
 ```
 
@@ -74,12 +77,17 @@ The SQL integration script uses synthetic members and rolls back its fixtures. I
 
 ## Not yet implemented / release blockers
 
-- Existing member, account, permission and historical transaction migration with source-to-target reconciliation and rollback. The legacy crosswalk table exists, but no live member export has been imported.
-- Verified permanent-capital account and documented opening journal evidence.
-- A first-party Netlify member-auth handler now derives member identity from `resolve_member_session` and an HttpOnly session cookie. Member transfer entry points accept the session token hash and derive the member ID inside PostgreSQL; no member ID is accepted from the request body. Integration and browser tests are still required.
-- Full two-person approval enforcement and posting functions for reversals, limit changes and manual journals. The proposal/approval tables prevent self-approval, but staff capability authorization and execution workflows remain to be implemented.
-- Vantoris-owned identity-document storage, identity review, sign-in, MFA, session revocation, statements, account-scoped read APIs and staff directory/authorization.
-- Disposable PostgreSQL integration tests and RLS checks are being added to CI; multi-session concurrency tests, backups and restore verification remain release blockers.
-- Replacement of remaining Base44 auth/entity/function dependencies in the application.
+- **Existing-member preservation:** no legacy member export, account export or financial history has been imported. The crosswalk schema exists, but no source-to-target reconciliation, permission mapping, balance proof or rollback has been performed. Do not replace the current member directory or point production at this schema.
+- **Capital evidence:** the database now enforces an append-only, dual-approved permanent-capital floor and blocks member-liability account creation until capital is funded. The actual Vantoris capital amount, capital account and opening journal have not been supplied or posted. Do not invent them.
+- **Member identity and MFA:** first-party member sign-in, activation, password reset, TOTP enrollment, session cookies, CSRF checks, rate limiting and account-scoped APIs have been added. They have not been exercised against a real PostgreSQL instance or browser test environment.
+- **Member account opening:** there is no completed staff workflow to create a new member liability account and its verified opening journal. Existing members must be imported and reconciled before account access is enabled.
+- **Staff identity:** separate staff sign-in, MFA session resolution, capability-based RLS, a restricted staff workspace, one-time member activation/recovery token issuance and controlled financial action UI have been added. Staff accounts, MFA factors and role assignments still require controlled provisioning; no staff directory/role-management UI exists.
+- **Identity review:** the schema stores encrypted document evidence and Vantoris review records, but document upload, secure retrieval, review decisions, retention and member-facing status APIs are not complete.
+- **Financial approvals:** PostgreSQL now enforces proposer/approver separation and provides approved posting functions for manual journals, reversals and member limit changes. These workflows have not been applied or verified against the institution's database. Staff UI and integration coverage are still incomplete for edge cases.
+- **Limits:** no real member transfer limits have been supplied. Transfers intentionally fail closed until an authorized Vantoris process establishes each member's limits.
+- **Statements and operations:** member statements and scoped account/activity APIs have been added, but complete statement reconciliation, pagination, audit review screens and operations reporting remain incomplete.
+- **Testing and resilience:** a disposable PostgreSQL integration script and CI workflow cover synthetic ledger, capital, transfer, limit, staff, activation and RLS cases. No CI run has been observed for this migration branch; multi-session concurrency tests, backup scheduling, restore verification and incident recovery remain release blockers.
+- **Base44 removal:** Base44 has not been fully removed. The member-critical paths have first-party replacements, but other member/admin pages, `@base44/sdk`, legacy functions and Oracle assistant/runtime paths still require inventory and replacement. The Codex workflow file is deleted from this branch; no production or main-branch change has been made.
+
 
 Do not enable member transfers or claim institutional production readiness until these blockers are closed with evidence. No external payment rail is enabled by this migration.
