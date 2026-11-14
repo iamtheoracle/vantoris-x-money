@@ -58,6 +58,10 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
+      - name: Check Vantoris member auth function syntax
+        run: node --check netlify/functions/member-auth.mjs
+      - name: Run Vantoris member auth cryptography tests
+        run: node --test tests/member-auth.test.mjs
       - name: Run Vantoris migration contract tests
         run: |
           deno test --allow-read=migrations tests/private-payment-migration.test.ts
