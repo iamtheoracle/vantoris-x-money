@@ -75,7 +75,7 @@ jobs:
       - name: Verify avcu_backend inherits restricted ledger privileges
         run: |
           psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
-          DO $
+          DO $verify$
           BEGIN
             IF NOT pg_has_role('avcu_backend', 'vantoris_backend', 'USAGE') THEN
               RAISE EXCEPTION 'avcu_backend does not inherit vantoris_backend grants';
@@ -96,7 +96,7 @@ jobs:
               'vantoris_ledger.execute_member_internal_transfer(uuid,bytea)', 'EXECUTE') THEN
               RAISE EXCEPTION 'avcu_backend cannot execute the session-bound internal transfer function';
             END IF;
-          END $;
+          END $verify$;
           SQL
       - name: Run disposable PostgreSQL ledger integration test
         run: psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/postgres/vantoris-ledger.integration.sql
