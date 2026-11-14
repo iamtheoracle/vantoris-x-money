@@ -56,15 +56,15 @@ GRANT EXECUTE ON FUNCTION vantoris_ledger.verify_auth_csrf(bytea,bytea) TO vanto
 CREATE OR REPLACE FUNCTION vantoris_ledger.record_member_statement_access(
  p_token_hash bytea,p_account_id uuid,p_from timestamptz,p_to timestamptz)
 RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $
-DECLARE member_id uuid;
+DECLARE v_member_id uuid;
 BEGIN
  IF p_from IS NULL OR p_to IS NULL OR p_from>=p_to OR p_to>clock_timestamp()+interval '1 day' OR p_to-p_from>interval '366 days' THEN RAISE EXCEPTION 'INVALID_STATEMENT_RANGE' USING ERRCODE='22023'; END IF;
- member_id:=vantoris_ledger.resolve_member_session(p_token_hash);
- IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.ledger_accounts WHERE id=p_account_id AND member_id=member_id AND account_type='member_liability') THEN RAISE EXCEPTION 'ACCOUNT_NOT_OWNED_BY_MEMBER' USING ERRCODE='42501'; END IF;
+ v_member_id:=vantoris_ledger.resolve_member_session(p_token_hash);
+ IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.ledger_accounts WHERE id=p_account_id AND member_id=v_member_id AND account_type='member_liability') THEN RAISE EXCEPTION 'ACCOUNT_NOT_OWNED_BY_MEMBER' USING ERRCODE='42501'; END IF;
  INSERT INTO vantoris_ledger.audit_events(actor_id,action,object_type,object_id,details)
- VALUES('member:'||member_id::text,'member_statement_generated','ledger_account',p_account_id::text,
+ VALUES('member:'||v_member_id::text,'member_statement_generated','ledger_account',p_account_id::text,
   jsonb_build_object('from',p_from,'to',p_to));
- RETURN member_id;
+ RETURN v_member_id;
 END $;
 REVOKE ALL ON FUNCTION vantoris_ledger.record_member_statement_access(bytea,uuid,timestamptz,timestamptz) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION vantoris_ledger.record_member_statement_access(bytea,uuid,timestamptz,timestamptz) TO vantoris_backend;
