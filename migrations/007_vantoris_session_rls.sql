@@ -83,7 +83,7 @@ CREATE POLICY identity_reviews_member_or_staff_read ON vantoris_ledger.member_id
  USING (member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR NULLIF(current_setting('vantoris.staff_id',true),'') IS NOT NULL);
 
 GRANT SELECT ON vantoris_ledger.member_credentials,vantoris_ledger.staff_users,
- vantoris_ledger.auth_sessions,vantoris_ledger.member_mfa_factors,vantoris_ledger.staff_mfa_factors,
+ vantoris_ledger.member_mfa_factors,vantoris_ledger.staff_mfa_factors,
  vantoris_ledger.member_recovery_codes,vantoris_ledger.staff_recovery_codes,
  vantoris_ledger.member_legacy_identities,vantoris_ledger.member_identity_documents,
  vantoris_ledger.member_identity_reviews TO vantoris_backend;
