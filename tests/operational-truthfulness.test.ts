@@ -183,12 +183,14 @@ Deno.test("Vantoris Intelligence is first-party, member-authenticated and inform
   const client = await Deno.readTextFile("src/lib/oracleAssistant.js");
   const adapter = await Deno.readTextFile("src/lib/privateLlm.js");
   const server = await Deno.readTextFile("netlify/functions/oracle.mjs");
+  const legacyAsk = await Deno.readTextFile("netlify/functions/ask.mjs");
   const chat = await Deno.readTextFile("src/components/vantoris/AgentChat.jsx");
   assert(client.includes("fetch('/api/oracle'") && !client.includes("base44"), "browser assistant must call only the first-party Vantoris endpoint");
   assert(adapter.includes("askOracle") && !adapter.includes("base44"), "legacy assistant adapter must delegate to the Vantoris client");
   assert(server.includes("resolve_member_session") && server.includes("verify_auth_csrf"), "assistant requests must require a verified member session and CSRF");
   assert(server.includes("consume_member_assistant_request"), "assistant requests must use database-owned rate limits");
   assert(server.includes("VANTORIS_PRIVATE_LLM_URL") && server.includes("VANTORIS_PRIVATE_LLM_MODEL"), "only the configured Vantoris private model may be used");
+  assert(legacyAsk.includes("import oracle from './oracle.mjs'") && !legacyAsk.includes("@base44/sdk"), "legacy ask route must remain a compatibility alias to the first-party endpoint");
   assert(!server.includes("@base44/sdk") && !server.includes("UPSTASH_"), "assistant server must not depend on Base44 or an external usage store");
   assert(!chat.includes("base44") && !chat.includes("executeElevatedCommand") && !chat.includes("inspectCommandInput"), "assistant UI must not access Base44 or execute privileged commands");
 });
