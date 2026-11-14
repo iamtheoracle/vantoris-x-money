@@ -349,13 +349,13 @@ async function transfer(request, body) {
     const requestHash = sha256(canonical).toString('hex');
     const operationId = crypto.randomUUID();
     const claim = await tx`
-      SELECT * FROM vantoris_ledger.create_internal_transfer_operation(
-        ${operationId},${auth.memberId},${source},${receiver},${amountCents},${idempotencyKey},${requestHash}
+      SELECT * FROM vantoris_ledger.create_member_internal_transfer_operation(
+        ${operationId},${auth.tokenHash},${source},${receiver},${amountCents},${idempotencyKey},${requestHash}
       )
     `;
     const posted = await tx`
-      SELECT * FROM vantoris_ledger.execute_internal_transfer(
-        ${claim[0].operation_id},${auth.memberId}
+      SELECT * FROM vantoris_ledger.execute_member_internal_transfer(
+        ${claim[0].operation_id},${auth.tokenHash}
       )
     `;
     return { journalId: posted[0].journal_id, duplicate: posted[0].duplicate };
