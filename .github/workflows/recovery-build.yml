@@ -38,6 +38,7 @@ jobs:
       - run: node --check scripts/apply-vantoris-migrations.mjs
       - run: node --check scripts/generate-vantoris-migration-manifest.mjs
       - run: node --check netlify/functions/migration-guard.mjs
+      - run: node --check tests/postgres/transfer-concurrency.test.mjs
       - run: node --test tests/migration-runner.test.mjs
       - uses: denoland/setup-deno@v2
         with:
