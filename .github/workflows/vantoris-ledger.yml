@@ -47,35 +47,10 @@ jobs:
             -c "CREATE ROLE avcu_backend LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD 'ci-only-runtime-password';"
           psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 \
             -c "GRANT vantoris_backend TO avcu_backend;"
-      - name: Apply Vantoris migrations in order
+      - name: Apply and verify ordered Vantoris migrations with SHA-256 history
         run: |
-          for migration in \
-            migrations/001_avcu_payment_control_plane.sql \
-            migrations/002_avcu_backend_grants.sql \
-            migrations/003_avcu_outgoing_funds_holds.sql \
-            migrations/004_avcu_payment_audit_hardening.sql \
-            migrations/005_avcu_payment_outbox_claims.sql \
-            migrations/006_vantoris_identity_and_sessions.sql \
-            migrations/007_vantoris_session_rls.sql \
-            migrations/008_vantoris_auth_rate_limits.sql \
-            migrations/009_vantoris_staff_controls.sql \
-            migrations/010_vantoris_permanent_capital_protection.sql \
-            migrations/011_vantoris_approved_journal_posting.sql \
-            migrations/012_vantoris_member_transfer_limits.sql \
-            migrations/013_vantoris_member_activation_mfa.sql \
-            migrations/014_vantoris_staff_profile.sql \
-            migrations/015_vantoris_totp_replay_protection.sql \
-            migrations/016_vantoris_capital_floor_workflow.sql \
-            migrations/017_vantoris_mfa_mandatory.sql \
-            migrations/018_vantoris_reversal_reason_audit.sql \
-            migrations/019_vantoris_identity_document_workflow.sql \
-            migrations/020_vantoris_staff_approval_separation.sql \
-            migrations/021_vantoris_journal_balance_trigger_row_fix.sql \
-            migrations/022_vantoris_member_assistant_rate_limits.sql \
-            migrations/023_vantoris_manual_journal_currency_integrity.sql
-          do
-            psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
-          done
+          node scripts/apply-vantoris-migrations.mjs
+          node scripts/apply-vantoris-migrations.mjs --verify-only
       - name: Verify avcu_backend inherits restricted ledger privileges
         run: |
           psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
