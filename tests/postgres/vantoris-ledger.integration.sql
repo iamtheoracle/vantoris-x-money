@@ -253,7 +253,7 @@ BEGIN
 END $$;
 
 SET ROLE avcu_backend;
-DO $
+DO $assistant$
 BEGIN
   IF NOT vantoris_ledger.consume_member_assistant_request(decode(repeat('c',64),'hex'),30,2) THEN
     RAISE EXCEPTION 'First assistant request unexpectedly rate limited';
@@ -274,7 +274,7 @@ BEGIN
     RAISE EXCEPTION 'Assistant per-minute request limit was bypassed';
   END IF;
 END
-$;
+$assistant$;
 SELECT vantoris_ledger.resolve_member_session(decode(repeat('c',64),'hex'));
 DO $$ DECLARE n integer; BEGIN
  SELECT count(*) INTO n FROM vantoris_ledger.ledger_accounts; IF n<>1 THEN RAISE EXCEPTION 'Member one account scope leaked: %',n; END IF;
