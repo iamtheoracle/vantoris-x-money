@@ -1,10 +1,10 @@
 import React,{useCallback,useEffect,useMemo,useState} from 'react';
-import {AlertTriangle,CheckCircle2,ClipboardList,FileText,Loader2,LogOut,Plus,RefreshCw,ShieldCheck,Users,Wallet} from 'lucide-react';
+import {useNavigate} from 'react-router-dom';
+import {ClipboardList,FileText,Loader2,LogOut,Plus,RefreshCw,ShieldCheck,Users,Wallet} from 'lucide-react';
 
 function readCsrf(){const item=document.cookie.split(';').map(v=>v.trim()).find(v=>v.startsWith('__Host-vantoris_staff_csrf='));return item?decodeURIComponent(item.slice('__Host-vantoris_staff_csrf='.length)):'';}
-const moneyCents=value=>{const n=BigInt(String(value||'0'));return '$'+(n/100n).toLocaleString('en-US')+'.'+String(n%100n).padStart(2,'0');};
-
 export default function StaffPortal(){
+ const navigate=useNavigate();
  const [data,setData]=useState(null),[loading,setLoading]=useState(true),[error,setError]=useState(''),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const [proposalType,setProposalType]=useState('manual_journal'),[description,setDescription]=useState(''),[journalId,setJournalId]=useState(''),[reason,setReason]=useState('');
  const [memberId,setMemberId]=useState(''),[singleLimit,setSingleLimit]=useState(''),[dailyLimit,setDailyLimit]=useState('');
@@ -15,11 +15,12 @@ export default function StaffPortal(){
  const load=useCallback(async()=>{
   setLoading(true);setError('');
   try{const r=await fetch('/api/staff-actions?action=overview',{credentials:'same-origin',cache:'no-store'});const j=await r.json().catch(()=>({}));
-   if(!r.ok)throw new Error(j.error==='authentication_required'?'Your staff session has expired.':'Vantoris staff data is unavailable.');
+   if(!r.ok&&r.status===401){navigate('/staff/login',{replace:true});return;}
+   if(!r.ok)throw new Error('Vantoris staff data is unavailable.');
    setData(j);
   }catch(e){setError(e.message||'Staff workspace unavailable.');}
   finally{setLoading(false);}
- },[]);
+ },[navigate]);
  useEffect(()=>{load();},[load]);
 
  async function post(body){
