@@ -11,7 +11,7 @@ Deno.test('Vantoris ledger migration defines the institutional books', async () 
   assert(sql.includes('DEFERRABLE INITIALLY DEFERRED'), 'Journal balance must be checked at transaction commit.');
   assert(sql.includes('line_count < 2 OR net_cents <> 0'), 'Journals require at least two balanced lines.');
   assert(sql.includes('reject_ledger_mutation'), 'Posted journals and entries must be immutable.');
-  assert(!/provider_events|bank_receipts|payment_outbox|\\bACH\\b|\\bFEDWIRE\\b|plaid|base44/i.test(sql), 'Institutional ledger schema must not depend on external payment providers.');
+  assert(!/provider_events|bank_receipts|payment_outbox|\bACH\b|\bFEDWIRE\b|plaid|base44/i.test(sql), 'Institutional ledger schema must not depend on external payment providers.');
 });
 
 Deno.test('Vantoris runtime grants do not permit direct ledger mutation', async () => {
