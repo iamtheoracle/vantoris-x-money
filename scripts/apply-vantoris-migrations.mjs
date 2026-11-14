@@ -54,6 +54,13 @@ export function loadMigrationFiles(directory = MIGRATION_DIR) {
   return migrations;
 }
 
+export function assertBootstrapAllowed({ historyTableExists, ledgerSchemaExists }) {
+  if (!historyTableExists && ledgerSchemaExists) {
+    throw new Error('VANTORIS_MIGRATION_HISTORY_BASELINE_REQUIRED');
+  }
+  return true;
+}
+
 export function validateHistoryRows(expected, actual) {
   const byVersion = new Map(actual.map(row => [row.version, row]));
   for (const migration of expected) {
@@ -108,6 +115,10 @@ function historyTableExists() {
   return psql("SELECT COALESCE(to_regclass('public.vantoris_schema_migrations')::text,'')", true) !== '';
 }
 
+function ledgerSchemaExists() {
+  return psql("SELECT COALESCE(to_regnamespace('vantoris_ledger')::text,'')", true) !== '';
+}
+
 function applyMigration(migration) {
   const body = stripTransactionBoundaries(migration.content, migration.filename);
   const query = [
@@ -128,7 +139,12 @@ export async function applyVantorisMigrations({ verifyOnly = process.argv.includ
   const migrations = loadMigrationFiles();
   const bootstrap = migrations[0];
 
-  if (!historyTableExists()) {
+  const hasHistoryTable = historyTableExists();
+  assertBootstrapAllowed({
+    historyTableExists: hasHistoryTable,
+    ledgerSchemaExists: ledgerSchemaExists(),
+  });
+  if (!hasHistoryTable) {
     if (verifyOnly) throw new Error('VANTORIS_MIGRATION_HISTORY_TABLE_MISSING');
     applyMigration(bootstrap);
   } else {
