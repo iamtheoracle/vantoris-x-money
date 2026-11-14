@@ -58,7 +58,7 @@ export default function StaffPortal(){
  }
  async function decide(proposalId,decision){
   setBusy(true);setError('');setNotice('');
-  try{await post({action:'approve',proposalId,decision});setNotice('Proposal '+decision+'d.');await load();}
+  try{await post({action:'approve',proposalId,decision});setNotice(decision==='approve'?'Proposal approved.':'Proposal rejected.');await load();}
   catch(e){setError(e.message);}finally{setBusy(false);}
  }
  async function execute(proposalId){
