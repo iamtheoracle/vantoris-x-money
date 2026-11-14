@@ -25,7 +25,7 @@ Implemented in this branch:
 
 Not yet complete:
 - Existing member/account/transaction import and reconciliation; no member data has been migrated.
-- Application of migrations 001–022 to a Vantoris-administered database; disposable CI applied the full set, but no live database has been changed.
+- Application of migrations 001–023 to a Vantoris-administered database; disposable CI has passed 001–022. Migration 023 adds manual-journal currency integrity and is awaiting its own CI run. No live database has been changed.
 - Staff account/MFA provisioning and staff role-management workflow.
 - Identity-document encryption key provisioning, retention/rotation procedures and live database/browser verification; member account opening, messaging and service-case workflows.
 - Replacement or archival of all remaining legacy Base44 function and page source files.
@@ -47,7 +47,7 @@ The member/staff UI intentionally shows unavailable states where the Vantoris-ow
 
 ## PostgreSQL setup
 
-Use a new disposable PostgreSQL database for tests. Create the restricted runtime role before migration 002 and apply migrations 001–022 in numeric order. Follow [the institutional ledger runbook](docs/VANTORIS-INSTITUTIONAL-LEDGER.md).
+Use a new disposable PostgreSQL database for tests. Create the restricted runtime role before migration 002 and apply migrations 001–023 in numeric order. Follow [the institutional ledger runbook](docs/VANTORIS-INSTITUTIONAL-LEDGER.md).
 
 Required server-side secrets:
 - `VANTORIS_LEDGER_DATABASE_URL`
@@ -61,7 +61,7 @@ Never use a `VITE_` prefix for credentials. Never point integration tests at pro
 ## Validation and release
 
 Latest verified CI on branch HEAD ca96080d9ebe8d4ddc2ca76b3168fe8393a163b9:
-- PostgreSQL run 43618034707: passed migrations 001–022, restricted runtime-role verification, disposable ledger integration (including member assistant limits), member/staff syntax checks, MFA cryptography tests and migration contract tests.
+- PostgreSQL run 43618034707: passed migrations 001–022, restricted runtime-role verification, disposable ledger integration (including member assistant limits), member/staff syntax checks, MFA cryptography tests and migration contract tests. Migration 023 and its EUR/mixed-currency/idempotency scenarios are pending CI.
 - Recovery build run 43618034865: passed Oracle/runtime tests, assistant security-boundary checks, browser financial-mutation checks, internal-transfer truthfulness checks, entity/security rules, lint, typecheck and production Vite build.
 These are CI/disposable-environment results only. No institutional database, production deployment, merge or external money rail was changed.
 
