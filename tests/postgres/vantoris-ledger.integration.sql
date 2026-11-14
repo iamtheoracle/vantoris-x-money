@@ -31,9 +31,11 @@ BEGIN
           (gen_random_uuid(),opening_journal,a1,'USD',-10000);
   SET CONSTRAINTS ALL IMMEDIATE;
 
-  INSERT INTO vantoris_ledger.payment_operations(id,operation_type,idempotency_key,request_hash,status)
-    VALUES(op_id,'internal_transfer','test-transfer:'||op_id,'test-request-hash','accepted');
-
+  SELECT * INTO result FROM vantoris_ledger.create_internal_transfer_operation(
+    op_id,'test-transfer:'||op_id,repeat('a',64)
+  );
+  op_id := result.operation_id;
+  SET CONSTRAINTS ALL DEFERRED;
   SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(
     op_id,m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-member-session','Synthetic transfer test'
   );
@@ -60,16 +62,17 @@ BEGIN
   );
   IF NOT result.duplicate THEN RAISE EXCEPTION 'Retry was not idempotent'; END IF;
 
-  INSERT INTO vantoris_ledger.payment_operations(id,operation_type,idempotency_key,request_hash,status)
-    VALUES(gen_random_uuid(),'internal_transfer','test-insufficient:'||m1,'test-request-hash','accepted');
+  SELECT * INTO result FROM vantoris_ledger.create_internal_transfer_operation(
+    gen_random_uuid(),'test-insufficient:'||m1,repeat('b',64)
+  );
   BEGIN
     PERFORM * FROM vantoris_ledger.execute_internal_transfer(
-      (SELECT id FROM vantoris_ledger.payment_operations WHERE idempotency_key='test-insufficient:'||m1),
+      result.operation_id,
       m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,'test-member-session','Must fail'
     );
     RAISE EXCEPTION 'Insufficient funds transfer unexpectedly succeeded';
   EXCEPTION WHEN SQLSTATE 'P0001' THEN
-    NULL;
+    IF SQLERRM<>'INSUFFICIENT_AVAILABLE_FUNDS' THEN RAISE; END IF;
   END;
 
   BEGIN
