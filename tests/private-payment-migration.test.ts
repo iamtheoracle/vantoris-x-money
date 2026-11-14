@@ -48,11 +48,15 @@ Deno.test('Vantoris has no external payment projection outbox', async () => {
 
 Deno.test('Vantoris identity and session records remain first-party', async () => {
   const sql = await Deno.readTextFile('migrations/006_vantoris_identity_and_sessions.sql');
-  for (const table of ['staff_users','member_credentials','member_legacy_identities','auth_sessions','member_mfa_factors','staff_mfa_factors','member_identity_documents','member_identity_reviews']) {
+  const identityDocuments = await Deno.readTextFile('migrations/019_vantoris_identity_document_workflow.sql');
+  for (const table of ['staff_users','member_credentials','member_legacy_identities','auth_sessions','member_mfa_factors','staff_mfa_factors']) {
     assert(sql.includes('CREATE TABLE vantoris_ledger.' + table), 'Missing Vantoris identity table: ' + table);
   }
+  for (const table of ['member_identity_documents','member_identity_reviews']) {
+    assert(identityDocuments.includes('CREATE TABLE vantoris_ledger.' + table), 'Missing Vantoris identity evidence table: ' + table);
+  }
   assert(sql.includes('secret_ciphertext bytea'), 'MFA secrets must be encrypted at rest.');
-  assert(sql.includes('ciphertext bytea'), 'Identity documents must be encrypted at rest.');
+  assert(identityDocuments.includes('ciphertext bytea'), 'Identity documents must be encrypted at rest.');
   assert(sql.includes('source_system text NOT NULL'), 'Legacy identity crosswalk is required to preserve existing member identities.');
   assert(sql.includes('STAFF_SEPARATION_OF_DUTIES_REQUIRED'), 'A proposer must not approve their own staff action.');
 });
