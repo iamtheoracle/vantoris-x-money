@@ -46,6 +46,15 @@ test('migration file sequence gaps are rejected', () => {
   }
 });
 
+test('all repository migrations have unique contiguous versions and explicit transaction boundaries', () => {
+  const migrations = loadMigrationFiles();
+  assert.equal(migrations[0].version, '000');
+  assert.equal(migrations.length, 24);
+  for (const migration of migrations) {
+    assert.doesNotThrow(() => stripTransactionBoundaries(migration.content, migration.filename));
+  }
+});
+
 test('migration history verification rejects missing, changed and unknown rows', () => {
   const expected = [
     { version: '000', filename: '000_history.sql', checksum: 'a'.repeat(64) },
