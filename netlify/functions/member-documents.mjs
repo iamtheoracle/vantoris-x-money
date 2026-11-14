@@ -128,25 +128,25 @@ export default async function handler(request){
   }
   if(request.method==='POST'){
    if(!sameOrigin(request))return json({error:'origin_invalid'},403);
+   const form=await request.formData();
+   const file=form.get('file'),documentType=String(form.get('documentType')||'');
+   if(!file||typeof file.arrayBuffer!=='function')return json({error:'document_file_required'},400);
+   if(file.size<1||file.size>4194304)return json({error:'document_size_invalid'},400);
+   if(!['government_id','proof_of_address','selfie','business_document','other'].includes(documentType))return json({error:'document_type_invalid'},400);
+   const plaintext=Buffer.from(await file.arrayBuffer());
+   const mediaType=mediaTypeFromBytes(plaintext);
+   if(!mediaType||mediaType!==file.type)return json({error:'document_media_type_invalid'},400);
+   const version=Number(process.env.VANTORIS_DOCUMENT_KEY_VERSION||'1');
+   const encrypted=encryptDocument(plaintext,version);
+   const filename=safeFilename(file.name);
    const stored=await database().begin(async tx=>{
     const auth=await memberContext(request,tx);if(!auth)return {error:'authentication_required'};
-    const form=await request.formData();
-    const file=form.get('file'),documentType=String(form.get('documentType')||'');
-    if(!file||typeof file.arrayBuffer!=='function')return {error:'document_file_required'};
-    if(file.size<1||file.size>4194304)return {error:'document_size_invalid'};
-    if(!['government_id','proof_of_address','selfie','business_document','other'].includes(documentType))return {error:'document_type_invalid'};
-    const plaintext=Buffer.from(await file.arrayBuffer());
-    const mediaType=mediaTypeFromBytes(plaintext);
-    if(!mediaType||mediaType!==file.type)return {error:'document_media_type_invalid'};
-    const version=Number(process.env.VANTORIS_DOCUMENT_KEY_VERSION||'1');
-    const encrypted=encryptDocument(plaintext,version);
-    const filename=safeFilename(file.name);
     const rows=await tx`SELECT vantoris_ledger.store_member_identity_document(
       ${auth.tokenHash},${documentType},${encrypted.ciphertext},${encrypted.nonce},${encrypted.authTag},
       ${version},${encrypted.contentHash},${mediaType},${filename}) AS document_id`;
     return {documentId:rows[0].document_id};
    });
-   if(stored.error)return json({error:stored.error},stored.error==='authentication_required'?401:400);
+   if(stored.error)return json({error:stored.error},401);
    return json({documentId:stored.documentId,status:'received'},201);
   }
   return json({error:'method_not_allowed'},405);
