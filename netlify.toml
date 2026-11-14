@@ -1,8 +1,7 @@
 # Vantoris is a React SPA using BrowserRouter.
-# Netlify must return the SPA entry point for client-side routes such as
-# /login, /operations, /operations/*, /herobox, etc.
-# API traffic is intentionally handled by the configured Base44 backend URL,
-# not by this Netlify rewrite.
+# Netlify returns the SPA entry point for client-side routes.
+# Server APIs must be implemented as authenticated Netlify Functions or another
+# explicitly configured backend; this rewrite does not proxy application APIs.
 
 [[redirects]]
   from = "/*"
