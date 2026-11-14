@@ -368,7 +368,7 @@ async function transfer(request, body) {
 
 
 async function currentAccount(request, accountId) {
-  if (!/^[0-9a-f-]{36}$/i.test(String(accountId || ''))) return null;
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(accountId || ''))) return null;
   return await database().begin(async tx => {
     const auth = await authenticateMember(request, tx);
     if (!auth) return null;
@@ -405,7 +405,7 @@ function csvCell(value) {
 }
 
 async function currentStatement(request, accountId, from, to) {
-  if (!/^[0-9a-f-]{36}$/i.test(String(accountId || '')) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(String(from||'')) || !/^\\d{4}-\\d{2}-\\d{2}$/.test(String(to||''))) {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(String(accountId || '')) || !/^\d{4}-\d{2}-\d{2}$/.test(String(from||'')) || !/^\d{4}-\d{2}-\d{2}$/.test(String(to||''))) {
     return json({ error:'invalid_statement_request' },400);
   }
   const fromDate = new Date(from+'T00:00:00.000Z');
@@ -417,7 +417,13 @@ async function currentStatement(request, accountId, from, to) {
   if (!token || token.length>200) return json({ error:'authentication_required' },401);
   const tokenHash = sha256(token);
   const result = await database().begin(async tx => {
-    const memberId = await tx`SELECT vantoris_ledger.record_member_statement_access(${tokenHash},${accountId},${fromDate},${toExclusive}) AS member_id`;
+    const csrf = cookies(request).__Host-vantoris_csrf || '';
+    const header = request.headers.get('x-csrf-token') || '';
+    if (!csrf || !header || csrf.length !== header.length || !timingSafeEqual(Buffer.from(csrf),Buffer.from(header))) return { error:'csrf_invalid' };
+    const csrfHash = sha256(csrf);
+    const csrfRows = await tx`SELECT vantoris_ledger.verify_auth_csrf(${tokenHash},${csrfHash}) AS valid`;
+    if (csrfRows[0]?.valid !== true) return { error:'csrf_invalid' };
+    await tx`SELECT vantoris_ledger.record_member_statement_access(${tokenHash},${accountId},${fromDate},${toExclusive}) AS member_id`;
     const accounts = await tx`SELECT id,account_reference,currency FROM vantoris_ledger.ledger_accounts WHERE id=${accountId}`;
     if (!accounts.length) return null;
     const opening = await tx`
@@ -449,10 +455,11 @@ async function currentStatement(request, accountId, from, to) {
       lines.push([entry.created_at.toISOString(),entry.id,entry.journal_type,entry.description,amount>0n?centsToDecimal(amount):'',amount<0n?centsToDecimal(-amount):'',centsToDecimal(running)]);
     }
     lines.push([],['Closing balance',hasAny?centsToDecimal(running):'']);
-    const csv='\\uFEFF'+lines.map(row=>row.map(csvCell).join(',')).join('\\r\\n');
+    const csv='\uFEFF'+lines.map(row=>row.map(csvCell).join(',')).join('\r\n');
     return {csv,accountReference:accounts[0].account_reference};
   });
   if (!result) return json({error:'account_not_found'},404);
+  if (result.error === 'csrf_invalid') return json({error:'csrf_invalid'},403);
   return new Response(result.csv,{status:200,headers:{
     'content-type':'text/csv; charset=utf-8',
     'content-disposition':`attachment; filename="vantoris-statement-${accountId}-${from}-${to}.csv"`,
@@ -462,6 +469,16 @@ async function currentStatement(request, accountId, from, to) {
 export default async function handler(request) {
   const url = new URL(request.url);
   const action = url.searchParams.get('action') || 'me';
+  if (request.method === 'GET' && action === 'account') {
+    try {
+      const data = await currentAccount(request,url.searchParams.get('id'));
+      return data ? json(data) : json({error:'account_not_found'},404);
+    } catch (error) {
+      const message = String(error?.message || '');
+      if (message.includes('MEMBER_SESSION_INVALID')) return json({error:'authentication_required'},401);
+      return json({error:'account_service_unavailable'},503);
+    }
+  }
   if (request.method === 'GET' && action === 'me') {
     try {
       const data = await currentMember(request);
@@ -482,6 +499,7 @@ export default async function handler(request) {
 
   try {
     if (body.action === 'login') return await login(request, body);
+    if (body.action === 'statement') return await currentStatement(request,body.accountId,body.from,body.to);
     if (body.action === 'logout') {
       const result = await database().begin(async tx => {
         const auth = await authenticateMember(request, tx);
