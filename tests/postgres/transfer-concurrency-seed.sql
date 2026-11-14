@@ -81,9 +81,7 @@ BEGIN
  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
   (capital_id,'CONCURRENCY-CAPITAL',NULL,'institutional_capital','USD'),
   (clearing_id,'CONCURRENCY-CLEARING',NULL,'internal_clearing','USD'),
-  (suspense_id,'CONCURRENCY-SUSPENSE',NULL,'suspense','USD'),
-  (sender_account_id,'CONCURRENCY-SENDER-USD',sender_id,'member_liability','USD'),
-  (receiver_account_id,'CONCURRENCY-RECEIVER-USD',receiver_id,'member_liability','USD');
+  (suspense_id,'CONCURRENCY-SUSPENSE',NULL,'suspense','USD');
 
  capital_opening_proposal:=vantoris_ledger.create_staff_action_proposal(
   decode(repeat('a',64),'hex'),'manual_journal','concurrency-capital-opening',
@@ -98,6 +96,11 @@ BEGIN
  PERFORM vantoris_ledger.post_approved_manual_journal(
   decode(repeat('c',64),'hex'),capital_opening_proposal
  );
+
+ -- Member liability accounts may only be issued after verified capital is funded.
+ INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
+  (sender_account_id,'CONCURRENCY-SENDER-USD',sender_id,'member_liability','USD'),
+  (receiver_account_id,'CONCURRENCY-RECEIVER-USD',receiver_id,'member_liability','USD');
 
  sender_opening_proposal:=vantoris_ledger.create_staff_action_proposal(
   decode(repeat('a',64),'hex'),'manual_journal','concurrency-sender-opening',
