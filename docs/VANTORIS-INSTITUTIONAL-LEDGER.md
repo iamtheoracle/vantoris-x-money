@@ -71,7 +71,7 @@ The SQL integration script uses synthetic members and rolls back its fixtures. I
 
 - Existing member, account, permission and historical transaction migration with source-to-target reconciliation and rollback. The legacy crosswalk table exists, but no live member export has been imported.
 - Verified permanent-capital account and documented opening journal evidence.
-- A first-party Netlify member-auth handler now derives member identity from `resolve_member_session` and an HttpOnly session cookie; integration and browser tests are still required. The current transfer function still accepts a server-supplied member UUID; the API must derive it from the session, never from the request body. A token-bound database wrapper should replace that transitional signature before member transfers are enabled.
+- A first-party Netlify member-auth handler now derives member identity from `resolve_member_session` and an HttpOnly session cookie. Member transfer entry points accept the session token hash and derive the member ID inside PostgreSQL; no member ID is accepted from the request body. Integration and browser tests are still required.
 - Full two-person approval enforcement and posting functions for reversals, limit changes and manual journals. The proposal/approval tables prevent self-approval, but staff capability authorization and execution workflows remain to be implemented.
 - Vantoris-owned identity-document storage, identity review, sign-in, MFA, session revocation, statements, account-scoped read APIs and staff directory/authorization.
 - Disposable PostgreSQL integration tests and RLS checks are being added to CI; multi-session concurrency tests, backups and restore verification remain release blockers.
