@@ -120,7 +120,8 @@ const AuthenticatedApp=()=>{
      </Route>
     </Route>
 
-    <Route path="/admin/*" element={<Navigate to="/operations" replace/>}/>
+    <Route path="/operations" element={<OperationsRoute/>}/>
+     <Route path="/admin/*" element={<Navigate to="/operations" replace/>}/>
     <Route path="/staff/portal" element={<OperationsRoute/>}/>
     <Route path="/operations/*" element={<OperationsRoute/>}/>
     <Route path="*" element={<PageNotFound/>}/>
