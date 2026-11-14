@@ -152,7 +152,7 @@ BEGIN
   INSERT INTO vantoris_ledger.journal_entries(id,journal_id,ledger_account_id,currency,amount_cents) VALUES
    (gen_random_uuid(),impairment_journal,capital_id,'USD',1000),
    (gen_random_uuid(),impairment_journal,clearing_id,'USD',-1000);
-  SET CONSTRAINTS institutional_capital_floor_check IMMEDIATE;
+  SET CONSTRAINTS ALL IMMEDIATE;
   RAISE EXCEPTION 'Permanent capital impairment unexpectedly succeeded';
  EXCEPTION WHEN check_violation THEN
   IF SQLERRM NOT LIKE 'PERMANENT_CAPITAL_IMPAIRMENT_BLOCKED%' THEN RAISE; END IF;
