@@ -168,7 +168,7 @@ jobs:
           ]) {
             if (!transfer.includes(marker)) throw new Error('Core internal transfer contract is missing: ' + marker);
           }
-          if (/fetch\\(\\s*['"]https?:\\/\\//i.test(transfer)) {
+          if (/fetch\(\s*['"]https?:\/\//i.test(transfer)) {
             throw new Error('Internal transfer page must not call an external payment API directly');
           }
           const investment = readFileSync('src/pages/Investment.jsx', 'utf8');
