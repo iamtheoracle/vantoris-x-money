@@ -235,3 +235,12 @@ Deno.test('approved manual journals derive one currency from their ledger accoun
   assert(sql.includes('GRANT EXECUTE ON FUNCTION vantoris_ledger.post_approved_manual_journal'), 'runtime posting permission must remain explicit');
   assert(!/\x27USD\x27/.test(sql), 'manual journal posting must not hardcode USD');
 });
+
+Deno.test('migration history bootstrap is append-only and exposes read access only', async () => {
+  const sql = await Deno.readTextFile('migrations/000_vantoris_migration_history.sql');
+  assert(sql.includes('public.vantoris_schema_migrations'), 'Vantoris migration history table must exist before versioned migrations');
+  assert(sql.includes("version ~ '^[0-9]{3}$'") && sql.includes("checksum ~ '^[0-9a-f]{64}$'"), 'history versions and SHA-256 checksums must be constrained');
+  assert(sql.includes('BEFORE UPDATE OR DELETE') && sql.includes('BEFORE TRUNCATE'), 'migration history must be append-only');
+  assert(sql.includes('REVOKE ALL ON TABLE public.vantoris_schema_migrations FROM PUBLIC, vantoris_backend'), 'runtime role must not mutate migration history');
+  assert(sql.includes('GRANT SELECT ON TABLE public.vantoris_schema_migrations TO vantoris_backend'), 'runtime role may verify migration history');
+});
