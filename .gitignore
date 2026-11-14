@@ -1,0 +1,2 @@
+# Generated from versioned SQL migration files during build.
+netlify/functions/migrationManifest.mjs
