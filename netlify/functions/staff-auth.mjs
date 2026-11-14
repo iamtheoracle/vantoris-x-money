@@ -151,7 +151,7 @@ async function login(request,body) {
 export default async function handler(request) {
   const url=new URL(request.url),action=url.searchParams.get('action')||'me';
   if(request.method==='GET'&&action==='me') {
-    const token=readCookies(request).__Host-vantoris_staff_session;
+    const token=readCookies(request)['__Host-vantoris_staff_session'];
     if(!token) return json({error:'authentication_required'},401);
     try {
       const rows=await database()`SELECT vantoris_ledger.get_staff_profile(${sha256(token)}) AS staff`;
@@ -166,7 +166,7 @@ export default async function handler(request) {
   try {
     if(body.action==='login') return await login(request,body);
     if(body.action==='logout') {
-      const cookie=readCookies(request),token=cookie.__Host-vantoris_staff_session||'',csrf=cookie.__Host-vantoris_staff_csrf||'',header=request.headers.get('x-csrf-token')||'';
+      const cookie=readCookies(request),token=cookie['__Host-vantoris_staff_session']||'',csrf=cookie['__Host-vantoris_staff_csrf']||'',header=request.headers.get('x-csrf-token')||'';
       if(!token||!csrf||!header||csrf.length!==header.length||!timingSafeEqual(Buffer.from(csrf),Buffer.from(header))) return json({error:'csrf_invalid'},403);
       const tokenHash=sha256(token),csrfHash=sha256(csrf);
       const valid=await database()`SELECT vantoris_ledger.verify_auth_csrf(${tokenHash},${csrfHash}) AS valid`;
