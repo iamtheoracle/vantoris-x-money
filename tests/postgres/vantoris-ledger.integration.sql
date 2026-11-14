@@ -9,7 +9,8 @@ DECLARE
  capital_id uuid:=gen_random_uuid(); clearing_id uuid:=gen_random_uuid(); suspense_id uuid:=gen_random_uuid(); a1 uuid:=gen_random_uuid(); a2 uuid:=gen_random_uuid();
  capital_journal uuid:=gen_random_uuid(); opening_journal uuid:=gen_random_uuid(); impairment_journal uuid:=gen_random_uuid(); op_id uuid:=gen_random_uuid();
  activation_hash bytea:=decode(repeat('1',64),'hex'); reset_hash bytea:=decode(repeat('2',64),'hex'); mfa_challenge_hash bytea:=decode(repeat('3',64),'hex');
- mfa_session_hash bytea:=decode(repeat('4',64),'hex'); mfa_csrf_hash bytea:=decode(repeat('5',64),'hex'); mfa_factor_id uuid:=gen_random_uuid(); manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid; limit_proposal uuid; limit_history uuid;
+ mfa_session_hash bytea:=decode(repeat('4',64),'hex'); mfa_csrf_hash bytea:=decode(repeat('5',64),'hex'); mfa_factor_id uuid:=gen_random_uuid();
+ mfa_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; staff_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid; limit_proposal uuid; limit_history uuid;
  result record; sender_balance numeric; receiver_balance numeric; captured_status text; journal_count integer;
 BEGIN
  INSERT INTO vantoris_ledger.members(id,member_reference,status) VALUES
@@ -45,11 +46,11 @@ BEGIN
  PERFORM vantoris_ledger.begin_member_mfa_enrollment(m3,mfa_challenge_hash,mfa_factor_id,
   decode('00','hex'),decode(repeat('00',12),'hex'),decode(repeat('00',16),'hex'),1,clock_timestamp()+interval '10 minutes');
  PERFORM vantoris_ledger.complete_member_mfa_enrollment(mfa_challenge_hash,mfa_session_hash,mfa_csrf_hash,
-  floor(extract(epoch from clock_timestamp())/30)::bigint,clock_timestamp()+interval '1 hour');
- IF vantoris_ledger.consume_member_totp_step(mfa_factor_id,floor(extract(epoch from clock_timestamp())/30)::bigint) THEN
+  mfa_totp_step,clock_timestamp()+interval '1 hour');
+ IF vantoris_ledger.consume_member_totp_step(mfa_factor_id,mfa_totp_step) THEN
   RAISE EXCEPTION 'Member TOTP step replay was accepted';
  END IF;
- IF NOT vantoris_ledger.consume_staff_totp_step(ops_factor_id,floor(extract(epoch from clock_timestamp())/30)::bigint) THEN
+ IF NOT vantoris_ledger.consume_staff_totp_step(ops_factor_id,staff_totp_step) THEN
   RAISE EXCEPTION 'First staff TOTP step was rejected';
  END IF;
  IF vantoris_ledger.consume_staff_totp_step(ops_factor_id,floor(extract(epoch from clock_timestamp())/30)::bigint) THEN
