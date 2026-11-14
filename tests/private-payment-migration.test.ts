@@ -70,3 +70,11 @@ Deno.test('Vantoris sessions enforce MFA and member-scoped PostgreSQL RLS', asyn
   assert(rls.includes('resolve_staff_session'), 'Staff session resolver must require a staff session.');
   assert(!/GRANT SELECT ON[^;]*auth_sessions/i.test(rls), 'Runtime must not directly read all raw session token hashes.');
 });
+
+Deno.test('Vantoris login throttling and CSRF checks are database-owned', async () => {
+  const sql = await Deno.readTextFile('migrations/008_vantoris_auth_rate_limits.sql');
+  assert(sql.includes('auth_login_attempts'), 'Login attempts must be stored by Vantoris.');
+  assert(sql.includes("interval '15 minutes'"), 'Failed-login window and lock duration must be bounded.');
+  assert(sql.includes('verify_auth_csrf'), 'State-changing member requests must verify session-bound CSRF.');
+  assert(sql.includes('GRANT EXECUTE ON FUNCTION vantoris_ledger.record_login_failure'), 'Backend must use the database throttling function.');
+});
