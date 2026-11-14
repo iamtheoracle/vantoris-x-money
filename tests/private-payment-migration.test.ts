@@ -128,3 +128,13 @@ Deno.test('Member transfer limits require dual approval and serialize concurrent
   assert(sql.includes('FOR UPDATE'), 'Per-member limit row must serialize concurrent transfer claims.');
   assert(sql.includes('MEMBER_TRANSFER_LIMIT_NOT_CONFIGURED'), 'No invented default limit may be assumed.');
 });
+
+Deno.test('Vantoris transfer limit changes require two-person approval and immutable history', async () => {
+  const sql = await Deno.readTextFile('migrations/012_vantoris_member_transfer_limits.sql');
+  assert(sql.includes('member_transfer_limit_history'), 'Member transfer limit history missing.');
+  assert(sql.includes('post_approved_limit_change'), 'Approved limit posting function missing.');
+  assert(sql.includes('MEMBER_SINGLE_TRANSFER_LIMIT_EXCEEDED'), 'Single limit enforcement missing.');
+  assert(sql.includes('MEMBER_DAILY_TRANSFER_LIMIT_EXCEEDED'), 'Daily limit enforcement missing.');
+  assert(sql.includes('MEMBER_TRANSFER_LIMIT_NOT_CONFIGURED'), 'Missing limits must fail closed.');
+  assert(sql.includes('member_transfer_limit_history_immutable'), 'Limit history must be append-only.');
+});
