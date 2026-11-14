@@ -107,6 +107,7 @@ const AuthenticatedApp=()=>{
        <Route path="/homes" element={<HomesPage/>}/>
        <Route path="/news" element={<NewsPage/>}/>
        <Route path="/ask" element={<AskPage/>}/>
+        <Route path="/assistant" element={<AskPage/>}/>
        <Route path="/herobox-hub" element={<HeroBoxHub/>}/>
        <Route path="/support" element={<SupportPage/>}/>
        <Route path="/move-money" element={<MoveMoney/>}/>
