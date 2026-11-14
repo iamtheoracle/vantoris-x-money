@@ -8,7 +8,7 @@ The current migration set is a replacement foundation. It does **not** import ex
 
 ## Migration state
 
-The seventeen files are ordered and must be applied once, in order, to an empty Vantoris-administered PostgreSQL database:
+The eighteen files are ordered and must be applied once, in order, to an empty Vantoris-administered PostgreSQL database:
 
 1. `migrations/001_avcu_payment_control_plane.sql` — Vantoris ledger schema, member/account registry, immutable journals and entries, operations, holds, audit and staff approval records.
 2. `migrations/002_avcu_backend_grants.sql` — least-privilege runtime grants. Requires the runtime role to exist.
@@ -27,6 +27,7 @@ The seventeen files are ordered and must be applied once, in order, to an empty 
 15. `migrations/015_vantoris_totp_replay_protection.sql` — database-enforced one-use TOTP time-steps for member and staff MFA.
 16. `migrations/016_vantoris_capital_floor_workflow.sql` — capital floor proposals, independent approval and server-side posting; the old two-session setter is no longer executable by the application role.
 17. `migrations/017_vantoris_mfa_mandatory.sql` — database constraints prevent MFA from being disabled for member or staff credentials.
+18. `migrations/018_vantoris_reversal_reason_audit.sql` — requires the staff-supplied reason and records it in the reversal journal and immutable audit event.
 
 These migrations have **not been verified as applied** to any live Vantoris database. A file in Git is not an applied migration. Record the actual database name, server identity, migration owner, execution timestamp and checksums in the institution's controlled change record after a successful application.
 
@@ -66,6 +67,7 @@ psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/014_v
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/015_vantoris_totp_replay_protection.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/016_vantoris_capital_floor_workflow.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/017_vantoris_mfa_mandatory.sql
+psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/018_vantoris_reversal_reason_audit.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/postgres/vantoris-ledger.integration.sql
 ```
 
