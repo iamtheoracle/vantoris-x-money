@@ -159,3 +159,11 @@ Deno.test('Vantoris staff sessions resolve capabilities and dispatch only approv
   assert(sql.includes('post_approved_reversal'), 'Reversal dispatch missing.');
   assert(sql.includes('post_approved_limit_change'), 'Limit change dispatch missing.');
 });
+
+Deno.test('Member and staff TOTP time-steps cannot be replayed', async () => {
+  const sql = await Deno.readTextFile('migrations/015_vantoris_totp_replay_protection.sql');
+  assert(sql.includes('consume_member_totp_step'), 'Member TOTP replay guard missing.');
+  assert(sql.includes('consume_staff_totp_step'), 'Staff TOTP replay guard missing.');
+  assert(sql.includes('last_used_step<p_step'), 'Previously used TOTP steps must be rejected.');
+  assert(sql.includes('p_totp_step bigint'), 'MFA enrollment must consume the initial TOTP step atomically.');
+});
