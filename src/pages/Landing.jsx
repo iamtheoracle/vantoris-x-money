@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   Shield,
-  CreditCard,
   Landmark,
   TrendingUp,
   Heart,
@@ -11,7 +10,6 @@ import {
   Globe2,
   Sparkles,
   ChevronRight,
-  Play,
   CheckCircle2,
   Plane,
   HandHeart,
@@ -34,40 +32,38 @@ import ShieldLogo from '@/components/vantoris/ShieldLogo';
 import HambrosTribute from '@/components/vantoris/HambrosTribute';
 import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
 import FounderStories from '@/components/vantoris/FounderStories';
-import PrivateInvestmentCardGallery from '@/components/vantoris/PrivateInvestmentCardGallery';
-import { PROVIDERS } from '@/lib/providers';
 
 const NAV = [
   { label: 'Verified', href: '#verified' },
   { label: 'Services', href: '#service-availability' },
-  { label: 'Cards', href: '#cards' },
+  { label: 'Internal transfers', href: '#banking' },
   
   { label: 'About', href: '#about' },
   { label: 'Heritage', href: '#hambros-tribute' },
   { label: 'Builders', href: '#builder-stories' },
   { label: 'Accounts', href: '#banking' },
-  { label: 'Invest', href: '#invest' },
+  { label: 'Investment records', href: '#invest' },
   { label: 'Travel', href: '#travel' },
   { label: 'Property', href: '#property' },
-  { label: 'AI & Chat', href: '#ai-ops' },
+  { label: 'Optional assistant', href: '#ai-platform' },
   { label: 'Community', href: '#community' },
   { label: 'Safety', href: '#fraud' },
   { label: 'Contact', href: '#contact' },
 ];
 
 const SERVICE_AREAS = [
-  ['Account records & statements', 'Account records and statements from verified account sources'],
-  ['Payment workflows', 'Available only when authorized ledger and provider workflows are connected'],
-  ['Card services', 'Issuer-dependent records, issuance, and controls'],
-  ['Credit services', 'Only after separate eligibility, compliance, and provider review'],
-  ['Payroll routing', 'Not live until a verified payroll provider and account details are connected'],
-  ['Outbound bill payment', 'Only after payment authorization, processing, and settlement are verified'],
-  ['Responsive access', 'Accessible client experience across supported screen sizes'],
-  ['Notifications & messaging', 'Available where persistent messaging and notification workflows are connected'],
-  ['Document access', 'Document storage and exports, subject to verified access controls'],
-  ['Investment workspace', 'Investment information and actions only when providers and authorization are verified'],
-  ['Security controls', 'Session controls and separated workspaces; server-side authorization remains required'],
-  ['Advisor & assistant support', 'Guidance with permission boundaries; human escalation only when connected'],
+  ['Vantoris ledger', 'Member liabilities, institutional capital, posted journals and holds recorded in Vantoris-administered PostgreSQL'],
+  ['Internal member transfers', 'Vantoris-to-Vantoris transfers using a hold, balanced journal and release in one database transaction'],
+  ['Posted balances', 'Derived from immutable ledger entries; available funds account for active holds'],
+  ['Member statements', 'Generated from Vantoris ledger records and scoped to the authenticated member'],
+  ['Identity decisions', 'Reviewed by Vantoris staff using Vantoris-held records; secure document intake is still being completed'],
+  ['Staff governance', 'Separate staff identity, capability checks, independent approvals and append-only audit'],
+  ['Member support', 'First-party service case and messaging workflows are still being completed'],
+  ['Investment records', 'Displayed only after Vantoris verifies the underlying assets and records the corresponding journals'],
+  ['External payments', 'Disabled until Vantoris has an independently verified counterparty relationship in its own name'],
+  ['Card services', 'No card issuance or card-network processing is enabled in the Vantoris core'],
+  ['Optional discovery', 'Travel, property and market information are separate from member balances and internal transfers'],
+  ['Optional assistant', 'May provide guidance but has no ledger posting authority and is not required for any core service'],
 ];
 
 const NGO_PARTNERS = [
@@ -93,34 +89,34 @@ const MILITARY_ORGS = [
 const PILLARS = [
   {
     icon: Landmark,
-    title: 'Private client accounts',
-    body: 'A private client workspace for account records, statements, and activity. Live balances and payment execution appear only after an authorized account and payments provider is connected.',
+    title: 'Vantoris institutional ledger',
+    body: 'Vantoris owns and administers the PostgreSQL ledger. Member balances are Vantoris liabilities derived from balanced, immutable journals and active holds.',
   },
   {
-    icon: CreditCard,
-    title: 'Debit & credit services',
-    body: 'View card records and card activity when returned by an issuer integration. Issuance, spend authorization, and card controls require a connected, approved card processor.',
+    icon: Wallet,
+    title: 'Internal member transfers',
+    body: 'Move funds between Vantoris accounts through a hold, balanced journal and release in one database transaction. No bank, Plaid, ACH, Fedwire or card network is in the path.',
   },
   {
-    icon: TrendingUp,
-    title: 'Investment portfolios',
-    body: 'Review portfolio information and investment requests. Trading, custody, funding, and withdrawals require an authorized investment provider and applicable approvals.',
+    icon: ShieldCheck,
+    title: 'Independent staff controls',
+    body: 'Vantoris staff use separate identities and capabilities. Reversals, manual journals, limit changes and capital-floor actions require independent approval and immutable audit.',
   },
   {
-    icon: HandHeart,
-    title: 'HeroBox & humanitarian care',
-    body: 'Explore care-package and humanitarian services. Ordering, donations, fulfilment, and shipping depend on verified providers and approvals.',
+    icon: FileText,
+    title: 'Member records and statements',
+    body: 'Members see only their own Vantoris accounts and ledger-derived statements. Missing or unverified figures remain blank rather than being estimated.',
   },
 ];
 
 const HELP = [
   {
     title: 'Working families',
-    text: 'Clear account information, payment-request workflows, and activity history, with payment execution enabled only through approved providers.',
+    text: 'Clear Vantoris account information, posted ledger activity and internal transfers between Vantoris members.',
   },
   {
     title: 'Service members & veterans',
-    text: 'Member support, HeroBox missions, and clear financial information for service members, veterans, and their families.',
+    text: 'Member support information and Vantoris ledger records for eligible members and their families.',
   },
   {
     title: 'Builders & entrepreneurs',
@@ -311,19 +307,19 @@ export default function Landing() {
                 <span className="font-mono text-[11px] text-brass tracking-wide">PRIVATE CLIENT PLATFORM</span>
               </div>
               <h1 className="font-heading text-white text-[2.75rem] sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.02] tracking-tight">
-                A private investment institution.
+                Vantoris is the institution.
                 <br />
-                <span className="font-display italic font-normal text-brass text-[1.05em]">A connected client experience.</span>
+                <span className="font-display italic font-normal text-brass text-[1.05em]">Its books, capital and member liabilities remain under Vantoris control.</span>
               </h1>
               <p className="mt-6 text-lg sm:text-xl text-white/65 max-w-xl leading-relaxed font-body">
-                Account records, investment information, travel, property, and impact services—presented with clear boundaries and verified availability. AI assistance is permission-scoped; sensitive information and consequential actions remain behind authorized workflows.
+                Vantoris maintains its own books, permanent capital and member liabilities. Internal transfers post between Vantoris accounts without an outside network. Staff decisions and member access are controlled by Vantoris.
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Link
                   to="/register"
                   className="inline-flex items-center gap-2 rounded-full bg-brass text-navy font-bold px-7 py-3.5 text-[15px] hover:bg-[#d4b03a] transition shadow-[0_0_40px_rgba(201,162,39,0.25)]"
                 >
-                  Open membership
+                  Activate approved membership
                   <ArrowRight size={18} />
                 </Link>
                 <Link
@@ -337,8 +333,8 @@ export default function Landing() {
                   onClick={(e) => onNavClick(e, '#service-availability')}
                   className="inline-flex items-center gap-2 rounded-full text-white/70 font-medium px-4 py-3.5 text-[14px] hover:text-white transition"
                 >
-                  <Play size={16} className="text-brass" />
-                  Peek the cards
+                  <ShieldCheck size={16} className="text-brass" />
+                  How the ledger works
                 </a>
               </div>
               <div className="mt-12 flex flex-wrap gap-x-8 gap-y-3 font-mono text-[11px] text-white/40 uppercase tracking-wider">
@@ -396,14 +392,14 @@ export default function Landing() {
             </div>
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {[
-                { title: 'Accounts & services', detail: 'Accounts, balances, cards and statements', icon: Landmark, to: '/accounts' },
-                { title: 'Transfers & payment requests', detail: 'Move money and review transactions', icon: Wallet, to: '/move-money' },
+                { title: 'Vantoris accounts', detail: 'Ledger-derived balances and statements', icon: Landmark, to: '/accounts' },
+                { title: 'Internal transfers', detail: 'Transfer between Vantoris member accounts', icon: Wallet, to: '/move-money' },
                 { title: 'Markets & investing', detail: 'Market discovery and investment tools', icon: TrendingUp, to: '/investment' },
                 { title: 'Flights & travel', detail: 'Flight discovery and travel services', icon: Plane, to: '/discover/flights' },
                 { title: 'Foreign exchange', detail: 'Explore FX information and rates', icon: Globe2, to: '/discover/fx' },
                 { title: 'Property', detail: 'Explore housing and property discovery', icon: Building2, to: '/discover/housing' },
                 { title: 'News & discovery', detail: 'Browse news and platform discovery', icon: BookOpen, to: '/discover/news' },
-                { title: 'AI & assistance', detail: 'Get guidance and find support', icon: Sparkles, to: '/assistant' },
+                { title: 'Optional assistant', detail: 'Guidance only; no ledger authority', icon: Sparkles, to: '/ask' },
               ].map((item) => {
                 const Icon = item.icon;
                 return (
@@ -425,7 +421,7 @@ export default function Landing() {
               })}
             </div>
             <p className="mt-5 text-xs leading-relaxed text-slate-500">
-              Availability varies by feature, account eligibility and provider integration. Market, flight and FX information may be informational; this directory does not imply that a transaction or booking is live.
+              Vantoris ledger balances and internal transfers do not depend on external providers. Optional discovery services are separate and may be unavailable.
             </p>
           </div>
         </section>
@@ -450,14 +446,14 @@ export default function Landing() {
                   Obvious trust.<span className="italic text-brass"> Premium clarity.</span>
                 </h2>
                 <p className="mt-4 text-slate-600 leading-relaxed font-body">
-                  Vantoris brings together account records, investment information, service access, and dedicated support within a carefully separated workspace. Provider-dependent services remain unavailable until their production integrations and approvals are verified. Sign in to access your authorized client workspace and available services.
+                  Vantoris is the institution and owns the ledger. Member balances are liabilities created by Vantoris journals. Internal transfers, statements and audit records are produced from its own PostgreSQL system; outside providers are not prerequisites.
                 </p>
                 <ul className="mt-6 space-y-2 text-sm text-navy font-body">
                   {[
                     'Member verification before full product access',
-                    'Statements when available from verified account sources',
-                    'Account activity and service records with audit context where available',
-                    'AI assistants for guidance—not for sharing your secrets',
+                    'Statements generated from Vantoris ledger entries',
+                    'Internal transfers between Vantoris member accounts',
+                    'Staff actions independently approved and audited',
                   ].map((x) => (
                     <li key={x} className="flex gap-2">
                       <ShieldCheck size={16} className="text-brass shrink-0 mt-0.5" />
@@ -494,32 +490,25 @@ export default function Landing() {
 
         <section id="service-availability" className="scroll-mt-24 bg-[#F4F6F9] border-y border-slate-200 py-16 sm:py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
-            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">Provider connectivity</p>
-            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-navy">Services, backed by real connections</h2>
+            <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">Institutional operating model</p>
+            <h2 className="font-heading text-3xl sm:text-4xl font-bold text-navy">Vantoris owns the books</h2>
             <p className="mt-4 max-w-3xl text-slate-600 leading-relaxed">
-              Vantoris displays a service as connected only when its production provider is configured and verified.
-              Internal records, sample artwork, and design concepts are not presented as live financial or payment services.
+              The Vantoris PostgreSQL ledger is the sole record for member liabilities, permanent capital, posted journals, holds and audit. The member sign-in, balances, statements and internal transfer path do not call an outside financial network.
             </p>
             <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Object.values(PROVIDERS).filter((provider) => ['financialAccount', 'payments', 'cards', 'statements', 'investment', 'flights', 'flightTracking', 'homes', 'shipping', 'donations', 'identity'].includes(provider.id)).map((provider) => (
-                <article key={provider.id} className="rounded-2xl border border-slate-200 bg-white p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-semibold text-navy">{provider.label}</h3>
-                    <span className={provider.status === 'connected' ? 'rounded-full bg-emerald-50 text-emerald-800 px-2.5 py-1 text-[10px] font-bold uppercase' : 'rounded-full bg-slate-100 text-slate-600 px-2.5 py-1 text-[10px] font-bold uppercase'}>
-                      {provider.status === 'connected' ? 'Connected' : 'Not connected'}
-                    </span>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-600 leading-relaxed">{provider.note}</p>
+              {SERVICE_AREAS.slice(0,9).map(([title,detail])=>(
+                <article key={title} className="rounded-2xl border border-slate-200 bg-white p-5">
+                  <h3 className="font-semibold text-navy">{title}</h3>
+                  <p className="mt-3 text-sm text-slate-600 leading-relaxed">{detail}</p>
                 </article>
               ))}
             </div>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link to="/register" className="rounded-full bg-navy text-white px-5 py-3 text-sm font-bold">Create membership</Link>
+              <Link to="/register" className="rounded-full bg-navy text-white px-5 py-3 text-sm font-bold">Activate approved membership</Link>
               <Link to="/login" className="rounded-full border border-slate-300 bg-white text-navy px-5 py-3 text-sm font-semibold">Member sign in</Link>
             </div>
           </div>
         </section>
-
         {/* AI platform */}
         <section id="ai-platform" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-16">
           <div className="rounded-[28px] bg-navy text-white p-8 sm:p-10 relative overflow-hidden">
@@ -531,10 +520,10 @@ export default function Landing() {
               <p className="font-mono text-[11px] text-brass uppercase tracking-wider">Permission-scoped AI assistance</p>
               <h2 className="font-heading text-3xl font-bold mt-2">AI assistance, with clear boundaries</h2>
               <p className="mt-4 text-white/70 leading-relaxed font-body">
-                Member guidance and staff assistance are separate. AI may explain information and help prepare work; it does not receive unrestricted private, financial, or administrative access. Sensitive actions require server-side authorization and explicit confirmation.
+                The assistant is optional and outside the institution. It may explain information, but it has no ledger credentials, cannot post journals, cannot approve staff actions and is not required for sign-in, balances, transfers, reversals, statements or audit.
               </p>
               <div className="mt-6 flex flex-wrap gap-2">
-                {['Member assistant', 'Ops command', 'Image & templates', 'Secure chat'].map((x) => (
+                {['Optional guidance', 'No ledger credentials', 'No posting authority', 'Switch-off independent'].map((x) => (
                   <span key={x} className="rounded-full border border-white/20 px-3 py-1 text-xs font-medium">{x}</span>
                 ))}
               </div>
@@ -698,72 +687,30 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* Cards */}
+        {/* Card services are intentionally not part of the institutional ledger. */}
         <section id="cards" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Cards</p>
-              <h2 className="text-3xl font-bold text-navy">Debit and credit pathways, under your control</h2>
-              <p className="mt-4 text-slate-600 leading-relaxed">
-                Eligible members can request debit cards, review card services, and keep spend
-                visible next to cash and investments. Credit offerings follow compliance review—
-                never a one-click surprise.
-              </p>
-              <ul className="mt-6 space-y-2 text-[15px] text-navy">
-                {['Card request & status tracking', 'Spend visibility in Activity', 'Operator review for eligible products'].map(
-                  (t) => (
-                    <li key={t} className="flex gap-2 items-center">
-                      <ChevronRight size={16} className="text-brass" />
-                      {t}
-                    </li>
-                  )
-                )}
-              </ul>
-            </div>
-            <div className="relative h-56 sm:h-64 rounded-[28px] bg-gradient-to-br from-navy to-[#0E2A4A] p-8 text-white shadow-xl overflow-hidden">
-              <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-brass/20 blur-2xl" />
-              <p className="text-white/50 text-xs uppercase tracking-widest">Illustrative card concept</p>
-              <p className="mt-8 text-2xl font-semibold tracking-wide">Not an issued card</p>
-              <p className="mt-auto pt-16 text-white/60 text-sm">•••• •••• •••• secure</p>
-              <p className="text-brass text-sm font-medium mt-2">Illustrative artwork only</p>
-            </div>
+          <div className="rounded-[28px] border border-slate-200 bg-white p-8">
+            <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Card services</p>
+            <h2 className="text-3xl font-bold text-navy">No card network is required to use Vantoris</h2>
+            <p className="mt-4 max-w-3xl text-slate-600 leading-relaxed">
+              Vantoris does not currently issue cards through this portal. Card processors and card networks are not part of the member ledger, internal transfers or institutional accounting. No card is represented as issued or active.
+            </p>
           </div>
         </section>
 
-        <section className="max-w-6xl mx-auto px-4 sm:px-6 pb-16" aria-labelledby="card-art-title">
-          <div className="rounded-[28px] border border-[#D8CBAE] bg-[#F7F5EF] p-5 sm:p-8">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#8B6C35]">Design collection</p>
-            <h2 id="card-art-title" className="mt-2 font-heading text-3xl text-[#102638]">Four considered card editions</h2>
-            <p className="mt-2 mb-6 max-w-2xl text-sm leading-relaxed text-slate-600">Original vector artwork prepared for high-resolution print output. These are design concepts, not issued payment cards or evidence of an issuer arrangement.</p>
-            <PrivateInvestmentCardGallery />
-          </div>
-        </section>
-
-        {/* Invest */}
+        {/* Investment records remain separate from member deposit liabilities. */}
         <section id="invest" className="scroll-mt-24 bg-navy text-white py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
             <div>
-              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Investment</p>
-              <h2 className="text-3xl font-bold leading-tight">Grow with transparency</h2>
+              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Investment records</p>
+              <h2 className="text-3xl font-bold leading-tight">Only Vantoris-verified assets appear as holdings</h2>
               <p className="mt-4 text-white/70 leading-relaxed">
-                Portfolio views, deposit and withdrawal workflows, and signals for authorized
-                operators mean members see progress while institutions keep process discipline.
+                Investment holdings, valuation and activity are not inferred from a provider flag. They will appear only when Vantoris verifies the underlying asset records and records the corresponding journals. No investment balance is currently represented as available.
               </p>
             </div>
-            <div className="rounded-2xl bg-white/5 border border-white/10 p-6 space-y-4">
-              {[
-                ['Portfolio overview', 'Balances and total value at a glance'],
-                ['Capital movements', 'Deposits & withdrawals with audit trails'],
-                ['Guidance', 'Advisor and assistant support when you need context'],
-              ].map(([t, d]) => (
-                <div key={t} className="flex gap-4">
-                  <TrendingUp className="text-brass shrink-0 mt-1" size={20} />
-                  <div>
-                    <p className="font-semibold">{t}</p>
-                    <p className="text-sm text-white/60">{d}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="rounded-2xl bg-white/5 border border-white/10 p-6">
+              <p className="font-semibold">Institutional capital is separate</p>
+              <p className="mt-2 text-sm text-white/60">Permanent Vantoris capital is not a member balance and is protected by its own ledger controls. Member liabilities are never used as a substitute for institutional capital.</p>
             </div>
           </div>
         </section>
@@ -773,16 +720,16 @@ export default function Landing() {
             <div>
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Travel & flights</p>
               <h2 className="text-3xl font-bold text-navy leading-tight">
-                Flights with marketplace clarity—paid from your membership
+                Travel discovery, separate from Vantoris balances
               </h2>
               <p className="mt-4 text-slate-600 leading-relaxed">
-                Use the travel workspace for trip discovery. Live fares, bookings, and trip charges appear only when verified travel and payment providers are connected. The interface does not itself confirm a reservation or ticket.
+                Travel discovery is optional and outside the Vantoris ledger. It does not debit member balances, confirm bookings or imply a payment arrangement.
               </p>
               <ul className="mt-6 space-y-3">
                 {[
                   'Round-trip and one-way search with flexible dates',
                   'Filter nonstop, cabin class, and baggage-aware totals',
-                  'Pay with eligible Vantoris balance or card when enabled',
+                  'No Vantoris balance or card payment is enabled for travel',
                   'Refunds and charges appear in Activity for tracking',
                 ].map((item) => (
                   <li key={item} className="flex gap-3 text-[15px] text-navy">
@@ -803,8 +750,7 @@ export default function Landing() {
                 <p className="text-navy font-semibold text-sm">Live flight data</p>
               </div>
               <p className="mt-3 text-sm text-slate-600 leading-relaxed">
-                Search and tracking results are requested from connected live data sources. Fares,
-                availability, and booking are shown only when a contracted provider returns verified results.
+                Travel data is optional external information. It is not used to determine member balances or authorize a Vantoris internal transfer.
               </p>
               <Link to="/discover/flights" className="mt-5 block w-full text-center rounded-full bg-navy text-white py-3 text-sm font-bold hover:bg-navy/90 transition">
                 Open live flight tracking
@@ -850,25 +796,26 @@ export default function Landing() {
         </section>
 
 <section id="wires" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20">
-          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Wires & tracking</p>
-          <h2 className="text-3xl font-bold text-navy max-w-2xl">Send with care. Track every step.</h2>
+          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Internal member transfers</p>
+          <h2 className="text-3xl font-bold text-navy max-w-2xl">Move funds between Vantoris accounts</h2>
           <p className="mt-4 text-slate-600 max-w-3xl leading-relaxed">
-            Domestic payment requests and wire instructions are shown only where an authorized U.S. provider, review process and settlement path are confirmed. This workspace does not represent an active cross-border wire service. Members see the source-recorded status; no transfer state is inferred.
+            A Vantoris internal transfer reserves the sender's available funds, posts one balanced journal to both Vantoris member accounts and captures the hold in one database transaction. It does not wait for a sponsor bank, correspondent, ACH, Fedwire, card processor or outside payment network.
           </p>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              ['Initiate', 'Amount, beneficiary, bank identifiers, purpose of payment'],
-              ['Verify', 'Confirm names and account details before release'],
-              ['Track', 'Display only the status returned by the authoritative source'],
-              ['Record', 'Keep reference IDs for disputes and statements'],
-            ].map(([t, d]) => (
-              <div key={t} className="rounded-2xl border border-slate-200 bg-white p-5">
-                <Wallet size={18} className="text-brass mb-2" />
-                <p className="font-bold text-navy text-sm">{t}</p>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">{d}</p>
+              ['Authenticate', 'Vantoris verifies the member session and account ownership'],
+              ['Hold', 'Available funds are reserved under an account lock'],
+              ['Journal', 'One balanced journal debits the sender and credits the receiver'],
+              ['Release', 'The hold is captured in the same committed transaction'],
+            ].map(([title,detail])=>(
+              <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5">
+                <Wallet size={18} className="text-brass mb-2"/>
+                <p className="font-bold text-navy text-sm">{title}</p>
+                <p className="text-xs text-slate-500 mt-1 leading-relaxed">{detail}</p>
               </div>
             ))}
           </div>
+          <p className="mt-6 text-xs leading-5 text-slate-500">External payments remain off until Vantoris establishes a counterparty relationship in its own name and separately approves that capability.</p>
         </section>
 
 <section id="fraud" className="scroll-mt-24 bg-[#FFF8F0] border-y border-amber-200/80 py-20">
@@ -876,11 +823,10 @@ export default function Landing() {
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-amber-800 mb-3 flex items-center gap-2">
               <Ban size={14} /> Safety · fraud awareness
             </p>
-            <h2 className="text-3xl font-bold text-navy max-w-2xl">Beware of frauds—especially wires and “investment property” pitches</h2>
+            <h2 className="text-3xl font-bold text-navy max-w-2xl">Beware of impersonation and unauthorized payment instructions</h2>
             <p className="mt-4 text-slate-700 max-w-3xl leading-relaxed">
               Criminals impersonate banks, realtors, travel agents, and even military charities.
-              Vantoris will never ask you to move money via secrecy, gift cards, crypto ATMs, or
-              unsolicited “account recovery” links.
+              Vantoris will never ask you to share passwords or one-time codes, or to bypass its own member-to-member ledger controls through secrecy, gift cards, crypto ATMs or unsolicited recovery links.
             </p>
             <div className="mt-10 grid sm:grid-cols-2 gap-4">
               {[
@@ -990,7 +936,7 @@ export default function Landing() {
             A connected service platform with clear boundaries and verified availability.
           </h2>
           <p className="mt-4 text-slate-600 max-w-3xl leading-relaxed">
-            Vantoris brings account records, investment information, card services, travel, property, client support, and impact services into one platform. Each service is presented according to its actual provider connectivity, authorization, eligibility, and operational readiness.
+            Vantoris maintains its own ledger for member liabilities, permanent capital, internal transfers, statements and audit. Optional services are separate and cannot change a member balance or post a journal.
           </p>
           <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {SERVICE_AREAS.map(([t, d]) => (
@@ -1044,7 +990,7 @@ export default function Landing() {
           <div className="rounded-[28px] border border-slate-200 bg-white p-8 sm:p-10">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Contact us</p>
             <h2 className="text-2xl font-bold text-navy">Talk to Vantoris</h2>
-            <p className="mt-2 text-slate-600">Client enquiries, service requests, and HeroBox coordination.</p>
+            <p className="mt-2 text-slate-600">Membership enquiries and member-support information.</p>
             <div className="mt-6 rounded-2xl border border-slate-200 bg-[#F7F5EF] p-5">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brass">United States client services</p>
               <p className="mt-2 text-sm leading-relaxed text-slate-600">Use the verified contact channel displayed inside your authenticated account. Public phone and email details are not published here until their ownership and service coverage are confirmed.</p>
@@ -1058,14 +1004,14 @@ export default function Landing() {
             <div className="rounded-[28px] bg-gradient-to-r from-navy to-[#0E2A4A] px-8 py-12 text-center text-white">
               <h2 className="text-2xl sm:text-3xl font-bold">Ready when you are</h2>
               <p className="mt-3 text-white/70 max-w-xl mx-auto">
-                Open a membership application or sign in to the account you already trust.
+                Activate an approved Vantoris membership or sign in to your existing member account.
               </p>
               <div className="mt-8 flex flex-wrap justify-center gap-3">
                 <Link
                   to="/register"
                   className="rounded-full bg-brass text-navy font-bold px-6 py-3.5 text-sm hover:bg-[#d4b03a]"
                 >
-                  Sign up
+                  Activate membership
                 </Link>
                 <Link
                   to="/login"
@@ -1087,11 +1033,11 @@ export default function Landing() {
             </div>
             <div>
               <p className="font-bold text-navy text-sm">Vantoris</p>
-              <p className="text-[11px] text-slate-500">Private institution · Investment · Impact</p>
+              <p className="text-[11px] text-slate-500">Private institution · Vantoris ledger · Internal transfers</p>
             </div>
           </div>
           <p className="text-[12px] text-slate-400 max-w-md">
-            Vantoris Private Institution. Service availability, eligibility, and terms are shown within each workspace. This public information page does not establish deposit-taking, custody, investment execution, or payment-rail availability.
+            Vantoris Private Institution. Service availability, eligibility, and terms are shown within each workspace. This page does not claim deposit insurance, a third-party charter, custody or external payment-network access. Vantoris member balances and internal transfers are recorded in its own ledger.
           </p>
         </div>
       </footer>
