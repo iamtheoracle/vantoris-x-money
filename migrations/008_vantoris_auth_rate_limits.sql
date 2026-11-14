@@ -55,7 +55,7 @@ GRANT EXECUTE ON FUNCTION vantoris_ledger.clear_login_failures(bytea,bytea) TO v
 GRANT EXECUTE ON FUNCTION vantoris_ledger.verify_auth_csrf(bytea,bytea) TO vantoris_backend;
 CREATE OR REPLACE FUNCTION vantoris_ledger.record_member_statement_access(
  p_token_hash bytea,p_account_id uuid,p_from timestamptz,p_to timestamptz)
-RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $
+RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE v_member_id uuid;
 BEGIN
  IF p_from IS NULL OR p_to IS NULL OR p_from>=p_to OR p_to>clock_timestamp()+interval '1 day' OR p_to-p_from>interval '366 days' THEN RAISE EXCEPTION 'INVALID_STATEMENT_RANGE' USING ERRCODE='22023'; END IF;
@@ -65,7 +65,7 @@ BEGIN
  VALUES('member:'||v_member_id::text,'member_statement_generated','ledger_account',p_account_id::text,
   jsonb_build_object('from',p_from,'to',p_to));
  RETURN v_member_id;
-END $;
+END $$;
 REVOKE ALL ON FUNCTION vantoris_ledger.record_member_statement_access(bytea,uuid,timestamptz,timestamptz) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION vantoris_ledger.record_member_statement_access(bytea,uuid,timestamptz,timestamptz) TO vantoris_backend;
 COMMIT;
