@@ -149,3 +149,13 @@ Deno.test('Vantoris member activation, password recovery and MFA are first-party
   assert(sql.includes('complete_member_mfa_enrollment'), 'MFA confirmation must create the authenticated session.');
   assert(sql.includes('secret_ciphertext'), 'MFA secret must remain encrypted at rest.');
 });
+
+Deno.test('Vantoris staff sessions resolve capabilities and dispatch only approved actions', async () => {
+  const sql = await Deno.readTextFile('migrations/014_vantoris_staff_profile.sql');
+  assert(sql.includes('get_staff_profile'), 'Session-bound staff profile function missing.');
+  assert(sql.includes('resolve_staff_session'), 'Staff identity must be derived from a verified staff session.');
+  assert(sql.includes('execute_approved_staff_action'), 'Approved action dispatcher missing.');
+  assert(sql.includes('post_approved_manual_journal'), 'Manual journal dispatch missing.');
+  assert(sql.includes('post_approved_reversal'), 'Reversal dispatch missing.');
+  assert(sql.includes('post_approved_limit_change'), 'Limit change dispatch missing.');
+});
