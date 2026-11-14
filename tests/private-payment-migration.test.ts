@@ -90,3 +90,13 @@ Deno.test('Vantoris staff financial actions require independent capabilities and
   assert(sql.includes('staff_action_approvals_immutable'), 'Staff approvals must be append-only.');
   assert(sql.includes('protect_staff_proposal_changes'), 'Staff proposal payloads must be immutable.');
 });
+
+Deno.test('Vantoris permanent capital is separately protected and cannot be impaired', async () => {
+  const sql = await Deno.readTextFile('migrations/010_vantoris_permanent_capital_protection.sql');
+  assert(sql.includes('institutional_capital_policy_history'), 'Permanent capital floor history missing.');
+  assert(sql.includes('CHECK(proposed_by_staff_id<>approved_by_staff_id)'), 'Capital floor must require two distinct staff members.');
+  assert(sql.includes('PERMANENT_CAPITAL_FLOOR_CANNOT_BE_REDUCED'), 'Permanent capital floor cannot be lowered.');
+  assert(sql.includes('PERMANENT_CAPITAL_IMPAIRMENT_BLOCKED'), 'A journal that impairs capital must be rejected.');
+  assert(sql.includes('ledger_account_creation_capital_guard'), 'Member liabilities must not be opened before capital is funded.');
+  assert(sql.includes('institutional_capital_policy_immutable'), 'Capital policy history must be append-only.');
+});
