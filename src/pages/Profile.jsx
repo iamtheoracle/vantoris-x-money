@@ -1,178 +1,28 @@
-import React, { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
-import ShieldLogo from '@/components/vantoris/ShieldLogo';
-import DeleteAccountDialog from '@/components/vantoris/DeleteAccountDialog';
-import ProfileHeader from '@/components/vantoris/profile/ProfileHeader';
-import RelationshipOverview from '@/components/vantoris/profile/RelationshipOverview';
-import ActionStrip from '@/components/vantoris/profile/ActionStrip';
-import UnifiedTimeline from '@/components/vantoris/profile/UnifiedTimeline';
-import DocumentsSection from '@/components/vantoris/profile/DocumentsSection';
-import SecuritySection from '@/components/vantoris/profile/SecuritySection';
-import SettingsSection from '@/components/vantoris/profile/SettingsSection';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, Mail, ShieldCheck, UserRound, Wallet } from 'lucide-react';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function Profile() {
-  const [user, setUser] = useState(null);
-  const [application, setApplication] = useState(null);
-  const [accounts, setAccounts] = useState([]);
-  const [heroProfile, setHeroProfile] = useState(null);
-  const [heroRequests, setHeroRequests] = useState([]);
-  const [heroActivities, setHeroActivities] = useState([]);
-  const [transactions, setTransactions] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [auditLogs, setAuditLogs] = useState([]);
-  const [documents, setDocuments] = useState([]);
-  const [showDelete, setShowDelete] = useState(false);
-  const [referralLink, setReferralLink] = useState('');
-  const [phase, setPhase] = useState(0);
-  const [loadError, setLoadError] = useState('');
-
-  useEffect(() => { loadProfile().catch(() => setLoadError('Some profile records are unavailable. Displayed sections may be incomplete.')); }, []);
-
-  async function loadProfile() {
-    // Phase 1: User + Application (immediate)
-    const me = await base44.auth.me();
-    if (!me?.id) {
-      setLoadError('An authenticated profile could not be retrieved.');
-      return;
-    }
-    setUser(me);
-    setReferralLink(me.referral_code ? `${window.location.origin}/register?ref=${me.referral_code}` : '');
-
-    const apps = await base44.entities.Application.filter({ user_id: me.id });
-    if (!Array.isArray(apps)) throw new Error('Application records returned an invalid response.');
-    setApplication(apps[0] || null);
-    setPhase(1);
-
-    // Phase 2: Products (accounts, herobox)
-    const [accts, heroProfs, heroReqs] = await Promise.all([
-      base44.entities.Account.filter({ user_id: me.id }),
-      base44.entities.HeroBoxProfile.filter({ user_id: me.id }),
-      base44.entities.HeroBoxRequest.filter({ user_id: me.id }),
-    ]);
-    if (![accts, heroProfs, heroReqs].every(Array.isArray)) throw new Error('Product records returned an invalid response.');
-    setAccounts(accts);
-    setHeroProfile(heroProfs[0] || null);
-    setHeroRequests(heroReqs);
-    setPhase(2);
-
-    // Phase 3: Activity (transactions, hero activities, notifications, audit logs)
-    const accountIds = accts.map(a => a.id);
-    const txnPromises = accountIds.slice(0, 5).map(id =>
-      base44.entities.Transaction.filter({ account_id: id }, '-created_date', 5)
-    );
-    const [txnResults, heroActs, notifs, auditEntries] = await Promise.all([
-      Promise.all(txnPromises),
-      base44.entities.HeroBoxActivity.filter({ user_id: me.id }, '-created_date', 10),
-      base44.entities.Notification.filter({ user_id: me.id }, '-created_date', 5),
-      base44.entities.AuditLog.filter({ target_user_id: me.id }, '-created_date', 5),
-    ]);
-    if (!Array.isArray(txnResults) || !Array.isArray(heroActs) || !Array.isArray(notifs) || !Array.isArray(auditEntries)) throw new Error('Activity records returned an invalid response.');
-    setTransactions(txnResults.flat());
-    setHeroActivities(heroActs);
-    setNotifications(notifs);
-    setAuditLogs(auditEntries);
-    setPhase(3);
-
-    // Phase 4: Secondary (documents — lazy)
-    const docs = await base44.entities.Document.filter({ user_id: me.id });
-    if (!Array.isArray(docs)) throw new Error('Document records returned an invalid response.');
-    setDocuments(docs);
-    setPhase(4);
-  }
-
-  if (!user && loadError) {
-    return <div role="alert" className="mx-auto max-w-xl p-6 text-center text-sm text-amber-900">{loadError}</div>;
-  }
-
-  if (!user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  const isMember = user.role === 'user';
-  const hasAccounts = accounts.length > 0;
-  const hasHeroBox = !!heroProfile;
-  const hasDocuments = documents.length > 0;
-
-  const bankingTier = application?.banking_tier || user.banking_tier || 'Tier not assigned';
-
-  const profileCompletion = [
-    user.full_name ? 25 : 0,
-    application?.kyc_status === 'approved' ? 25 : 0,
-    hasAccounts ? 25 : 0,
-    hasHeroBox ? 25 : 0,
-  ].reduce((a, b) => a + b, 0);
-
+  const { user, accounts } = useAuth();
   return (
-    <div className="px-5 pt-6 pb-8">
-      {loadError && <p role="status" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-950">{loadError}</p>}
-      {/* 1. Profile Header — loads immediately */}
-      <ProfileHeader
-        user={user}
-        application={application}
-        profileCompletion={profileCompletion}
-        bankingTier={bankingTier}
-      />
-
-      {/* 2. Relationship Overview — premium product cards */}
-      {phase >= 2 && (
-        <RelationshipOverview
-          accounts={accounts}
-          heroProfile={heroProfile}
-          heroRequests={heroRequests}
-        />
-      )}
-
-      {/* 3. Action Strip — embedded beneath account summary, context-aware */}
-      {phase >= 2 && (
-        <ActionStrip
-          hasAccounts={hasAccounts}
-          hasHeroBox={hasHeroBox}
-          isMember={isMember}
-          hasDocuments={hasDocuments}
-        />
-      )}
-
-      {/* 4. Activity Timeline — unified, progressive */}
-      {phase >= 3 && (
-        <UnifiedTimeline
-          transactions={transactions}
-          heroActivities={heroActivities}
-          notifications={notifications}
-          auditLogs={auditLogs}
-        />
-      )}
-
-      {/* 5. Documents — only if they exist */}
-      {phase >= 4 && <DocumentsSection documents={documents} />}
-
-      {/* 6. Security & Verification */}
-      {phase >= 3 && (
-        <SecuritySection
-          application={application}
-          auditLogs={auditLogs}
-          notifications={notifications}
-        />
-      )}
-
-      {/* 7. Settings — at the bottom */}
-      <SettingsSection
-        user={user}
-        referralLink={referralLink}
-        onDeleteAccount={() => setShowDelete(true)}
-      />
-
-      <DeleteAccountDialog open={showDelete} onOpenChange={setShowDelete} />
-
-      {/* Footer */}
-      <div className="mt-8 mb-2 flex flex-col items-center">
-        <ShieldLogo size={28} className="mb-2 opacity-40" />
-        <p className="text-gray/40 text-[10px] tracking-widest uppercase">Secure. Trusted. Tailored for you.</p>
-      </div>
-    </div>
+    <main className="mx-auto max-w-5xl px-5 py-8">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Member profile</p>
+      <h1 className="mt-2 text-3xl font-semibold text-navy">Your Vantoris identity</h1>
+      <p className="mt-2 text-sm text-slate-600">Member identity and account ownership are maintained by Vantoris.</p>
+      <section className="mt-7 rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="flex items-center gap-3"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-100 text-navy"><UserRound size={20}/></span><div><h2 className="font-semibold text-navy">{user?.memberReference || 'Member record'}</h2><p className="text-xs text-slate-500">Vantoris member reference</p></div></div>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <div className="rounded-xl bg-slate-50 p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><Mail size={15}/> Verified sign-in email</div><p className="mt-2 break-all text-sm font-semibold text-navy">{user?.email || '—'}</p></div>
+          <div className="rounded-xl bg-slate-50 p-4"><div className="flex items-center gap-2 text-xs font-medium text-slate-500"><ShieldCheck size={15}/> Membership status</div><p className="mt-2 text-sm font-semibold capitalize text-navy">{user?.status || '—'}</p></div>
+        </div>
+      </section>
+      <section className="mt-6 rounded-2xl border border-slate-200 bg-white p-6">
+        <div className="flex items-center gap-2"><Wallet size={18} className="text-navy"/><h2 className="font-semibold text-navy">Your Vantoris accounts</h2></div>
+        {!accounts?.length ? <p className="mt-4 rounded-xl border border-dashed border-slate-200 p-5 text-sm text-slate-500">No ledger account is currently linked to this member record. Vantoris must verify and establish the account before a balance is displayed.</p> :
+          <div className="mt-4 divide-y divide-slate-100">{accounts.map(account=><Link key={account.id} to={`/accounts/${account.id}`} className="flex items-center justify-between gap-3 py-4"><div><p className="text-sm font-semibold text-navy">{account.accountReference}</p><p className="mt-1 text-xs capitalize text-slate-500">{account.accountType.replace(/_/g,' ')} · {account.currency}</p></div><ArrowUpRight size={17} className="text-slate-400"/></Link>)}</div>}
+      </section>
+      <div className="mt-6 flex flex-wrap gap-3"><Link to="/documents" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-navy">Identity documents</Link><Link to="/support" className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-navy">Member support</Link></div>
+    </main>
   );
 }
-
