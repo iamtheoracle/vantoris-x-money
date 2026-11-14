@@ -100,13 +100,17 @@ FOR EACH ROW EXECUTE FUNCTION vantoris_ledger.reject_ledger_mutation();
 
 CREATE TABLE vantoris_ledger.payment_operations (
   id uuid PRIMARY KEY,
+  member_id uuid NOT NULL REFERENCES vantoris_ledger.members(id),
+  source_account_id uuid NOT NULL REFERENCES vantoris_ledger.ledger_accounts(id),
+  receiver_account_id uuid NOT NULL REFERENCES vantoris_ledger.ledger_accounts(id),
+  amount_cents bigint NOT NULL CHECK (amount_cents > 0),
   operation_type text NOT NULL CHECK (operation_type IN ('internal_transfer')),
   idempotency_key text NOT NULL,
-  request_hash text NOT NULL,
+  request_hash text NOT NULL CHECK (length(request_hash)=64),
   status text NOT NULL CHECK (status IN ('accepted','held','posted','released','reversed','rejected')),
   created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   updated_at timestamptz NOT NULL DEFAULT clock_timestamp(),
-  UNIQUE (operation_type, idempotency_key)
+  UNIQUE (member_id, operation_type, idempotency_key)
 );
 
 CREATE TABLE vantoris_ledger.outgoing_funds_holds (
