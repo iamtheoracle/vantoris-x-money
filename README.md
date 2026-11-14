@@ -18,19 +18,19 @@ Work is taking place on `migration/remove-base44-and-codex`. No feature implemen
 Implemented in this branch:
 - First-party member sign-in, activation, password recovery, mandatory TOTP MFA and replay prevention.
 - First-party staff sign-in, MFA session validation, capability resolution and a restricted staff workspace.
-- PostgreSQL-backed member account/activity/statement APIs and internal transfer posting. The member UI selects only active-member USD liability accounts; the server remains authoritative for limits and posting.
+- PostgreSQL-backed member account/activity/statement APIs and internal transfer posting. The member UI selects only active-member USD liability accounts; the server remains authoritative for limits and posting. Disposable concurrent-transfer tests now prove no double-spend, identical retry and rollback of a hold when journal posting fails.
 - Dual-approved manual journals, reversals, transfer limits and permanent capital floor proposals.
-- Ordered PostgreSQL migration runner: bootstrap 000, versioned migrations 001–023, append-only SHA-256 history recorded in the same transaction as each migration, and read-only runtime checksum verification before database-backed member, staff, document and assistant requests.
+- Ordered PostgreSQL migration runner: bootstrap 000, versioned migrations 001–024, append-only SHA-256 history recorded in the same transaction as each migration, and read-only runtime checksum verification before database-backed member, staff, document and assistant requests.
 - No Base44 Vite plugin, Base44 SDK dependency, Stripe SDK dependency, Base44 API proxy or Codex GitHub Actions workflow in the active application configuration.
 - A first-party `/api/oracle` informational assistant endpoint, member-session/CSRF checks, database-backed minute/day limits and browser-session-only chat history. It calls only a configured Vantoris private OpenAI-compatible model endpoint; no provider configuration has been verified.
 
 Not yet complete:
 - Existing member/account/transaction import and reconciliation; no member data has been migrated.
-- Controlled production migration baseline/application. Disposable CI has passed bootstrap 000 and migrations 001–023 with checksum verification. The runner refuses to auto-baseline an existing ledger schema without history; no live database has been changed.
+- Controlled production migration baseline/application. Disposable CI has passed bootstrap 000 and migrations 001–024 with checksum verification. The runner refuses to auto-baseline an existing ledger schema without history; no live database has been changed.
 - Staff account/MFA provisioning and staff role-management workflow.
 - Identity-document encryption key provisioning, retention/rotation procedures and live database/browser verification; member account opening, messaging and service-case workflows.
 - Replacement or archival of all remaining legacy Base44 function and page source files.
-- Multi-session transfer concurrency and forced-rollback tests, browser QA, backup/restore proof and external-network-blocked acceptance testing.
+- Browser QA, backup/restore proof and external-network-blocked acceptance testing. Multi-session no-overdraft, idempotent retry and forced post-hold rollback tests pass in disposable PostgreSQL CI.
 - Assistant model configuration and durable cross-device conversation history; current chat history is held only in the browser session.
 - Production deployment and release approval.
 
@@ -39,7 +39,7 @@ The member/staff UI intentionally shows unavailable states where the Vantoris-ow
 ### Existing feature availability — not changed in this implementation batch
 
 - The Home action guard currently keeps Deposit, Request and QR actions unavailable; the Send action remains the internal member-to-member transfer path.
-- The current ledger schema is USD-only. Migration 023 derives journal currency from its ledger accounts but does not enable EUR or multi-currency banking.
+- The current ledger schema is USD-only. Migration 023 derives manual-journal currency from its ledger accounts and migration 024 fixes committed transfer journal validation; neither enables EUR or multi-currency banking.
 - The Member QR page states that payment QR is not enabled and links to internal transfers.
 - Card information and investment holdings remain unavailable until genuine issuance/verified asset records exist.
 - Staff withdrawal decisions remain unavailable; no replacement balance or manual client-side posting was added.
@@ -49,7 +49,7 @@ The member/staff UI intentionally shows unavailable states where the Vantoris-ow
 
 ## PostgreSQL setup
 
-Use a new disposable PostgreSQL database for tests. Provision the restricted runtime roles first, then run `npm run db:migrate:vantoris` to apply bootstrap 000 and versioned migrations 001–023 transactionally with SHA-256 history. Run `npm run db:verify:vantoris` for read-only verification. An existing database with the `vantoris_ledger` schema but no history table is refused and requires a separately reviewed baseline; the runner never assumes it is fresh. Follow [the institutional ledger runbook](docs/VANTORIS-INSTITUTIONAL-LEDGER.md).
+Use a new disposable PostgreSQL database for tests. Provision the restricted runtime roles first, then run `npm run db:migrate:vantoris` to apply bootstrap 000 and versioned migrations 001–024 transactionally with SHA-256 history. Run `npm run db:verify:vantoris` for read-only verification. An existing database with the `vantoris_ledger` schema but no history table is refused and requires a separately reviewed baseline; the runner never assumes it is fresh. Follow [the institutional ledger runbook](docs/VANTORIS-INSTITUTIONAL-LEDGER.md).
 
 Required server-side secrets:
 - `VANTORIS_LEDGER_DATABASE_URL`
@@ -64,8 +64,8 @@ Never use a `VITE_` prefix for credentials. Never point integration tests at pro
 ## Validation and release
 
 Latest verified CI on the migration branch:
-- PostgreSQL run 43620031390: passed bootstrap 000 and migrations 001–023, same-transaction SHA-256 history recording and verification, restricted runtime-role checks, disposable ledger integration, manual-journal currency derivation/idempotency/reversal, member/staff syntax, MFA cryptography and migration contract tests.
-- Recovery build run 43620031360: passed generated manifest loading, migration runner and runtime-guard tests, Oracle/runtime and security checks, Deno tests, ESLint, TypeScript and production Vite build.
+- PostgreSQL run 43621256968: passed bootstrap 000 and migrations 001–024, same-transaction SHA-256 history recording/verification, restricted runtime-role checks, ledger integration, manual-journal currency/idempotency/reversal, two-session no-overdraft transfer race, identical retry, forced rollback after hold creation, member/staff syntax, MFA cryptography and migration contract tests.
+- Recovery build run 43621256937: passed generated manifest loading, migration runner and runtime-guard tests, Oracle/runtime and security checks, Deno tests, ESLint, TypeScript and production Vite build.
 These are CI/disposable-environment results only. No institutional database, production deployment, merge or external money rail was changed.
 
 Do not merge or deploy without explicit authorization. Do not import or replace existing member records until a source export, stable identity crosswalk, financial reconciliation, permissions mapping and rollback plan have been verified.
