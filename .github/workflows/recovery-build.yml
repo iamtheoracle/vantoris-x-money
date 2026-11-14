@@ -29,6 +29,7 @@ jobs:
       - run: node --check netlify/functions/staff-auth.mjs
       - run: node --check netlify/functions/staff-actions.mjs
       - run: node --check netlify/functions/member-documents.mjs
+      - run: node --check netlify/functions/oracle.mjs
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
@@ -50,12 +51,14 @@ jobs:
           deno test --node-modules-dir=auto --allow-read=src/pages tests/financial-formatting.test.ts
           deno test --node-modules-dir=auto --allow-read=public/card-art,src/components/vantoris,src/pages,src/index.css tests/heritage-and-card-art.test.ts
           deno test --node-modules-dir=auto --allow-read=base44,src/pages,src/components/vantoris,index.html,netlify/functions,docs,src/App.jsx tests/operational-truthfulness.test.ts
-      - name: Prevent direct browser AI execution paths
+      - name: Verify first-party read-only Vantoris assistant boundary
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync, existsSync } from 'node:fs';
           const surfaces = [
             'src/components/vantoris/FloatingCommandDock.jsx',
+            'src/components/vantoris/AgentChat.jsx',
+            'src/pages/product/Ask.jsx',
             'src/pages/Home.jsx',
             'src/pages/Accounts.jsx',
             'src/pages/MoveMoney.jsx',
@@ -75,23 +78,27 @@ jobs:
               throw new Error('Direct AI execution path found in ' + file);
             }
           }
-          const client = readFileSync('src/lib/privateLlm.js', 'utf8');
-          const endpoint = readFileSync('netlify/functions/ask.mjs', 'utf8');
-          if (!client.includes("error: 'assistant_disabled'") || !client.includes('return false')) {
-            throw new Error('Optional Vantoris assistant must remain explicitly disabled until authorized.');
+          const client = readFileSync('src/lib/oracleAssistant.js', 'utf8');
+          const adapter = readFileSync('src/lib/privateLlm.js', 'utf8');
+          const server = readFileSync('netlify/functions/oracle.mjs', 'utf8');
+          const chat = readFileSync('src/components/vantoris/AgentChat.jsx', 'utf8');
+          if (!client.includes("fetch('/api/oracle'") || client.includes('base44') || client.includes("functions.invoke(")) {
+            throw new Error('Browser assistant must use only the first-party Vantoris endpoint.');
           }
-          if (client.includes('fetch(') || client.includes('base44')) {
-            throw new Error('Browser assistant client must not call providers or Base44 directly.');
+          if (!adapter.includes('askOracle') || adapter.includes('base44')) {
+            throw new Error('Existing assistant adapters must use the shared Vantoris client.');
           }
-          if (endpoint.includes('@base44/sdk') || endpoint.includes('BASE44_') || endpoint.includes('UPSTASH_') || endpoint.includes('callBase44')) {
-            throw new Error('Assistant endpoint must not depend on Base44 or external usage infrastructure.');
+          for (const marker of ['resolve_member_session', 'verify_auth_csrf', 'consume_member_assistant_request', 'VANTORIS_PRIVATE_LLM_URL', 'VANTORIS_PRIVATE_LLM_MODEL']) {
+            if (!server.includes(marker)) throw new Error('Server assistant boundary is missing: ' + marker);
           }
-          if (!endpoint.includes("error: 'assistant_disabled'") || !endpoint.includes('}, 503)')) {
-            throw new Error('Server assistant endpoint must fail closed while the optional service is disabled.');
+          if (server.includes('@base44/sdk') || server.includes('BASE44_') || server.includes('UPSTASH_')) {
+            throw new Error('Vantoris assistant must not depend on Base44 or an external usage store.');
           }
-          if (existsSync('src/lib/oracleAssistant.js')) throw new Error('Legacy Oracle/Base44 assistant client must not remain active.');
+          if (chat.includes('base44') || chat.includes('executeElevatedCommand') || chat.includes('inspectCommandInput')) {
+            throw new Error('Assistant UI must not authenticate through Base44 or execute elevated commands.');
+          }
           if (existsSync('server/llm-proxy.mjs')) throw new Error('Obsolete standalone private-model proxy still exists');
-          console.log('Optional assistant is isolated and fail-closed; core Vantoris services do not depend on it.');
+          console.log('Vantoris assistant uses member authentication, database rate limits and an informational private-model endpoint only.');
           NODE
       - name: Prevent browser-side financial and privileged record mutations
         run: |
