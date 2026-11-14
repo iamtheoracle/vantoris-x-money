@@ -43,9 +43,17 @@ function cookies(request) {
   for (const part of (request.headers.get('cookie') || '').split(';')) {
     const index = part.indexOf('=');
     if (index < 0) continue;
-    result[part.slice(0, index).trim()] = decodeURIComponent(part.slice(index + 1).trim());
+    try { result[part.slice(0, index).trim()] = decodeURIComponent(part.slice(index + 1).trim()); }
+    catch { /* Ignore malformed cookies; authentication will fail closed. */ }
   }
   return result;
+}
+
+function sameOrigin(request) {
+  const origin = request.headers.get('origin');
+  if (!origin) return false;
+  try { return new URL(origin).origin === new URL(request.url).origin; }
+  catch { return false; }
 }
 
 const sessionCookie = (value, maxAge) =>
@@ -155,7 +163,7 @@ async function login(request, body) {
         FROM vantoris_ledger.member_credentials c
         JOIN vantoris_ledger.members m ON m.id=c.member_id
        WHERE lower(c.email)=${email}
-       FOR UPDATE OF c
+       
     `;
     const member = rows[0];
     if (!member || member.status !== 'active') {
@@ -231,7 +239,8 @@ async function authenticateMember(request, tx) {
 async function verifyCsrf(request, tx, auth) {
   const csrf = auth.cookie.__Host-vantoris_csrf || '';
   const header = request.headers.get('x-csrf-token') || '';
-  if (!csrf || !header || csrf.length > 200 || header !== csrf) return false;
+  if (!csrf || !header || csrf.length > 200 || header.length !== csrf.length) return false;
+  if (!timingSafeEqual(Buffer.from(header), Buffer.from(csrf))) return false;
   const csrfHash = sha256(csrf);
   const rows = await tx`SELECT vantoris_ledger.verify_auth_csrf(${auth.tokenHash},${csrfHash}) AS valid`;
   return rows[0]?.valid === true;
@@ -338,6 +347,7 @@ export default async function handler(request) {
   }
 
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
+  if (!sameOrigin(request)) return json({ error: 'origin_not_allowed' }, 403);
   let body;
   try { body = await readBody(request); }
   catch (error) { return json({ error: error.message === 'REQUEST_TOO_LARGE' ? 'request_too_large' : 'invalid_json' }, error.message === 'REQUEST_TOO_LARGE' ? 413 : 400); }
