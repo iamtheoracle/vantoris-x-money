@@ -344,20 +344,18 @@ export default function Landing() {
               </div>
             </div>
 
-            {/* Real supplied card concept art — avoid fabricated member balances on the public landing page. */}
             <div className="lg:col-span-5 relative">
-              <figure className="overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#071C38] shadow-[0_30px_90px_rgba(0,0,0,.45)]">
-                <img
-                  src="/card-art/obsidian.svg"
-                  alt="Illustrative Vantoris Private Institution card concept; not an issued card"
-                  className="block w-full h-auto object-cover"
-                  loading="eager"
-                  fetchPriority="high"
-                />
-              </figure>
-              <p className="mt-3 text-xs leading-relaxed text-white/45">
-                Card artwork is illustrative. Card availability, network, and issuance depend on verified issuer partnerships.
-              </p>
+              <div className="rounded-[1.75rem] border border-white/15 bg-[#071C38] p-7 sm:p-9 shadow-[0_30px_90px_rgba(0,0,0,.45)]">
+                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-brass">Vantoris ledger authority</p>
+                <div className="mt-8 flex items-center justify-between border-b border-white/10 pb-5">
+                  <span className="text-sm text-white/60">Institutional record</span>
+                  <span className="rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3 py-1 text-[10px] font-semibold uppercase text-emerald-300">Vantoris PostgreSQL</span>
+                </div>
+                <div className="mt-6 space-y-4">
+                  {['Permanent institutional capital','Member liabilities','Balanced posted journals','Active funds holds','Append-only audit'].map((label,index)=><div key={label} className="flex items-center gap-3"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/10 text-brass text-xs">{String(index+1).padStart(2,'0')}</span><span className="text-sm text-white/80">{label}</span></div>)}
+                </div>
+                <p className="mt-8 border-t border-white/10 pt-4 text-xs leading-relaxed text-white/45">Member balances and internal transfers are recorded by Vantoris. No outside payment network is required.</p>
+              </div>
             </div>
           </div>
 
@@ -605,7 +603,7 @@ export default function Landing() {
                 A private workspace for clients who need more than basic account access.
               </h2>
               <p className="mt-5 text-slate-600 text-[16px] leading-relaxed">
-                Vantoris brings together account records, card services, investment information, travel, property, and impact services. Each space has its own permissions and availability status; staff operations remain separate from client-facing access.
+                Vantoris's own ledger records member liabilities, institutional capital, holds and journals. Members transfer between Vantoris accounts; staff controls remain separately authenticated, approved and audited.
               </p>
               <p className="mt-4 text-slate-600 text-[16px] leading-relaxed">
                 We built Vantoris for people who carry responsibility: households, founders,
