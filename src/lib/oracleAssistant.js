@@ -82,6 +82,7 @@ export async function askOracle(message) {
     let deleted = [];
     try { deleted = JSON.parse(localStorage.getItem('vantoris_deleted_conversations') || '[]'); } catch { deleted = []; }
     if (deleted.includes(memberId)) {
+      try { sessionStorage.removeItem(historyStorageKey(memberId)); } catch { /* session storage may be unavailable */ }
       localStorage.setItem('vantoris_deleted_conversations', JSON.stringify(deleted.filter(id => id !== memberId)));
     }
     const history = readSessionHistory(memberId);
