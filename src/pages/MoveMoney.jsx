@@ -201,7 +201,7 @@ export default function MoveMoney() {
           <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="font-semibold text-navy">Your Vantoris accounts</h2>
-              <span className="text-xs text-slate-500">{eligibleAccounts.length} eligible
+              <span className="text-xs text-slate-500">{eligibleAccounts.length} eligible</span>
             </div>
             <div className="space-y-3">
               {eligibleAccounts.map(account => (
