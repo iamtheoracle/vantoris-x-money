@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { formatCurrency } from '@/lib/formatCurrency';
+import { transactionPresentation } from '@/lib/transactionPresentation';
 import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
 import FounderStories from '@/components/vantoris/FounderStories';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -50,29 +51,7 @@ function relativeDay(iso) {
 }
 
 
-function transactionPresentation(amount, type) {
-  if (amount === null || amount === undefined || (typeof amount === 'string' && amount.trim() === '')) {
-    return { amount: null, sign: '', tone: 'text-slate-500' };
-  }
-  const raw = Number(amount);
-  if (!Number.isFinite(raw) || raw === 0) {
-    return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-slate-500' };
-  }
 
-  const normalizedType = String(type || '').trim().toLowerCase();
-  const debitTypes = new Set(['debit', 'withdrawal', 'outgoing_transfer', 'transfer_out', 'payment', 'fee', 'purchase']);
-  const creditTypes = new Set(['credit', 'deposit', 'incoming_transfer', 'transfer_in', 'interest', 'refund', 'receipt']);
-
-  if (debitTypes.has(normalizedType)) {
-    return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
-  }
-  if (creditTypes.has(normalizedType)) {
-    return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
-  }
-  if (raw < 0) return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
-  if (raw > 0) return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
-  return { amount: 0, sign: '', tone: 'text-slate-500' };
-}
 
 function accountLabel(a) {
   const type = (a.account_type || a.type || 'Account').replace(/_/g, ' ');
