@@ -81,12 +81,16 @@ jobs:
           const client = readFileSync('src/lib/oracleAssistant.js', 'utf8');
           const adapter = readFileSync('src/lib/privateLlm.js', 'utf8');
           const server = readFileSync('netlify/functions/oracle.mjs', 'utf8');
+          const legacyAsk = readFileSync('netlify/functions/ask.mjs', 'utf8');
           const chat = readFileSync('src/components/vantoris/AgentChat.jsx', 'utf8');
           if (!client.includes("fetch('/api/oracle'") || client.includes('base44') || client.includes("functions.invoke(")) {
             throw new Error('Browser assistant must use only the first-party Vantoris endpoint.');
           }
           if (!adapter.includes('askOracle') || adapter.includes('base44')) {
             throw new Error('Existing assistant adapters must use the shared Vantoris client.');
+          }
+          if (!legacyAsk.includes("import oracle from './oracle.mjs'") || legacyAsk.includes('@base44/sdk')) {
+            throw new Error('Legacy ask route must remain a compatibility alias to the first-party endpoint.');
           }
           for (const marker of ['resolve_member_session', 'verify_auth_csrf', 'consume_member_assistant_request', 'VANTORIS_PRIVATE_LLM_URL', 'VANTORIS_PRIVATE_LLM_MODEL']) {
             if (!server.includes(marker)) throw new Error('Server assistant boundary is missing: ' + marker);
