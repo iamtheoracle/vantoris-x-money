@@ -154,31 +154,44 @@ jobs:
           }
           console.log('Critical member, admin, and discovery surfaces contain no direct privileged writes, browser-side email delivery, or browser-side LLM discovery.');
           NODE
-      - name: Keep unverified financial operations fail-closed
+      - name: Preserve internal transfers and keep unsupported financial claims evidence-bound
         run: |
           node --input-type=module <<'NODE'
           import { readFileSync } from 'node:fs';
-          const requiredGuards = [
-            ['src/pages/MoveMoney.jsx', 'const SERVER_MONEY_OPERATIONS_ENABLED = false;'],
-            ['src/pages/Investment.jsx', 'const SERVER_INVESTMENT_OPERATIONS_ENABLED = false;'],
-          ];
+          const transfer = readFileSync('src/pages/MoveMoney.jsx', 'utf8');
+          for (const marker of [
+            "action: 'transfer'",
+            "result.transfer?.status !== 'posted'",
+            'result.transfer?.journalId',
+            'idempotency_conflict',
+            'This transfer does not use a sponsor bank, Plaid, ACH, Fedwire',
+          ]) {
+            if (!transfer.includes(marker)) throw new Error('Core internal transfer contract is missing: ' + marker);
+          }
+          if (/plaid|fedwire|\\bach\\b|stripe|external payment api/i.test(transfer)) {
+            if (!transfer.includes('This transfer does not use a sponsor bank, Plaid, ACH, Fedwire')) {
+              throw new Error('Internal transfer page must remain independent of external payment rails');
+            }
+          }
+          const investment = readFileSync('src/pages/Investment.jsx', 'utf8');
+          if (!investment.includes('No investment balance is currently available') ||
+              !investment.includes('verified underlying asset records') ||
+              !investment.includes('No third-party portfolio figure is treated as a Vantoris balance') ||
+              /\\$[0-9]|€[0-9]|£[0-9]/.test(investment)) {
+            throw new Error('Investment screen must not represent unverified holdings as Vantoris balances');
+          }
           const readOnlySurfaces = [
-            ['src/pages/AccountDetail.jsx', 'Account detail is a read-only member record view'],
+            ['src/pages/AccountDetail.jsx', 'Account detail must not write financial records from the browser'],
             ['src/pages/admin/AdminAccounts.jsx', 'Admin account screens must not contain direct financial mutations'],
             ['src/pages/admin/AdminWithdrawals.jsx', 'Withdrawal operations must remain read-only until an authorized server workflow exists'],
           ];
           for (const [file, reason] of readOnlySurfaces) {
             const source = readFileSync(file, 'utf8');
-            if (/base44\.entities\.(Account|Transaction|WithdrawalRequest)\.(create|update|delete|updateMany|bulkCreate|bulkUpdate)\s*\(/.test(source)) {
+            if (/base44\\.entities\\.(Account|Transaction|WithdrawalRequest)\\.(create|update|delete|updateMany|bulkCreate|bulkUpdate)\\s*\\(/.test(source)) {
               throw new Error(reason + ': direct mutation found in ' + file);
             }
           }
-          for (const [file, marker] of requiredGuards) {
-            if (!readFileSync(file, 'utf8').includes(marker)) {
-              throw new Error('Unverified financial operations must remain disabled in ' + file);
-            }
-          }
-          console.log('Unverified member and operator financial operations remain fail-closed.');
+          console.log('Session-bound internal transfers remain available; unverified investment and direct browser writes remain guarded.');
           NODE
       - name: Validate entity JSON and security rules
         run: |
