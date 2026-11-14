@@ -1,31 +1,19 @@
--- Run after a DBA creates the dedicated non-login runtime role avcu_backend.
--- Do not grant this role to browser/member identities. Keep the connection string server-side.
+-- VANTORIS migration 002: least-privilege runtime grants.
+-- A DBA creates vantoris_backend as a NOLOGIN, NOSUPERUSER, NOCREATEDB,
+-- NOCREATEROLE role before this migration. Only the server receives credentials.
 BEGIN;
-GRANT USAGE ON SCHEMA avcu_payments TO avcu_backend;
-
-GRANT SELECT, INSERT, UPDATE ON
-  avcu_payments.payment_operations,
-  avcu_payments.provider_events,
-  avcu_payments.provider_cursors,
-  avcu_payments.bank_receipts,
-  avcu_payments.payment_transfers,
-  avcu_payments.payment_outbox,
-  avcu_payments.worker_leases
-TO avcu_backend;
-
-GRANT SELECT, INSERT ON avcu_payments.payment_audit TO avcu_backend;
-GRANT SELECT ON avcu_payments.ledger_accounts TO avcu_backend;
-GRANT SELECT, INSERT ON
-  avcu_payments.ledger_journals,
-  avcu_payments.ledger_entries
-TO avcu_backend;
-
-GRANT USAGE, SELECT ON SEQUENCE avcu_payments.payment_audit_id_seq TO avcu_backend;
-GRANT USAGE, SELECT ON SEQUENCE avcu_payments.payment_outbox_id_seq TO avcu_backend;
-
-GRANT EXECUTE ON FUNCTION avcu_payments.acquire_lease(text, uuid, integer) TO avcu_backend;
-GRANT EXECUTE ON FUNCTION avcu_payments.assert_lease(text, uuid, bigint) TO avcu_backend;
-GRANT EXECUTE ON FUNCTION avcu_payments.renew_lease(text, uuid, bigint, integer) TO avcu_backend;
-GRANT EXECUTE ON FUNCTION avcu_payments.release_lease(text, uuid, bigint) TO avcu_backend;
-
+GRANT USAGE ON SCHEMA vantoris_ledger TO vantoris_backend;
+GRANT SELECT ON vantoris_ledger.members, vantoris_ledger.ledger_accounts,
+  vantoris_ledger.journals, vantoris_ledger.journal_entries,
+  vantoris_ledger.outgoing_funds_holds, vantoris_ledger.audit_events
+TO vantoris_backend;
+GRANT SELECT, INSERT ON vantoris_ledger.payment_operations TO vantoris_backend;
+GRANT SELECT ON vantoris_ledger.staff_action_proposals,
+  vantoris_ledger.staff_action_approvals TO vantoris_backend;
+GRANT USAGE, SELECT ON SEQUENCE vantoris_ledger.audit_events_id_seq TO vantoris_backend;
+REVOKE INSERT, UPDATE, DELETE, TRUNCATE ON
+  vantoris_ledger.members, vantoris_ledger.ledger_accounts,
+  vantoris_ledger.journals, vantoris_ledger.journal_entries,
+  vantoris_ledger.audit_events
+FROM vantoris_backend;
 COMMIT;
