@@ -18,8 +18,8 @@ writeFileSync(
   OUTPUT,
   'export const MIGRATION_MANIFEST = Object.freeze(' +
     JSON.stringify(manifest, null, 2) +
-    ');\\n',
+    ');\n',
   'utf8',
 );
 
-process.stdout.write('Generated Vantoris migration manifest for ' + manifest.length + ' migrations.\\n');
+process.stdout.write('Generated Vantoris migration manifest for ' + manifest.length + ' migrations.\n');
