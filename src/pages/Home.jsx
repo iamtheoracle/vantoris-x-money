@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { formatCurrency } from '@/lib/formatCurrency';
 import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
 import FounderStories from '@/components/vantoris/FounderStories';
@@ -51,17 +51,24 @@ function relativeDay(iso) {
 
 
 function transactionPresentation(amount, type) {
-  const raw = amount === null || amount === undefined || amount === '' ? NaN : Number(amount);
-  if (Number.isFinite(raw) && raw > 0) return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
-  if (Number.isFinite(raw) && raw < 0) return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
-  const normalized = String(type || '').trim().toLowerCase();
-  if (['deposit', 'interest', 'opening_balance', 'credit', 'dividend'].includes(normalized)) {
-    return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-emerald-600' };
+  if (amount === null || amount === undefined || amount === '') {
+    return { amount: null, sign: '', tone: 'text-slate-500' };
   }
-  if (['withdrawal', 'fee', 'debit', 'payment'].includes(normalized)) {
-    return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-navy' };
+  if (typeof amount === 'string' && /^-?\\d+(?:\\.\\d{1,2})?$/.test(amount)) {
+    const negative = amount.startsWith('-');
+    const absolute = negative ? amount.slice(1) : amount;
+    const isZero = /^0(?:\\.0{1,2})?$/.test(absolute);
+    return {
+      amount: absolute,
+      sign: isZero ? '' : negative ? '−' : '+',
+      tone: negative ? 'text-navy' : 'text-emerald-600',
+    };
   }
-  return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-slate-500' };
+  const raw = Number(amount);
+  if (!Number.isFinite(raw)) return { amount: null, sign: '', tone: 'text-slate-500' };
+  if (raw > 0) return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
+  if (raw < 0) return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
+  return { amount: 0, sign: '', tone: 'text-slate-500' };
 }
 
 function accountLabel(a) {
@@ -91,54 +98,29 @@ export default function Home() {
     setSearchParams(next, { replace: true });
   };
 
+  const { logout } = useAuth();
+
   useEffect(() => {
     let cancelled = false;
-    const safeList = async (request) => {
-      try {
-        const result = await request;
-        return { items: Array.isArray(result) ? result : [], failed: !Array.isArray(result) };
-      } catch {
-        return { items: [], failed: true };
-      }
-    };
-
     (async () => {
       try {
-        const me = await base44.auth.me();
-        const [accountResult, cardResult, investmentResult] = await Promise.all([
-          safeList(base44.entities.Account.filter({ user_id: me.id }, '-created_date')),
-          safeList(base44.entities.PaymentCard.filter({ user_id: me.id, status: 'active' }, '-created_date')),
-          safeList(base44.entities.InvestmentPortfolio.filter({ user_id: me.id }, '-created_date')),
-        ]);
-
-        let txs = [];
-        let activityFailed = false;
-        if (accountResult.items.length) {
-          const accountIds = accountResult.items.map((account) => account.id);
-          const batches = await Promise.all(
-            accountIds.slice(0, 6).map((id) =>
-              safeList(base44.entities.Transaction.filter({ account_id: id }, '-created_date', 20))
-            )
-          );
-          activityFailed = batches.some((batch) => batch.failed);
-          txs = batches
-            .flatMap((batch) => batch.items)
-            .sort((x, y) => new Date(y.created_date || 0).getTime() - new Date(x.created_date || 0).getTime())
-            .slice(0, 40);
+        const response = await fetch('/api/member-auth?action=me', {
+          credentials: 'same-origin',
+          cache: 'no-store',
+          headers: { accept: 'application/json' },
+        });
+        if (!response.ok) throw new Error('Member data unavailable');
+        const data = await response.json();
+        if (!data?.member?.id || !Array.isArray(data.accounts) || !Array.isArray(data.transactions)) {
+          throw new Error('Invalid Vantoris ledger response');
         }
-
         if (!cancelled) {
-          setUser(me);
-          setAccounts(accountResult.items);
-          setCards(cardResult.items);
-          setPortfolios(investmentResult.items);
-          setTransactions(txs);
-          setDataIssues({
-            accounts: accountResult.failed,
-            cards: cardResult.failed,
-            investments: investmentResult.failed,
-            activity: activityFailed,
-          });
+          setUser(data.member);
+          setAccounts(data.accounts);
+          setCards([]);
+          setPortfolios([]);
+          setTransactions(data.transactions);
+          setDataIssues({ accounts: false, cards: true, investments: true, activity: false });
         }
       } catch {
         if (!cancelled) {
@@ -148,10 +130,7 @@ export default function Home() {
         if (!cancelled) setLoading(false);
       }
     })();
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -180,15 +159,7 @@ export default function Home() {
   }
 
   function handleSignOut() {
-    try {
-      base44.auth.logout('/');
-    } catch (e) {
-      try {
-        localStorage.removeItem('base44_access_token');
-        localStorage.removeItem('token');
-      } catch (_) {}
-      window.location.href = '/login';
-    }
+    logout(true);
   }
 
   if (loading) {
@@ -323,7 +294,7 @@ export default function Home() {
                 QR Pay
               </button>
             </div>
-            <p className="mb-6 text-center text-[11px] leading-5 text-slate-500">Payment shortcuts are disabled. ACH and domestic Fedwire requests may be submitted for operations review from Accounts; no bank transfer is confirmed here.</p>
+            <p className="mb-6 text-center text-[11px] leading-5 text-slate-500">Payment shortcuts remain disabled while the member transfer interface completes verification. External payment networks are not available.</p>
 
             <div className="mb-4">
               <div className="flex items-center justify-between mb-2.5 px-0.5">
@@ -474,7 +445,7 @@ export default function Home() {
             </button>
 
             <p className="mt-4 text-[12px] text-slate-400 leading-relaxed text-center">
-              Account services and product availability are subject to applicable agreements and service-provider terms.
+              Account information is derived from Vantoris's posted ledger. External payment services are not enabled.
             </p>
           </section>
         )}
