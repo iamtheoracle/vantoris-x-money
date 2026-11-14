@@ -274,16 +274,41 @@ async function currentMember(request) {
        WHERE a.member_id=${auth.memberId}
        ORDER BY a.created_at,a.id
     `;
+    const activity = await tx`
+      SELECT j.id,j.journal_type,j.description,j.created_at,e.amount_cents,e.currency,a.id AS account_id
+        FROM vantoris_ledger.journal_entries e
+        JOIN vantoris_ledger.journals j ON j.id=e.journal_id
+        JOIN vantoris_ledger.ledger_accounts a ON a.id=e.ledger_account_id
+       WHERE a.member_id=${auth.memberId}
+       ORDER BY j.created_at DESC,e.created_at DESC
+       LIMIT 40
+    `;
     return {
       member: { id: rows[0].id, memberReference: rows[0].member_reference, email: rows[0].email, status: rows[0].status, role: 'member' },
       accounts: accounts.map(account => ({
         id: account.id,
         accountReference: account.account_reference,
         accountType: account.account_type,
+        account_type: account.account_type,
+        account_name: account.account_type.replace(/_/g, ' '),
+        mask: '•••• ' + String(account.account_reference).slice(-4),
         currency: account.currency,
+        balance: account.posted_balance_cents === null ? null : Number(account.posted_balance_cents) / 100,
+        availableBalance: account.available_balance_cents === null ? null : Number(account.available_balance_cents) / 100,
         postedBalanceCents: account.posted_balance_cents === null ? null : Number(account.posted_balance_cents),
         availableBalanceCents: account.available_balance_cents === null ? null : Number(account.available_balance_cents),
         activeHoldCents: Number(account.active_hold_cents || 0),
+      })),
+      transactions: activity.map(item => ({
+        id: item.id + ':' + item.account_id,
+        journalId: item.id,
+        account_id: item.account_id,
+        type: item.journal_type,
+        description: item.description,
+        created_date: item.created_at,
+        amount: -Number(item.amount_cents) / 100,
+        currency: item.currency,
+        status: 'posted',
       })),
     };
   });
