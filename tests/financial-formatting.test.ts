@@ -53,9 +53,10 @@ Deno.test("account detail formatter does not coerce absent amounts to zero", asy
   assert(source.includes("if (!Number.isFinite(amount)) return 'Amount not supplied';"), "invalid account detail amounts must remain unavailable");
 });
 
-Deno.test("investment activity and request rows never inherit an unverified portfolio currency", async () => {
+Deno.test("investment screen withholds unverified portfolio balances", async () => {
   const source = await Deno.readTextFile("src/pages/Investment.jsx");
-  assert(source.includes("const amountForRecord = (value, currency) => formatCurrency(value, currency || null);"), "record rows must require their own currency");
-  assert(source.includes("amountForRecord(r.amount, r.currency || r.currency_code)"), "deposit and withdrawal request rows must use their own currency");
-  assert(source.includes("amountForRecord(t.amount, t.currency || t.currency_code)"), "investment transaction rows must use their own currency");
+  assert(source.includes("No investment balance is currently available"), "unverified investment balances must remain unavailable");
+  assert(source.includes("verified underlying asset records"), "investment holdings require verified source records");
+  assert(source.includes("No third-party portfolio figure is treated as a Vantoris balance"), "external portfolio totals must not be represented as institutional balances");
+  assert(!/\$[0-9]|€[0-9]|£[0-9]/.test(source), "the unavailable investment screen must not display a fabricated portfolio value");
 });
