@@ -5,8 +5,8 @@ import { validateVantorisMigrationRows, assertVantorisMigrationHistory } from '.
 
 test('runtime manifest has the bootstrap and every versioned migration', () => {
   assert.equal(MIGRATION_MANIFEST[0].version, '000');
-  assert.equal(MIGRATION_MANIFEST.length, 24);
-  assert.equal(MIGRATION_MANIFEST.at(-1).version, '023');
+  assert.equal(MIGRATION_MANIFEST.length, 25);
+  assert.equal(MIGRATION_MANIFEST.at(-1).version, '024');
   assert(MIGRATION_MANIFEST.every(row => /^[a-f0-9]{64}$/.test(row.checksum)));
 });
 
