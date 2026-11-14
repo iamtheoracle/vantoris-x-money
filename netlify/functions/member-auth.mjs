@@ -1,6 +1,6 @@
 import postgres from 'postgres';
 import {
-  createCipheriv, createDecipheriv, createHash, createHmac, randomBytes,
+  createDecipheriv, createHash, createHmac, randomBytes,
   scrypt, timingSafeEqual,
 } from 'node:crypto';
 import { promisify } from 'node:util';
