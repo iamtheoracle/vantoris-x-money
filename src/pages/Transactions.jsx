@@ -1,41 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
-import { ArrowLeft } from "lucide-react";
-import { formatCurrency } from "@/lib/formatCurrency";
+import React,{useEffect,useState} from 'react';
+import {ArrowDownLeft,ArrowUpRight,Loader2,ReceiptText} from 'lucide-react';
+import {formatCurrency} from '@/lib/currency';
 
-export default function Transactions() {
-  const [rows, setRows] = useState([]);
-  const [note, setNote] = useState("Loading account records...");
-  useEffect(() => {
-    base44.entities.Transaction.list("-created_date", 40)
-      .then((list) => {
-        setRows(Array.isArray(list) ? list : []);
-        setNote(list?.length ? "" : "No transaction records were returned for this session.");
-      })
-      .catch((e) => setNote(e?.message || "Transactions could not be loaded."));
-  }, []);
-  return (
-    <div className="min-h-screen bg-[#F4F6F9] pb-28">
-      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 safe-top">
-        <Link to="/" className="rounded-lg p-1.5" aria-label="Back"><ArrowLeft size={20} /></Link>
-        <h1 className="font-bold text-navy">Transactions</h1>
-      </div>
-      <div className="app-frame space-y-3 p-4">
-        {note && <p className="rounded-2xl bg-white p-4 text-sm text-slate-500">{note}</p>}
-        {rows.map((tx) => (
-          <article key={tx.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-navy">{tx.description || tx.type || "Transaction"}</p>
-                <p className="mt-1 text-xs text-slate-500">{tx.status ? String(tx.status).replace(/_/g, " ") : "Status not supplied"} · {tx.created_date || tx.date || "Date not supplied"}</p>
-              </div>
-              <p className="font-mono text-sm font-semibold">{formatCurrency(tx.amount, tx.currency || tx.currency_code || null)}</p>
-            </div>
-          </article>
-        ))}
-        <Link to="/move-money" className="block rounded-full bg-navy py-3 text-center text-sm font-semibold text-white">Move money</Link>
-      </div>
-    </div>
-  );
+export default function Transactions(){
+ const [items,setItems]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState('');
+ useEffect(()=>{let active=true;fetch('/api/member-auth?action=me',{credentials:'same-origin',cache:'no-store'}).then(async r=>{const j=await r.json().catch(()=>({}));if(!r.ok)throw new Error('Vantoris could not retrieve your ledger activity.');if(active)setItems(j.transactions||[]);}).catch(e=>{if(active)setError(e.message);}).finally(()=>{if(active)setLoading(false);});return()=>{active=false;};},[]);
+ return <main className="mx-auto max-w-5xl px-5 py-8"><p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Vantoris ledger</p><h1 className="mt-2 text-3xl font-semibold text-navy">Transactions</h1><p className="mt-2 text-sm text-slate-600">Posted entries are read from your Vantoris ledger accounts.</p>
+ {loading?<div className="flex justify-center py-16"><Loader2 className="animate-spin text-navy"/></div>:error?<p role="alert" className="mt-6 rounded-xl bg-rose-50 p-4 text-sm text-rose-800">{error}</p>:!items.length?<div className="mt-6 rounded-2xl border border-dashed border-slate-200 bg-white p-8 text-center"><ReceiptText size={26} className="mx-auto text-slate-400"/><p className="mt-3 font-semibold text-navy">No posted activity</p><p className="mt-2 text-sm text-slate-500">There are no posted ledger entries for your member accounts.</p></div>:<div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">{items.map(item=>{const amount=String(item.amountCents||'0');const incoming=!amount.startsWith('-');return <div key={item.id} className="flex items-center gap-3 border-b border-slate-100 p-4 last:border-0"><span className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-navy">{incoming?<ArrowDownLeft size={18}/>:<ArrowUpRight size={18}/>}</span><div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-navy">{item.description||item.type||'Ledger entry'}</p><p className="mt-1 text-xs text-slate-500">{new Date(item.created_date).toLocaleString()} · {item.status}</p></div><p className="shrink-0 text-sm font-semibold tabular-nums text-navy">{incoming?'+':'−'}{formatCurrency(amount.replace(/^-/,''),item.currency||'USD')}</p></div>;})}</div>}
+ </main>;
 }
