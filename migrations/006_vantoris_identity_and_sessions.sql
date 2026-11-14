@@ -169,8 +169,11 @@ BEGIN
   SELECT s.member_id INTO resolved_member
     FROM vantoris_ledger.auth_sessions s
     JOIN vantoris_ledger.members m ON m.id=s.member_id
+    JOIN vantoris_ledger.member_credentials c ON c.member_id=m.id
    WHERE s.principal_type='member' AND s.token_hash=p_token_hash
      AND s.revoked_at IS NULL AND s.expires_at>clock_timestamp() AND m.status='active'
+     AND c.email_verified_at IS NOT NULL AND c.password_reset_required=false
+     AND (c.mfa_required=false OR s.mfa_verified_at IS NOT NULL)
    FOR UPDATE OF s;
   IF resolved_member IS NULL THEN RAISE EXCEPTION 'MEMBER_SESSION_INVALID' USING ERRCODE='28000'; END IF;
   UPDATE vantoris_ledger.auth_sessions SET last_seen_at=clock_timestamp() WHERE token_hash=p_token_hash;
