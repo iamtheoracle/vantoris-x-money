@@ -87,6 +87,11 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.member_identity_documents WHERE id=identity_document_id AND review_status='approved') THEN
   RAISE EXCEPTION 'Identity document status was not updated';
  END IF;
+ BEGIN
+  PERFORM * FROM vantoris_ledger.read_staff_identity_document(decode(repeat('i',64),'hex'),identity_document_id);
+  RAISE EXCEPTION 'Support staff without identity.review could read identity evidence';
+ EXCEPTION WHEN insufficient_privilege THEN NULL;
+ END;
 
  -- MFA cannot be disabled for member or staff principals.
  BEGIN
