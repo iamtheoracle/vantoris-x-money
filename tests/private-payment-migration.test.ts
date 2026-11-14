@@ -78,3 +78,15 @@ Deno.test('Vantoris login throttling and CSRF checks are database-owned', async 
   assert(sql.includes('verify_auth_csrf'), 'State-changing member requests must verify session-bound CSRF.');
   assert(sql.includes('GRANT EXECUTE ON FUNCTION vantoris_ledger.record_login_failure'), 'Backend must use the database throttling function.');
 });
+
+Deno.test('Vantoris staff financial actions require independent capabilities and approval', async () => {
+  const sql = await Deno.readTextFile('migrations/009_vantoris_staff_controls.sql');
+  assert(sql.includes('staff_role_capabilities'), 'Staff capability registry missing.');
+  assert(sql.includes('ledger.reverse.propose'), 'Reversal proposal capability missing.');
+  assert(sql.includes('ledger.reverse.approve'), 'Independent reversal approval capability missing.');
+  assert(sql.includes('ledger.manual_journal.propose'), 'Manual journal proposal capability missing.');
+  assert(sql.includes('ledger.manual_journal.approve'), 'Independent manual journal approval capability missing.');
+  assert(sql.includes('STAFF_SEPARATION_OF_DUTIES_REQUIRED') || sql.includes('staff_action_approval_separation'), 'Proposer must not approve their own action.');
+  assert(sql.includes('staff_action_approvals_immutable'), 'Staff approvals must be append-only.');
+  assert(sql.includes('protect_staff_proposal_changes'), 'Staff proposal payloads must be immutable.');
+});
