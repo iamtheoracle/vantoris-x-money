@@ -83,7 +83,7 @@
 ## Current state
 
 - **Assigned branch:** `migration/remove-base44-and-codex`; branch exists and current work is being committed there.
-- **Migrations:** runbook enumerates 001–020. Migrations 007, 008, 012, 014 and 016 had PostgreSQL syntax defects and were corrected on this branch. Clean PostgreSQL CI is rerunning; no successful end-to-end run has yet been established in this gap register.
+- **Migrations:** runbook enumerates 001–020. Migrations 007, 008, 012, 014 and 016 had PostgreSQL syntax defects and were corrected on this branch. Migration 006 already installs the proposer/approver separation trigger; forward migration 020 hardens its existing function with a locked proposal read and fixed search path without adding a duplicate trigger. Clean PostgreSQL CI is rerunning; no successful end-to-end run has yet been established in this gap register.
 - **Runtime role:** documentation and disposable CI now model `avcu_backend` as the runtime LOGIN inheriting the historical `vantoris_backend` privilege group. Production role provisioning and cutover remain unverified and unauthorized.
 - **Member authentication:** first-party Netlify functions and React auth context exist in source. Real PostgreSQL/browser behavior, MFA secret provisioning, session revocation and production configuration remain unverified.
 - **Staff authentication:** separate staff auth and capability-gated operations endpoints exist in source. Staff identity provisioning, MFA provisioning, role-management UI and real browser authorization tests remain incomplete.
