@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { Outlet } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -9,39 +8,10 @@ const DefaultFallback = () => (
   </div>
 );
 
-function readToken() {
-  if (typeof window === 'undefined') return '';
-  return (
-    window.localStorage.getItem('base44_access_token') ||
-    window.localStorage.getItem('token') ||
-    window.localStorage.getItem('base44_token') ||
-    ''
-  );
-}
-
 export default function ProtectedRoute({ fallback = <DefaultFallback />, unauthenticatedElement }) {
-  const { isAuthenticated, isLoadingAuth, authChecked, authError, checkUserAuth } = useAuth();
-  const retried = useRef(false);
-
-  useEffect(() => {
-    if (!authChecked && !isLoadingAuth) {
-      checkUserAuth();
-      return;
-    }
-    if (authChecked && !isAuthenticated && !isLoadingAuth && readToken() && !retried.current) {
-      retried.current = true;
-      checkUserAuth();
-    }
-  }, [authChecked, isLoadingAuth, isAuthenticated, checkUserAuth]);
-
+  const { isAuthenticated, isLoadingAuth, authChecked, authError } = useAuth();
   if (isLoadingAuth || !authChecked) return fallback;
-
   if (authError?.type === 'user_not_registered') return <UserNotRegisteredError />;
-
-  if (!isAuthenticated) {
-    if (readToken() && !retried.current) return fallback;
-    return unauthenticatedElement;
-  }
-
+  if (!isAuthenticated) return unauthenticatedElement;
   return <Outlet />;
 }
