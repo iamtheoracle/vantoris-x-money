@@ -73,8 +73,8 @@ function privateEndpoint() {
 
 async function authorizeAndLimit(request) {
   const cookie = readCookies(request);
-  const sessionToken = cookie.__Host-vantoris_session || '';
-  const csrfCookie = cookie.__Host-vantoris_csrf || '';
+  const sessionToken = cookie['__Host-vantoris_session'] || '';
+  const csrfCookie = cookie['__Host-vantoris_csrf'] || '';
   const csrfHeader = request.headers.get('x-csrf-token') || '';
   if (!sessionToken || !constantTimeEqual(csrfCookie, csrfHeader)) return { status: 401, error: 'authentication_required' };
 
