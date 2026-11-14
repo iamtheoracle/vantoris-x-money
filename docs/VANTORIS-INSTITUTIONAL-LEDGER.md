@@ -30,6 +30,7 @@ The nineteen files are ordered and must be applied once, in order, to an empty V
 18. `migrations/018_vantoris_reversal_reason_audit.sql` — requires the staff-supplied reason and records it in the reversal journal and immutable audit event.
 19. `migrations/019_vantoris_identity_document_workflow.sql` — encrypted Vantoris document intake/retrieval, immutable evidence and review history, and staff identity decisions.
 20. `migrations/020_vantoris_staff_approval_separation.sql` — database trigger rejects an approval row when the approver's Vantoris staff reference equals the proposal's proposer reference.
+21. `migrations/021_vantoris_journal_balance_trigger_row_fix.sql` — corrects deferred journal-balance trigger row handling for both journal and journal-entry trigger events.
 
 These migrations have **not been verified as applied** to any live Vantoris database. A file in Git is not an applied migration. Record the actual database name, server identity, migration owner, execution timestamp and checksums in the institution's controlled change record after a successful application.
 
@@ -81,6 +82,7 @@ psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/017_v
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/018_vantoris_reversal_reason_audit.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/019_vantoris_identity_document_workflow.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/020_vantoris_staff_approval_separation.sql
+psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f migrations/021_vantoris_journal_balance_trigger_row_fix.sql
 psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/postgres/vantoris-ledger.integration.sql
 ```
 
