@@ -50,14 +50,14 @@ function relativeDay(iso) {
 }
 
 
-function transactionPresentation(amount, type) {
+function transactionPresentation(amount) {
   if (amount === null || amount === undefined || amount === '') {
     return { amount: null, sign: '', tone: 'text-slate-500' };
   }
-  if (typeof amount === 'string' && /^-?\\d+(?:\\.\\d{1,2})?$/.test(amount)) {
+  if (typeof amount === 'string' && /^-?\d+(?:\.\d{1,2})?$/.test(amount)) {
     const negative = amount.startsWith('-');
     const absolute = negative ? amount.slice(1) : amount;
-    const isZero = /^0(?:\\.0{1,2})?$/.test(absolute);
+    const isZero = /^0(?:\.0{1,2})?$/.test(absolute);
     return {
       amount: absolute,
       sign: isZero ? '' : negative ? '−' : '+',
@@ -528,7 +528,7 @@ export default function Home() {
             ) : (
               <div className="rounded-[18px] bg-white border border-slate-200/70 divide-y divide-slate-100 shadow-sm overflow-hidden">
                 {transactions.map((tx) => {
-                  const presentation = transactionPresentation(tx.amount, tx.type);
+                  const presentation = transactionPresentation(tx.amount);
                   const label = tx.description || tx.type || 'Transaction';
                   return (
                     <button
