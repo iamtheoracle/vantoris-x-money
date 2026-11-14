@@ -232,3 +232,17 @@ Deno.test("inventoried public, member and operations routes remain registered or
   }
 });
 
+
+Deno.test("database-backed Vantoris functions fail closed on migration-history mismatch", async () => {
+  const guard = await Deno.readTextFile("netlify/functions/migration-guard.mjs");
+  const packageJson = JSON.parse(await Deno.readTextFile("package.json"));
+  assert(guard.includes("MIGRATION_MANIFEST") && guard.includes("filename") && guard.includes("checksum"), "runtime guard must compare the deployed migration manifest with database history");
+  assert(guard.includes("VANTORIS_MIGRATION_HISTORY_INVALID"), "mismatch must fail closed");
+  for (const file of ["member-auth.mjs", "member-documents.mjs", "oracle.mjs", "staff-actions.mjs", "staff-auth.mjs"]) {
+    const source = await Deno.readTextFile("netlify/functions/" + file);
+    assert(source.includes("assertVantorisMigrationHistory(database())"), file + " must verify migration history before database-backed work");
+  }
+  assert(packageJson.scripts.build.includes("generate-vantoris-migration-manifest"), "deployment build must generate the exact migration checksum manifest");
+  assert(packageJson.scripts["db:migrate:vantoris"].includes("apply-vantoris-migrations"), "operators must have an ordered migration apply command");
+  assert(packageJson.scripts["db:verify:vantoris"].includes("--verify-only"), "operators must have a read-only migration verification command");
+});
