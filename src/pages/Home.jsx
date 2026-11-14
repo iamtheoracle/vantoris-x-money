@@ -50,24 +50,24 @@ function relativeDay(iso) {
 }
 
 
-function transactionPresentation(amount) {
-  if (amount === null || amount === undefined || amount === '') {
-    return { amount: null, sign: '', tone: 'text-slate-500' };
-  }
-  if (typeof amount === 'string' && /^-?\d+(?:\.\d{1,2})?$/.test(amount)) {
-    const negative = amount.startsWith('-');
-    const absolute = negative ? amount.slice(1) : amount;
-    const isZero = /^0(?:\.0{1,2})?$/.test(absolute);
-    return {
-      amount: absolute,
-      sign: isZero ? '' : negative ? '−' : '+',
-      tone: negative ? 'text-navy' : 'text-emerald-600',
-    };
-  }
+function transactionPresentation(amount, type) {
   const raw = Number(amount);
-  if (!Number.isFinite(raw)) return { amount: null, sign: '', tone: 'text-slate-500' };
-  if (raw > 0) return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
+  if (!Number.isFinite(raw) || raw === 0) {
+    return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-slate-500' };
+  }
+
+  const normalizedType = String(type || '').trim().toLowerCase();
+  const debitTypes = new Set(['debit', 'withdrawal', 'outgoing_transfer', 'transfer_out', 'payment', 'fee', 'purchase']);
+  const creditTypes = new Set(['credit', 'deposit', 'incoming_transfer', 'transfer_in', 'interest', 'refund', 'receipt']);
+
+  if (debitTypes.has(normalizedType)) {
+    return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
+  }
+  if (creditTypes.has(normalizedType)) {
+    return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
+  }
   if (raw < 0) return { amount: Math.abs(raw), sign: '−', tone: 'text-navy' };
+  if (raw > 0) return { amount: Math.abs(raw), sign: '+', tone: 'text-emerald-600' };
   return { amount: 0, sign: '', tone: 'text-slate-500' };
 }
 
@@ -528,7 +528,7 @@ export default function Home() {
             ) : (
               <div className="rounded-[18px] bg-white border border-slate-200/70 divide-y divide-slate-100 shadow-sm overflow-hidden">
                 {transactions.map((tx) => {
-                  const presentation = transactionPresentation(tx.amount);
+                  const presentation = transactionPresentation(tx.amount, tx.type);
                   const label = tx.description || tx.type || 'Transaction';
                   return (
                     <button
