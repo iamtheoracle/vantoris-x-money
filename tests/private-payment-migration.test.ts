@@ -108,3 +108,13 @@ Deno.test('Member transfer functions derive identity from a verified session tok
   assert(sql.includes('resolve_member_session(p_session_token_hash)'), 'Transfer actor must be resolved from the Vantoris session token.');
   assert(sql.includes('REVOKE EXECUTE ON FUNCTION vantoris_ledger.execute_internal_transfer'), 'Runtime must not call the transitional member-ID transfer function directly.');
 });
+
+Deno.test('Manual journals and reversals are posted only after independent approval', async () => {
+  const sql = await Deno.readTextFile('migrations/011_vantoris_approved_journal_posting.sql');
+  assert(sql.includes('post_approved_manual_journal'), 'Approved manual journal poster missing.');
+  assert(sql.includes('post_approved_reversal'), 'Approved reversal poster missing.');
+  assert(sql.includes('MANUAL_JOURNAL_SEPARATION_OF_DUTIES_REQUIRED'), 'Manual journal poster must differ from proposer.');
+  assert(sql.includes('REVERSAL_SEPARATION_OF_DUTIES_REQUIRED'), 'Reversal poster must differ from proposer.');
+  assert(sql.includes('INSERT INTO vantoris_ledger.journal_entries'), 'Staff actions must post ledger entries, not mutate balances.');
+  assert(sql.includes("SET status='executed'"), 'Approved proposal must move through its executed lifecycle.');
+});
