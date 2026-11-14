@@ -50,13 +50,15 @@ Deno.test("member Home transaction direction stays neutral when amount and type 
 Deno.test("account detail formatter does not coerce absent amounts to zero", async () => {
   const source = await Deno.readTextFile("src/pages/AccountDetail.jsx");
   assert(source.includes("value === null || value === undefined || (typeof value === 'string' && value.trim() === '')"), "account detail must reject null and blank values before numeric coercion");
-  assert(source.includes("if (!Number.isFinite(amount)) return 'Amount not supplied';"), "invalid account detail amounts must remain unavailable");
+  assert(source.includes("if (!/^-?\\d+$/.test(raw)) return null;"), "invalid account detail amounts must remain unavailable");
+  assert(source.includes("const cents = BigInt(raw);"), "only a validated integer-cent value may be converted");
+  assert(!source.includes("String(value || '0')"), "missing hold amounts must not be coerced to zero");
 });
 
 Deno.test("investment screen withholds unverified portfolio balances", async () => {
   const source = await Deno.readTextFile("src/pages/Investment.jsx");
   assert(source.includes("No investment balance is currently available"), "unverified investment balances must remain unavailable");
-  assert(source.includes("verified underlying asset records"), "investment holdings require verified source records");
+  assert(source.includes("verified the underlying asset records"), "investment holdings require verified source records");
   assert(source.includes("No third-party portfolio figure is treated as a Vantoris balance"), "external portfolio totals must not be represented as institutional balances");
   assert(!/\$[0-9]|€[0-9]|£[0-9]/.test(source), "the unavailable investment screen must not display a fabricated portfolio value");
 });
