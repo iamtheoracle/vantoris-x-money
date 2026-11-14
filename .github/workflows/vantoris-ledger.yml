@@ -39,10 +39,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
-      - name: Create restricted application role
+      - name: Provision separate runtime login and legacy privilege group
         run: |
           psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 \
-            -c "CREATE ROLE vantoris_backend LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD 'ci-only-runtime-password';"
+            -c "CREATE ROLE vantoris_backend NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION;"
+          psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 \
+            -c "CREATE ROLE avcu_backend LOGIN INHERIT NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION PASSWORD 'ci-only-runtime-password';"
+          psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 \
+            -c "GRANT vantoris_backend TO avcu_backend;"
       - name: Apply Vantoris migrations in order
         run: |
           for migration in \
@@ -68,6 +72,32 @@ jobs:
           do
             psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
+      - name: Verify avcu_backend inherits restricted ledger privileges
+        run: |
+          psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 <<'SQL'
+          DO $
+          BEGIN
+            IF NOT pg_has_role('avcu_backend', 'vantoris_backend', 'USAGE') THEN
+              RAISE EXCEPTION 'avcu_backend does not inherit vantoris_backend grants';
+            END IF;
+            IF NOT has_schema_privilege('avcu_backend', 'vantoris_ledger', 'USAGE') THEN
+              RAISE EXCEPTION 'avcu_backend lacks ledger schema usage';
+            END IF;
+            IF NOT has_table_privilege('avcu_backend', 'vantoris_ledger.members', 'SELECT') THEN
+              RAISE EXCEPTION 'avcu_backend lacks member read access';
+            END IF;
+            IF has_table_privilege('avcu_backend', 'vantoris_ledger.journals', 'INSERT')
+              OR has_table_privilege('avcu_backend', 'vantoris_ledger.journal_entries', 'INSERT')
+              OR has_table_privilege('avcu_backend', 'vantoris_ledger.audit_events', 'UPDATE')
+              OR has_table_privilege('avcu_backend', 'vantoris_ledger.audit_events', 'DELETE') THEN
+              RAISE EXCEPTION 'avcu_backend has direct ledger or audit mutation privileges';
+            END IF;
+            IF NOT has_function_privilege('avcu_backend',
+              'vantoris_ledger.execute_member_internal_transfer(uuid,bytea)', 'EXECUTE') THEN
+              RAISE EXCEPTION 'avcu_backend cannot execute the session-bound internal transfer function';
+            END IF;
+          END $;
+          SQL
       - name: Run disposable PostgreSQL ledger integration test
         run: psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f tests/postgres/vantoris-ledger.integration.sql
       - uses: denoland/setup-deno@v2
