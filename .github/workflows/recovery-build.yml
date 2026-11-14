@@ -168,10 +168,8 @@ jobs:
           ]) {
             if (!transfer.includes(marker)) throw new Error('Core internal transfer contract is missing: ' + marker);
           }
-          if (/plaid|fedwire|\\bach\\b|stripe|external payment api/i.test(transfer)) {
-            if (!transfer.includes('This transfer does not use a sponsor bank, Plaid, ACH, Fedwire')) {
-              throw new Error('Internal transfer page must remain independent of external payment rails');
-            }
+          if (/fetch\\(\\s*['"]https?:\\/\\//i.test(transfer)) {
+            throw new Error('Internal transfer page must not call an external payment API directly');
           }
           const investment = readFileSync('src/pages/Investment.jsx', 'utf8');
           if (!investment.includes('No investment balance is currently available') ||
