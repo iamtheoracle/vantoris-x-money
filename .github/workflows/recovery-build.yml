@@ -75,10 +75,23 @@ jobs:
               throw new Error('Direct AI execution path found in ' + file);
             }
           }
-          const shared = readFileSync('src/lib/oracleAssistant.js', 'utf8');
-          if (!shared.includes("functions.invoke('oracleRuntime'")) throw new Error('Shared Oracle runtime client is missing');
+          const client = readFileSync('src/lib/privateLlm.js', 'utf8');
+          const endpoint = readFileSync('netlify/functions/ask.mjs', 'utf8');
+          if (!client.includes("error: 'assistant_disabled'") || !client.includes('return false')) {
+            throw new Error('Optional Vantoris assistant must remain explicitly disabled until authorized.');
+          }
+          if (client.includes('fetch(') || client.includes('base44')) {
+            throw new Error('Browser assistant client must not call providers or Base44 directly.');
+          }
+          if (endpoint.includes('@base44/sdk') || endpoint.includes('BASE44_') || endpoint.includes('UPSTASH_') || endpoint.includes('callBase44')) {
+            throw new Error('Assistant endpoint must not depend on Base44 or external usage infrastructure.');
+          }
+          if (!endpoint.includes("error: 'assistant_disabled'") || !endpoint.includes('}, 503)')) {
+            throw new Error('Server assistant endpoint must fail closed while the optional service is disabled.');
+          }
+          if (existsSync('src/lib/oracleAssistant.js')) throw new Error('Legacy Oracle/Base44 assistant client must not remain active.');
           if (existsSync('server/llm-proxy.mjs')) throw new Error('Obsolete standalone private-model proxy still exists');
-          console.log('Assistant entry points use the shared Oracle runtime.');
+          console.log('Optional assistant is isolated and fail-closed; core Vantoris services do not depend on it.');
           NODE
       - name: Prevent browser-side financial and privileged record mutations
         run: |
