@@ -135,7 +135,7 @@ export default async function handler(request){
    if(!['government_id','proof_of_address','selfie','business_document','other'].includes(documentType))return json({error:'document_type_invalid'},400);
    const plaintext=Buffer.from(await file.arrayBuffer());
    const mediaType=mediaTypeFromBytes(plaintext);
-   if(!mediaType||mediaType!==file.type)return json({error:'document_media_type_invalid'},400);
+   if(!mediaType||(file.type&&mediaType!==file.type))return json({error:'document_media_type_invalid'},400);
    const version=Number(process.env.VANTORIS_DOCUMENT_KEY_VERSION||'1');
    const encrypted=encryptDocument(plaintext,version);
    const filename=safeFilename(file.name);
