@@ -59,7 +59,7 @@ jobs:
             migrations/011_vantoris_approved_journal_posting.sql \
             migrations/012_vantoris_member_transfer_limits.sql \
             migrations/013_vantoris_member_activation_mfa.sql \
-            migrations/014_vantoris_staff_profile.sql \\
+            migrations/014_vantoris_staff_profile.sql \
             migrations/015_vantoris_totp_replay_protection.sql
           do
             psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
