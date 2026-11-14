@@ -50,6 +50,15 @@ export default function StaffPortal(){
    const result=await post(body);setNotice('Proposal created: '+result.proposalId);setDescription('');setJournalId('');setReason('');setSingleLimit('');setDailyLimit('');setCapitalFloor('');await load();
   }catch(e){setError(e.message);}finally{setBusy(false);}
  }
+ async function reviewDocument(event,documentId){
+  event.preventDefault();const form=new FormData(event.currentTarget);
+  setBusy(true);setError('');setNotice('');
+  try{
+   await post({action:'review_identity_document',documentId,decision:form.get('decision'),rationale:form.get('rationale')});
+   setNotice('Vantoris identity review recorded in the append-only review and audit history.');
+   await load();
+  }catch(e){setError(e.message);}finally{setBusy(false);}
+ }
  async function issueMemberToken(event){
   event.preventDefault();setBusy(true);setError('');setNotice('');setIssuedToken(null);
   try{
@@ -173,6 +182,19 @@ export default function StaffPortal(){
      </article>)}
     </div>}
    </section>
+   {can('identity.review')&&<section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
+    <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold text-navy">Vantoris identity review queue</h2><span className="text-xs text-slate-500">Pending documents</span></div>
+    {!data?.identityDocuments?.length?<p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">No pending identity documents.</p>:<div className="space-y-3">
+     {data.identityDocuments.map(doc=><article key={doc.id} className="rounded-xl border border-slate-100 bg-slate-50 p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2"><div><p className="text-sm font-semibold capitalize text-navy">{doc.document_type.replace(/_/g,' ')}</p><p className="mt-1 break-all text-xs text-slate-500">{doc.original_filename} · Member {doc.member_id}</p><p className="mt-1 text-xs text-slate-500">{new Date(doc.created_at).toLocaleString()}</p></div><a href={`/api/member-documents?id=${doc.id}`} target="_blank" rel="noreferrer" className="text-xs font-semibold text-navy underline">View document</a></div>
+      <form onSubmit={event=>reviewDocument(event,doc.id)} className="mt-4 grid gap-2 sm:grid-cols-[180px_1fr_auto]">
+       <select name="decision" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"><option value="approved">Approve identity document</option><option value="rejected">Reject identity document</option><option value="needs_information">Request more information</option></select>
+       <input name="rationale" required maxLength={1000} placeholder="Vantoris review rationale (required)" className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"/>
+       <button disabled={busy} className="rounded-lg bg-navy px-3 py-2 text-xs font-semibold text-white disabled:opacity-40">Record decision</button>
+      </form>
+     </article>)}
+    </div>}
+   </section>}
    {can('audit.read')&&<section className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
     <div className="mb-4 flex items-center justify-between"><h2 className="font-semibold text-navy">Vantoris append-only audit log</h2><span className="text-xs text-slate-500">Latest 100 events</span></div>
     {!data?.audit?.length?<p className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500">No audit events are visible to this capability set.</p>:<div className="space-y-2">
