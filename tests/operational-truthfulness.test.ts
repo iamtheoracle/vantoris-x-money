@@ -150,7 +150,7 @@ Deno.test("external ACH and Fedwire submission remains disabled without explicit
 
 Deno.test("member bank transfer form only offers active accounts with verified USD currency", async () => {
   const source = await Deno.readTextFile("src/pages/MoveMoney.jsx");
-  assert(source.includes("accounts.filter((account) => account.currency === 'USD' && account.status === 'active')"), "bank transfer form must filter to active verified USD accounts");
+  assert(source.includes("accounts.filter(account => account.currency === 'USD' && account.status === 'active')"), "bank transfer form must filter to active verified USD accounts");
   assert(source.includes("No active account with a verified USD currency record"), "member must see why no eligible account is available");
 });
 
@@ -190,7 +190,7 @@ Deno.test("Vantage assistant uses only the configured private AI endpoint", asyn
 Deno.test("investment workspace does not invent unverified holdings or balances", async () => {
   const source = await Deno.readTextFile("src/pages/Investment.jsx");
   assert(source.includes("No investment balance is currently available"), "unverified holdings must remain explicitly unavailable");
-  assert(source.includes("verified underlying asset records"), "investment figures require verified underlying assets");
+  assert(source.includes("verified the underlying asset records"), "investment figures require verified underlying assets");
   assert(source.includes("No third-party portfolio figure is treated as a Vantoris balance"), "third-party portfolio totals must not be represented as institutional balances");
   assert(!/\$[0-9]|€[0-9]|£[0-9]/.test(source), "investment page must not contain fabricated balances");
 });
