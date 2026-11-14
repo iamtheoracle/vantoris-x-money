@@ -104,22 +104,22 @@ CREATE OR REPLACE FUNCTION vantoris_ledger.create_member_internal_transfer_opera
  p_operation_id uuid,p_session_token_hash bytea,p_source_account_ref text,p_receiver_account_ref text,
  p_amount_cents bigint,p_idempotency_key text,p_request_hash text)
 RETURNS TABLE(operation_id uuid,operation_status text,duplicate boolean)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE member_id uuid;
 BEGIN
  member_id:=vantoris_ledger.resolve_member_session(p_session_token_hash);
  RETURN QUERY SELECT * FROM vantoris_ledger.create_internal_transfer_operation(
   p_operation_id,member_id,p_source_account_ref,p_receiver_account_ref,p_amount_cents,p_idempotency_key,p_request_hash);
-END $;
+END $$;
 
 CREATE OR REPLACE FUNCTION vantoris_ledger.execute_member_internal_transfer(p_operation_id uuid,p_session_token_hash bytea)
 RETURNS TABLE(journal_id uuid,hold_id uuid,duplicate boolean)
-LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $
+LANGUAGE plpgsql SECURITY DEFINER SET search_path=pg_catalog,vantoris_ledger AS $$
 DECLARE member_id uuid;
 BEGIN
  member_id:=vantoris_ledger.resolve_member_session(p_session_token_hash);
  RETURN QUERY SELECT * FROM vantoris_ledger.execute_internal_transfer(p_operation_id,member_id);
-END $;
+END $$;
 
 REVOKE EXECUTE ON FUNCTION vantoris_ledger.create_internal_transfer_operation(uuid,uuid,text,text,bigint,text,text) FROM vantoris_backend;
 REVOKE EXECUTE ON FUNCTION vantoris_ledger.execute_internal_transfer(uuid,uuid) FROM vantoris_backend;
