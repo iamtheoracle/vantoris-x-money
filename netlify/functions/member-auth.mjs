@@ -150,7 +150,8 @@ async function confirmMfaEnrollment(request, body) {
   let secret;
   try { secret = decryptMfaSecret(factors[0]); }
   catch { return json({ error: 'mfa_unavailable' }, 503); }
-  if (!verifyTotp(secret, body.otp)) return json({ error: 'mfa_code_invalid' }, 401);
+  const totpStep = verifyTotpStep(secret, body.otp);
+  if (totpStep === null) return json({ error: 'mfa_code_invalid' }, 401);
 
   const sessionToken = randomBytes(32).toString('base64url');
   const csrfToken = randomBytes(32).toString('base64url');
@@ -159,7 +160,7 @@ async function confirmMfaEnrollment(request, body) {
   const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000);
   const member = await database().begin(async tx => {
     const rows = await tx`SELECT vantoris_ledger.complete_member_mfa_enrollment(
-      ${challengeHash},${sessionHash},${csrfHash},${expiresAt}
+      ${challengeHash},${sessionHash},${csrfHash},${totpStep},${expiresAt}
     ) AS member_id`;
     const memberId = rows[0].member_id;
     await tx`SELECT vantoris_ledger.resolve_member_session(${sessionHash})`;
@@ -200,8 +201,8 @@ function decryptMfaSecret(row) {
   return base32Decode(plaintext.toString('utf8'));
 }
 
-function verifyTotp(secret, suppliedCode, now = Date.now()) {
-  if (!/^\d{6}$/.test(String(suppliedCode || ''))) return false;
+function verifyTotpStep(secret, suppliedCode, now = Date.now()) {
+  if (!/^\d{6}$/.test(String(suppliedCode || ''))) return null;
   const supplied = Buffer.from(String(suppliedCode));
   const counter = Math.floor(now / 30000);
   for (let drift = -1; drift <= 1; drift += 1) {
@@ -214,9 +215,13 @@ function verifyTotp(secret, suppliedCode, now = Date.now()) {
       ((digest[offset + 2] & 0xff) << 8) |
       (digest[offset + 3] & 0xff);
     const expected = Buffer.from(String(binary % 1000000).padStart(6, '0'));
-    if (timingSafeEqual(expected, supplied)) return true;
+    if (timingSafeEqual(expected, supplied)) return counter + drift;
   }
-  return false;
+  return null;
+}
+
+function verifyTotp(secret, suppliedCode, now = Date.now()) {
+  return verifyTotpStep(secret, suppliedCode, now) !== null;
 }
 
 async function verifyPassword(password, encoded) {
@@ -289,7 +294,7 @@ async function login(request, body) {
     let mfaVerifiedAt = null;
     if (member.mfa_required) {
       const factors = await tx`
-        SELECT secret_ciphertext,nonce,auth_tag
+        SELECT id,secret_ciphertext,nonce,auth_tag
           FROM vantoris_ledger.member_mfa_factors
          WHERE member_id=${member.member_id} AND verified_at IS NOT NULL AND disabled_at IS NULL
          ORDER BY enrolled_at DESC LIMIT 1
@@ -299,7 +304,13 @@ async function login(request, body) {
       let secret;
       try { secret = decryptMfaSecret(factors[0]); }
       catch { return { error: 'mfa_unavailable' }; }
-      if (!verifyTotp(secret, otp)) {
+      const totpStep = verifyTotpStep(secret, otp);
+      if (totpStep === null) {
+        await tx`SELECT vantoris_ledger.record_login_failure(${emailFingerprint},${ipFingerprint})`;
+        return { error: 'invalid' };
+      }
+      const replay = await tx`SELECT vantoris_ledger.consume_member_totp_step(${factors[0].id},${totpStep}) AS accepted`;
+      if (replay[0]?.accepted !== true) {
         await tx`SELECT vantoris_ledger.record_login_failure(${emailFingerprint},${ipFingerprint})`;
         return { error: 'invalid' };
       }
@@ -671,4 +682,4 @@ export default async function handler(request) {
   }
 }
 
-export { base32Decode, verifyPassword, verifyTotp };
+export { base32Decode, verifyPassword, verifyTotp, verifyTotpStep };
