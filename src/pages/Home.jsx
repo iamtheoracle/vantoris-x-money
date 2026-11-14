@@ -51,6 +51,9 @@ function relativeDay(iso) {
 
 
 function transactionPresentation(amount, type) {
+  if (amount === null || amount === undefined || (typeof amount === 'string' && amount.trim() === '')) {
+    return { amount: null, sign: '', tone: 'text-slate-500' };
+  }
   const raw = Number(amount);
   if (!Number.isFinite(raw) || raw === 0) {
     return { amount: Number.isFinite(raw) ? 0 : null, sign: '', tone: 'text-slate-500' };
