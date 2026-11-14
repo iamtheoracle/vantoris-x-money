@@ -134,8 +134,7 @@ const AuthenticatedApp = () => {
 
   if (isLoadingPublicSettings || isLoadingAuth) return <LoadingFallback />;
 
-  // Keep the app reachable: show local /login instead of a blank redirect.
-  // Base44 hosted login can still be used from the Login page itself.
+  // Member and staff authentication are separate first-party Vantoris sessions.
   if (authError) {
     if (authError.type === 'user_not_registered') return <UserNotRegisteredError />;
     if (authError.type === 'auth_required') {
