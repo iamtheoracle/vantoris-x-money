@@ -193,7 +193,7 @@ jobs:
           }
           const investment = readFileSync('src/pages/Investment.jsx', 'utf8');
           if (!investment.includes('No investment balance is currently available') ||
-              !investment.includes('verified underlying asset records') ||
+              !investment.includes('verified the underlying asset records') ||
               !investment.includes('No third-party portfolio figure is treated as a Vantoris balance') ||
               /\$[0-9]|€[0-9]|£[0-9]/.test(investment)) {
             throw new Error('Investment screen must not represent unverified holdings as Vantoris balances');
