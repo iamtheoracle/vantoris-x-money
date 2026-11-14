@@ -167,3 +167,13 @@ Deno.test('Member and staff TOTP time-steps cannot be replayed', async () => {
   assert(sql.includes('last_used_step<p_step'), 'Previously used TOTP steps must be rejected.');
   assert(sql.includes('p_totp_step bigint'), 'MFA enrollment must consume the initial TOTP step atomically.');
 });
+
+Deno.test('Permanent capital floor is a dual-approved staff action', async () => {
+  const sql = await Deno.readTextFile('migrations/016_vantoris_capital_floor_workflow.sql');
+  assert(sql.includes("'capital_floor'"), 'Capital floor proposal type missing.');
+  assert(sql.includes('capital.floor.propose'), 'Capital floor proposer capability missing.');
+  assert(sql.includes('capital.floor.approve'), 'Capital floor approver capability missing.');
+  assert(sql.includes('capital.floor.post'), 'Capital floor posting capability missing.');
+  assert(sql.includes('post_approved_capital_floor'), 'Approved capital floor poster missing.');
+  assert(sql.includes('REVOKE EXECUTE ON FUNCTION vantoris_ledger.set_institutional_capital_floor'), 'Legacy two-token setter must not be callable by the app role.');
+});
