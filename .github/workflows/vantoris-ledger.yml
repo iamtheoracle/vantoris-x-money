@@ -58,7 +58,8 @@ jobs:
             migrations/010_vantoris_permanent_capital_protection.sql \
             migrations/011_vantoris_approved_journal_posting.sql \
             migrations/012_vantoris_member_transfer_limits.sql \
-            migrations/013_vantoris_member_activation_mfa.sql
+            migrations/013_vantoris_member_activation_mfa.sql \\
+            migrations/014_vantoris_staff_profile.sql
           do
             psql "$VANTORIS_LEDGER_TEST_DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
           done
@@ -69,6 +70,8 @@ jobs:
           deno-version: v2.x
       - name: Check Vantoris member auth function syntax
         run: node --check netlify/functions/member-auth.mjs
+      - name: Check Vantoris staff API syntax
+        run: node --check netlify/functions/staff-auth.mjs && node --check netlify/functions/staff-actions.mjs
       - name: Run Vantoris member auth cryptography tests
         run: node --test tests/member-auth.test.mjs
       - name: Run Vantoris migration contract tests
