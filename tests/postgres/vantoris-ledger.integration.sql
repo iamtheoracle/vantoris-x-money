@@ -11,6 +11,7 @@ DECLARE
  activation_hash bytea:=decode(repeat('1',64),'hex'); reset_hash bytea:=decode(repeat('2',64),'hex'); mfa_challenge_hash bytea:=decode(repeat('3',64),'hex');
  mfa_session_hash bytea:=decode(repeat('4',64),'hex'); mfa_csrf_hash bytea:=decode(repeat('5',64),'hex'); mfa_factor_id uuid:=gen_random_uuid();
  mfa_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; staff_totp_step bigint:=floor(extract(epoch from clock_timestamp())/30)::bigint; manual_proposal uuid; manual_journal uuid; reversal_proposal uuid; reversal_journal uuid; limit_proposal uuid; limit_history uuid;
+ capital_proposal uuid; capital_opening_proposal uuid; opening_proposal uuid;
  result record; sender_balance numeric; receiver_balance numeric; captured_status text; journal_count integer;
 BEGIN
  INSERT INTO vantoris_ledger.members(id,member_reference,status) VALUES
@@ -58,25 +59,44 @@ BEGIN
  END IF;
  PERFORM vantoris_ledger.resolve_member_session(mfa_session_hash);
 
- -- Permanent capital floor requires an operations proposer and a separate finance approver.
- PERFORM vantoris_ledger.set_institutional_capital_floor(decode(repeat('a',64),'hex'),decode(repeat('g',64),'hex'),5000);
+ -- Permanent capital floor is proposed by operations, approved by finance and posted by finance.
+ capital_proposal:=vantoris_ledger.create_staff_action_proposal(
+  decode(repeat('a',64),'hex'),'capital_floor','institutional-capital',
+  jsonb_build_object('minimum_unimpaired_cents',5000)
+ );
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),capital_proposal,'approve');
+ PERFORM vantoris_ledger.execute_approved_staff_action(decode(repeat('g',64),'hex'),capital_proposal);
+
  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
   (capital_id,'TEST-PERMANENT-CAPITAL',NULL,'institutional_capital','USD'),
   (clearing_id,'TEST-CLEARING',NULL,'internal_clearing','USD'),
   (suspense_id,'TEST-SUSPENSE',NULL,'suspense','USD');
- INSERT INTO vantoris_ledger.journals(id,journal_type,source_reference,idempotency_key,description,created_by) VALUES
-  (capital_journal,'manual','TEST-CAPITAL','test-capital','Synthetic permanent capital opening','test');
- INSERT INTO vantoris_ledger.journal_entries(id,journal_id,ledger_account_id,currency,amount_cents) VALUES
-  (gen_random_uuid(),capital_journal,clearing_id,'USD',5000),
-  (gen_random_uuid(),capital_journal,capital_id,'USD',-5000);
+
+ -- The opening capital is a dual-approved manual journal, never a typed balance.
+ capital_opening_proposal:=vantoris_ledger.create_staff_action_proposal(
+  decode(repeat('a',64),'hex'),'manual_journal','capital-opening',
+  jsonb_build_object('description','Synthetic permanent capital contribution','entries',jsonb_build_array(
+   jsonb_build_object('account_reference','TEST-CLEARING','amount_cents',5000),
+   jsonb_build_object('account_reference','TEST-PERMANENT-CAPITAL','amount_cents',-5000)
+  ))
+ );
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),capital_opening_proposal,'approve');
+ capital_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('g',64),'hex'),capital_opening_proposal);
+
  INSERT INTO vantoris_ledger.ledger_accounts(id,account_reference,member_id,account_type,currency) VALUES
   (a1,'TEST-MEMBER-ONE-USD',m1,'member_liability','USD'),
   (a2,'TEST-MEMBER-TWO-USD',m2,'member_liability','USD');
- INSERT INTO vantoris_ledger.journals(id,journal_type,source_reference,idempotency_key,description,created_by) VALUES
-  (opening_journal,'opening_balance','TEST-OPENING','test-opening:'||m1,'Synthetic test opening balance','test');
- INSERT INTO vantoris_ledger.journal_entries(id,journal_id,ledger_account_id,currency,amount_cents) VALUES
-  (gen_random_uuid(),opening_journal,clearing_id,'USD',10000),
-  (gen_random_uuid(),opening_journal,a1,'USD',-10000);
+
+ -- The member opening liability is another balanced journal, not a balance field.
+ opening_proposal:=vantoris_ledger.create_staff_action_proposal(
+  decode(repeat('a',64),'hex'),'manual_journal','member-opening',
+  jsonb_build_object('description','Synthetic member opening liability','entries',jsonb_build_array(
+   jsonb_build_object('account_reference','TEST-CLEARING','amount_cents',10000),
+   jsonb_build_object('account_reference','TEST-MEMBER-ONE-USD','amount_cents',-10000)
+  ))
+ );
+ PERFORM vantoris_ledger.approve_staff_action_proposal(decode(repeat('g',64),'hex'),opening_proposal,'approve');
+ opening_journal:=vantoris_ledger.post_approved_manual_journal(decode(repeat('g',64),'hex'),opening_proposal);
 
  -- A balanced journal that would reduce permanent capital below its floor must fail at commit.
  BEGIN
