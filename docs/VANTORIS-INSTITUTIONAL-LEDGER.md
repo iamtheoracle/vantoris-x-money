@@ -4,7 +4,7 @@
 
 Vantoris administers this PostgreSQL database. The `vantoris_ledger` schema is the institutional record for member liabilities, institutional capital, internal clearing, journals, holds and audit. A browser, Base44, a sponsor bank, Plaid, ACH, Fedwire, a card network or an assistant is not in the posting path.
 
-The current migration set is a replacement foundation. It does **not** import existing members, create accounts, establish permanent capital, or invent opening balances. Do not point the application at it until member-data reconciliation and the server-side authentication/authorization service are complete.
+The current migration set is a replacement foundation. It does **not** import existing members, create accounts, establish permanent capital, or invent opening balances. Do not point the application at it until migrations are applied to a Vantoris-administered database, member-data reconciliation is complete, staff/MFA credentials are provisioned, and the offline integration and browser tests pass.
 
 ## Migration state
 
@@ -95,7 +95,7 @@ The SQL integration script uses synthetic members and rolls back its fixtures. I
 - **Limits:** no real member transfer limits have been supplied. Transfers intentionally fail closed until an authorized Vantoris process establishes each member's limits.
 - **Statements and operations:** member statements and scoped account/activity APIs have been added, but complete statement reconciliation, pagination, audit review screens and operations reporting remain incomplete.
 - **Testing and resilience:** a disposable PostgreSQL integration script and CI workflow cover synthetic ledger, capital, transfer, limit, staff, activation and RLS cases. No CI run has been observed for this migration branch; multi-session concurrency tests, backup scheduling, restore verification and incident recovery remain release blockers.
-- **Base44 removal:** Base44 has not been fully removed. The member-critical paths have first-party replacements, but other member/admin pages, `@base44/sdk`, legacy functions and Oracle assistant/runtime paths still require inventory and replacement. The Codex workflow file is deleted from this branch; no production or main-branch change has been made.
+- **Base44 removal:** active member and staff routes no longer use Base44. The SDK dependency, Vite plugin, client adapter, app-parameter adapter and active assistant runtime have been removed; Netlify has no Base44 API proxy. Legacy Base44 function and unlinked page source files remain in the repository and must be audited, archived or deleted after the existing-member source reconciliation is complete. The Codex workflow file is deleted from this branch; no production or main-branch change has been made.
 
 
 Do not enable member transfers or claim institutional production readiness until these blockers are closed with evidence. No external payment rail is enabled by this migration.
