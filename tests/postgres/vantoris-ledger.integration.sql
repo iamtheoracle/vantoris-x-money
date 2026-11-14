@@ -64,10 +64,10 @@ BEGIN
   IF SQLERRM NOT LIKE 'PERMANENT_CAPITAL_IMPAIRMENT_BLOCKED%' THEN RAISE; END IF;
  END;
 
- SELECT * INTO result FROM vantoris_ledger.create_internal_transfer_operation(
-  op_id,m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-transfer:'||op_id,repeat('a',64));
+ SELECT * INTO result FROM vantoris_ledger.create_member_internal_transfer_operation(
+  op_id,decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-transfer:'||op_id,repeat('a',64));
  op_id:=result.operation_id;
- SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(op_id,m1);
+ SELECT * INTO result FROM vantoris_ledger.execute_member_internal_transfer(op_id,decode(repeat('c',64),'hex'));
  IF result.duplicate THEN RAISE EXCEPTION 'First transfer unexpectedly marked duplicate'; END IF;
  SELECT -COALESCE(sum(amount_cents),0) INTO sender_balance FROM vantoris_ledger.journal_entries WHERE ledger_account_id=a1;
  SELECT -COALESCE(sum(amount_cents),0) INTO receiver_balance FROM vantoris_ledger.journal_entries WHERE ledger_account_id=a2;
@@ -79,13 +79,13 @@ BEGIN
  SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(op_id,m1);
  IF NOT result.duplicate THEN RAISE EXCEPTION 'Transfer retry was not idempotent'; END IF;
  BEGIN
-  PERFORM * FROM vantoris_ledger.create_internal_transfer_operation(gen_random_uuid(),m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3100,'test-transfer:'||op_id,repeat('a',64));
+  PERFORM * FROM vantoris_ledger.create_member_internal_transfer_operation(gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3100,'test-transfer:'||op_id,repeat('a',64));
   RAISE EXCEPTION 'Idempotency payload conflict unexpectedly succeeded';
  EXCEPTION WHEN SQLSTATE '23505' THEN NULL; END;
- SELECT * INTO result FROM vantoris_ledger.create_internal_transfer_operation(
-  gen_random_uuid(),m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,'test-insufficient:'||m1,repeat('b',64));
+ SELECT * INTO result FROM vantoris_ledger.create_member_internal_transfer_operation(
+  gen_random_uuid(),decode(repeat('c',64),'hex'),'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',8000,'test-insufficient:'||m1,repeat('b',64));
  BEGIN
-  PERFORM * FROM vantoris_ledger.execute_internal_transfer(result.operation_id,m1);
+  PERFORM * FROM vantoris_ledger.execute_member_internal_transfer(result.operation_id,decode(repeat('c',64),'hex'));
   RAISE EXCEPTION 'Insufficient funds transfer unexpectedly succeeded';
  EXCEPTION WHEN SQLSTATE 'P0001' THEN IF SQLERRM<>'INSUFFICIENT_AVAILABLE_FUNDS' THEN RAISE; END IF; END;
  BEGIN
