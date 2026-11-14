@@ -32,15 +32,15 @@ INSERT INTO vantoris_ledger.staff_role_capabilities(role_code,capability_code) V
  ('super_administrator','ledger.read'),('super_administrator','ledger.reverse.propose'),('super_administrator','ledger.reverse.approve'),
  ('super_administrator','ledger.reverse.post'),('super_administrator','ledger.manual_journal.propose'),('super_administrator','ledger.manual_journal.approve'),
  ('super_administrator','ledger.manual_journal.post'),('super_administrator','limits.change.propose'),('super_administrator','limits.change.approve'),
- ('super_administrator','staff.manage'),
+ ('super_administrator','staff.manage'),('super_administrator','staff.action.read'),
  ('membership_officer','members.activate'),('membership_officer','members.view'),
  ('identity_reviewer','identity.review'),('identity_reviewer','members.view'),
  ('operations_officer','members.view'),('operations_officer','ledger.read'),('operations_officer','ledger.reverse.propose'),
- ('operations_officer','ledger.manual_journal.propose'),('operations_officer','limits.change.propose'),('operations_officer','audit.read'),
+ ('operations_officer','ledger.manual_journal.propose'),('operations_officer','limits.change.propose'),('operations_officer','audit.read'),('operations_officer','staff.action.read'),
  ('finance_controller','ledger.read'),('finance_controller','ledger.reverse.approve'),('finance_controller','ledger.reverse.post'),
  ('finance_controller','ledger.manual_journal.approve'),('finance_controller','ledger.manual_journal.post'),
- ('finance_controller','limits.change.approve'),('finance_controller','audit.read'),
- ('auditor','members.view'),('auditor','ledger.read'),('auditor','audit.read'),
+ ('finance_controller','limits.change.approve'),('finance_controller','audit.read'),('finance_controller','staff.action.read'),
+ ('auditor','members.view'),('auditor','ledger.read'),('auditor','audit.read'),('auditor','staff.action.read'),
  ('support_officer','members.view');
 
 CREATE OR REPLACE FUNCTION vantoris_ledger.staff_has_capability(p_staff_id uuid,p_capability text)
@@ -112,6 +112,69 @@ CREATE TRIGGER staff_action_proposals_no_delete BEFORE DELETE ON vantoris_ledger
  FOR EACH ROW EXECUTE FUNCTION vantoris_ledger.protect_staff_approval_rows();
 CREATE TRIGGER staff_action_proposals_no_truncate BEFORE TRUNCATE ON vantoris_ledger.staff_action_proposals
  FOR EACH STATEMENT EXECUTE FUNCTION vantoris_ledger.protect_staff_approval_rows();
+
+
+-- Tighten the broad MFA-staff context policies from migration 007 with
+-- capability checks. Support staff do not inherit ledger or audit visibility.
+DROP POLICY members_self_or_staff_read ON vantoris_ledger.members;
+CREATE POLICY members_self_or_staff_read ON vantoris_ledger.members FOR SELECT TO vantoris_backend
+ USING (id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+   vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'members.view'));
+
+DROP POLICY accounts_self_or_staff_read ON vantoris_ledger.ledger_accounts;
+CREATE POLICY accounts_self_or_staff_read ON vantoris_ledger.ledger_accounts FOR SELECT TO vantoris_backend
+ USING (member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+   vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'ledger.read'));
+
+DROP POLICY entries_self_or_staff_read ON vantoris_ledger.journal_entries;
+CREATE POLICY entries_self_or_staff_read ON vantoris_ledger.journal_entries FOR SELECT TO vantoris_backend
+ USING (EXISTS(SELECT 1 FROM vantoris_ledger.ledger_accounts a WHERE a.id=ledger_account_id AND
+   (a.member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+    vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'ledger.read'))));
+
+DROP POLICY journals_self_or_staff_read ON vantoris_ledger.journals;
+CREATE POLICY journals_self_or_staff_read ON vantoris_ledger.journals FOR SELECT TO vantoris_backend
+ USING (EXISTS(SELECT 1 FROM vantoris_ledger.journal_entries e JOIN vantoris_ledger.ledger_accounts a ON a.id=e.ledger_account_id
+   WHERE e.journal_id=journals.id AND (a.member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+    vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'ledger.read'))));
+
+DROP POLICY operations_self_or_staff_read ON vantoris_ledger.payment_operations;
+CREATE POLICY operations_self_or_staff_read ON vantoris_ledger.payment_operations FOR SELECT TO vantoris_backend
+ USING (member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+   vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'ledger.read'));
+
+DROP POLICY holds_self_or_staff_read ON vantoris_ledger.outgoing_funds_holds;
+CREATE POLICY holds_self_or_staff_read ON vantoris_ledger.outgoing_funds_holds FOR SELECT TO vantoris_backend
+ USING (EXISTS(SELECT 1 FROM vantoris_ledger.ledger_accounts a WHERE a.id=ledger_account_id AND
+   (a.member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+    vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'ledger.read'))));
+
+DROP POLICY audit_staff_read ON vantoris_ledger.audit_events;
+CREATE POLICY audit_staff_read ON vantoris_ledger.audit_events FOR SELECT TO vantoris_backend
+ USING (vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'audit.read'));
+
+DROP POLICY staff_proposals_staff_read ON vantoris_ledger.staff_action_proposals;
+CREATE POLICY staff_proposals_staff_read ON vantoris_ledger.staff_action_proposals FOR SELECT TO vantoris_backend
+ USING (vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'staff.action.read'));
+
+DROP POLICY staff_approvals_staff_read ON vantoris_ledger.staff_action_approvals;
+CREATE POLICY staff_approvals_staff_read ON vantoris_ledger.staff_action_approvals FOR SELECT TO vantoris_backend
+ USING (vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'staff.action.read'));
+
+DROP POLICY identity_documents_member_or_staff_read ON vantoris_ledger.member_identity_documents;
+CREATE POLICY identity_documents_member_or_staff_read ON vantoris_ledger.member_identity_documents FOR SELECT TO vantoris_backend
+ USING (member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+   vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'identity.review'));
+
+DROP POLICY identity_documents_member_or_staff_insert ON vantoris_ledger.member_identity_documents;
+CREATE POLICY identity_documents_member_or_staff_insert ON vantoris_ledger.member_identity_documents FOR INSERT TO vantoris_backend
+ WITH CHECK (member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+   vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'identity.review'));
+
+DROP POLICY identity_reviews_member_or_staff_read ON vantoris_ledger.member_identity_reviews;
+CREATE POLICY identity_reviews_member_or_staff_read ON vantoris_ledger.member_identity_reviews FOR SELECT TO vantoris_backend
+ USING (member_id=NULLIF(current_setting('vantoris.member_id',true),'')::uuid OR
+   vantoris_ledger.staff_has_capability(NULLIF(current_setting('vantoris.staff_id',true),'')::uuid,'identity.review'));
 
 REVOKE ALL ON ALL TABLES IN SCHEMA vantoris_ledger FROM PUBLIC;
 REVOKE ALL ON FUNCTION vantoris_ledger.staff_has_capability(uuid,text) FROM PUBLIC;
