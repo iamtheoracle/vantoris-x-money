@@ -26,7 +26,7 @@ Not yet complete:
 - Existing member/account/transaction import and reconciliation; no member data has been migrated.
 - Application of migrations 001–017 to a Vantoris-administered database; no live database has been changed.
 - Staff account/MFA provisioning and staff role-management workflow.
-- First-party identity document intake/review, account opening, member messaging and service-case workflows.
+- Identity-document encryption key provisioning, retention/rotation procedures and live database/browser verification; member account opening, messaging and service-case workflows.
 - Replacement or archival of all remaining legacy Base44 function and page source files.
 - Disposable PostgreSQL integration execution, concurrency testing, browser QA, backup/restore proof and external-network-blocked acceptance testing.
 - Production deployment and release approval.
