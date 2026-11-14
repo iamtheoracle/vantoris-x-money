@@ -179,7 +179,7 @@ BEGIN
   RAISE EXCEPTION 'Approved manual journal proposal was not executed';
  END IF;
  IF (SELECT count(*) FROM vantoris_ledger.journal_entries WHERE journal_id=manual_journal AND currency='USD')<>2 THEN
-  RAISE EXCEPTION 'Manual journal did not derive EUR from its ledger accounts';
+  RAISE EXCEPTION 'Manual journal did not derive USD from its ledger accounts';
  END IF;
  IF vantoris_ledger.post_approved_manual_journal(decode(repeat('60',32),'hex'),manual_proposal)<>manual_journal THEN
   RAISE EXCEPTION 'Manual journal retry did not return the original journal';
@@ -195,8 +195,8 @@ BEGIN
  IF NOT EXISTS(SELECT 1 FROM vantoris_ledger.journals WHERE id=reversal_journal AND reversal_of=manual_journal) THEN
   RAISE EXCEPTION 'Reversal journal was not linked to original';
  END IF;
- IF (SELECT count(*) FROM vantoris_ledger.journal_entries WHERE journal_id=reversal_journal AND currency='EUR')<>2 THEN
-  RAISE EXCEPTION 'Reversal did not preserve original journal currency';
+ IF (SELECT count(*) FROM vantoris_ledger.journal_entries WHERE journal_id=reversal_journal AND currency='USD')<>2 THEN
+  RAISE EXCEPTION 'Reversal did not preserve original USD journal currency';
  END IF;
 
  -- The current account schema is explicitly USD-only; do not silently enable EUR issuance.
