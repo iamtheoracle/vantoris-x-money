@@ -190,3 +190,13 @@ Deno.test('Vantoris reversal reason is mandatory and preserved in the audit trai
   assert(sql.includes("'reason',reason"), 'The reason must be retained in the immutable audit event.');
   assert(sql.includes("'||reason"), 'The reason must be retained in the reversal journal description.');
 });
+
+Deno.test('Identity evidence is encrypted, member-scoped and reviewed by Vantoris staff', async () => {
+  const sql = await Deno.readTextFile('migrations/019_vantoris_identity_document_workflow.sql');
+  assert(sql.includes('store_member_identity_document'), 'Vantoris encrypted document intake missing.');
+  assert(sql.includes('read_member_identity_document'), 'Member-scoped document retrieval missing.');
+  assert(sql.includes('read_staff_identity_document'), 'Capability-gated staff document retrieval missing.');
+  assert(sql.includes('review_member_identity_document'), 'Vantoris staff review decision function missing.');
+  assert(sql.includes('identity_document_content_immutable'), 'Identity evidence content must be immutable.');
+  assert(sql.includes('identity_reviews_immutable'), 'Identity review history must be append-only.');
+});
