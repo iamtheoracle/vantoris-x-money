@@ -183,3 +183,10 @@ Deno.test('MFA cannot be disabled for member or staff credentials', async () => 
   assert(sql.includes('member_credentials_mfa_required_true'), 'Member MFA must be mandatory.');
   assert(sql.includes('staff_users_mfa_required_true'), 'Staff MFA must be mandatory.');
 });
+
+Deno.test('Vantoris reversal reason is mandatory and preserved in the audit trail', async () => {
+  const sql = await Deno.readTextFile('migrations/018_vantoris_reversal_reason_audit.sql');
+  assert(sql.includes('REVERSAL_REASON_REQUIRED'), 'Reversal reason must be required at posting.');
+  assert(sql.includes("'reason',reason"), 'The reason must be retained in the immutable audit event.');
+  assert(sql.includes("'||reason"), 'The reason must be retained in the reversal journal description.');
+});
