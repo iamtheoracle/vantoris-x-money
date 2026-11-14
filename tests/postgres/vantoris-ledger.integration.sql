@@ -29,19 +29,14 @@ BEGIN
   INSERT INTO vantoris_ledger.journal_entries(id,journal_id,ledger_account_id,currency,amount_cents)
     VALUES(gen_random_uuid(),opening_journal,clearing_id,'USD',10000),
           (gen_random_uuid(),opening_journal,a1,'USD',-10000);
-  SET CONSTRAINTS ALL IMMEDIATE;
-
   SELECT * INTO result FROM vantoris_ledger.create_internal_transfer_operation(
     op_id,'test-transfer:'||op_id,repeat('a',64)
   );
   op_id := result.operation_id;
-  SET CONSTRAINTS ALL DEFERRED;
   SELECT * INTO result FROM vantoris_ledger.execute_internal_transfer(
     op_id,m1,'TEST-MEMBER-ONE-USD','TEST-MEMBER-TWO-USD',3000,'test-member-session','Synthetic transfer test'
   );
   IF result.duplicate THEN RAISE EXCEPTION 'First transfer unexpectedly marked duplicate'; END IF;
-  SET CONSTRAINTS ALL IMMEDIATE;
-
   SELECT -COALESCE(sum(amount_cents),0) INTO sender_balance
     FROM vantoris_ledger.journal_entries WHERE ledger_account_id=a1;
   SELECT -COALESCE(sum(amount_cents),0) INTO receiver_balance
@@ -88,6 +83,7 @@ BEGIN
   EXCEPTION WHEN OTHERS THEN
     IF SQLERRM='Audit UPDATE unexpectedly succeeded' THEN RAISE; END IF;
   END;
-END $$;
+END $;
 
+SET CONSTRAINTS ALL IMMEDIATE;
 ROLLBACK;
