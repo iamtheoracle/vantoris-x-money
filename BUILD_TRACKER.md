@@ -195,3 +195,63 @@ Build a file-level provenance matrix for `recovery/merge-vantoris-live`: each ro
 3. Continue the file-level provenance matrix for the remaining changed router/authentication files, payment functions/entities and all upstream-only/recovery-only paths. Do not transplant or rename unresolved files.
 4. Keep the VPI source on its own branch and preserve its existing migration history. Do not merge, deploy or activate providers.
 
+
+
+## Expanded provenance reconciliation — exact tree evidence (15 November 2026)
+
+### Current — source comparison
+
+Compared the complete recursive Git trees:
+- Original upstream `The-Oracle-Arc/vantoris-live` at `7ededd1eb4a7b946a9ac50371b33546aad0e0d29`.
+- Recovery PR #2 head `iamtheoracle/vantoris-x-money:recovery/merge-vantoris-live` at `d0a68ddbfe7551835744624f39ff73445f6694e4`.
+
+Verified tree counts:
+- Upstream blobs: 478.
+- Recovery blobs: 379.
+- Common paths: 339.
+- Byte-identical common blobs: 201.
+- Changed common blobs: 138.
+- Upstream-only omissions: 139.
+- Recovery-only additions: 40.
+- PR #2 changed-file list: 375 paths (368 added, 7 modified).
+
+Changed common paths: 107 under `src/`, 20 under `base44/`, 11 root/config/Netlify files.
+Upstream-only Base44 omissions (104): 17 agents, 3 connectors, 44 entity schemas, 7 functions, 6 registries, 3 runtime modules, 14 shared services, 9 workflows, 1 other.
+Recovery-only additions: 20 Base44 paths, 5 docs, 5 migrations, 2 tests, 4 source paths, 3 GitHub workflow/instruction paths, and 1 root runtime configuration.
+
+The full path-level comparison and the exact omitted-file inventory are recorded in `docs/UPSTREAM_RECOVERY_DIFF.md`.
+
+### Current — critical identity and ownership findings
+
+- Eleven recovery-only files are explicitly AVCU-named: four AVCU docs, five AVCU SQL migrations and two AVCU tests.
+- The recovered `base44/functions/oracleRuntime/entry.ts` labels stored history `AVCU Assistant`.
+- `netlify/functions/ask.mjs` uses AVCU-prefixed usage/spend keys and hardcoded Base44 app/server fallbacks.
+- Recovery package is named `base44-app`, not X Money; it retains Base44 SDK/plugin and Stripe browser dependencies.
+- Recovery `index.html` points canonical and Open Graph URLs to `https://vantorispip.sbs`.
+- Original upstream also has generic Base44 package identity, so package name alone cannot establish product ownership.
+- Original `src/lib/assistantRouter.js` (Vantoris Command divisions) is missing from recovery; recovery has a different Oracle/Nexus runtime surface.
+- Legacy upstream SessionService uses process-local memory; MemoryService stores JSON in Base44 entities and its expiry routine only queries expired rows; CapabilityRegistry includes enabled capabilities with empty permission arrays. These are source facts, not accepted production controls.
+
+### Fix queue update
+
+1. **IN PROGRESS — source provenance classification.** Full tree counts and exact path groups are now recorded. Still outstanding: semantic review of all 138 changed blobs, product-owner classification of all 40 recovery-only additions, and required-capability analysis of the 139 omissions. No application files moved.
+2. **BLOCKED — executable exact-HEAD test baseline.** Terminal-backed clone failed due DNS resolution for github.com. GitHub APIs support source inspection and commits but cannot run npm/Node/PostgreSQL tests or prove a clean local worktree.
+3. **PLANNED — implementation of the next approved X Money slice.** Do not start until the source manifest and executable baseline identify the correct authoritative product files. Keep AVCU and VPI independent.
+
+### Current — delivery and stats
+
+- Documentation updated: `docs/UPSTREAM_RECOVERY_DIFF.md` and this tracker.
+- Working branch comparison against `main`: 7 commits ahead, 0 behind (verified at update time).
+- No app code, migration, dependency, route, provider or secret changed.
+- Tests before/after: NOT RUN / NOT RUN; no local checkout.
+- Built: provenance documentation only.
+- Tested: no.
+- Security verified: no.
+- CI verified: no for these docs commits.
+- Committed: yes, working branch only.
+- Merged: no. Deployed: no. Operational: not established.
+
+### Exact next action
+
+Continue semantic comparison of the 138 changed blobs against their exact upstream versions, prioritizing authentication/session, Account/Transaction/User, application/account issuance, AI gateway/runtime and payment paths. For each changed file record upstream behavior, recovery behavior, security/permission differences, product ownership and disposition. Then classify recovery-only paths and assess the omitted source inventory against approved X Money capabilities. Do not transplant unresolved source.
+
