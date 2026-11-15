@@ -86,3 +86,29 @@ The branches above were inspected read-only. No other branch was modified.
 - Tests before/after: NOT RUN / NOT RUN for the reasons above. No code change was made, so no test result is implied.
 - Delivery: built — no product code; tested — not run; security verified — no; CI verified — no; merged — no; deployed — no; operational — not established.
 - Exact next dependency: recover the complete X Money-specific source package/commit or provide evidence for a file-by-file provenance reconciliation; then run the working branch in a terminal-backed environment and execute the full baseline before implementation.
+
+
+## Required ecosystem dependency — Vantoris Base
+
+Vantoris Base is a required shared-infrastructure dependency in the wider Vantoris completion plan. It is not optional and must not be confused with the Base44 vendor SDK/platform or with the legacy `base44/` source folder retained in recovered branches.
+
+### X Money integration boundary
+
+- X Money must retain its own PostgreSQL database, member identity, staff identity, ledger, balances, payment operations, audit records, financial authority and release controls.
+- Base may provide explicitly authorised platform services such as organisation registry, service identity, scoped integration contracts, notifications, document infrastructure, monitoring or group-level coordination.
+- Base must not become the X Money ledger, hold member financial records in an unrestricted shared database, or grant Group HQ staff direct money-movement authority.
+- Shared authentication, if eventually approved, does not replace X Money server-side authorisation. Every X Money request must still resolve the actual member/staff actor, resource ownership, action and X Money policy on the server.
+- Any integration must use versioned APIs/events, dedicated service identities, least-privilege scopes, signed/replay-protected webhooks, audit correlation and defined failure behaviour. No client-supplied tenant, role, account or approval claim is trusted.
+- X Money must continue to fail closed and preserve its local authoritative records if Base is unavailable. Base outage must not create, approve, post or settle financial operations.
+
+### Current Base evidence and blocker
+
+- The group master tracker records the dedicated Base workstream and acceptance criteria: https://github.com/iamtheoracle/vantoriss/blob/feat/vantoris-institutional-world/docs/MASTER_COMPLETION_TRACKER.md
+- GitHub repository inventory did not identify an authoritative `vantoris-base` repository.
+- Institutional Link / Group HQ remains the known Base44 application, but previous Base44 sandbox access was blocked by exhausted workspace integration credits. Do not retry its sandbox tools until access is restored.
+- `oracle-control` is a separate Oracle Arc administrative control plane, not Vantoris Base.
+- The legacy `base44/` directory in recovered VPI source is historical application code, not the shared Vantoris Base service.
+
+### Acceptance dependency
+
+Before X Money can be declared complete within the connected Vantoris ecosystem, the authoritative Base implementation must be identified, its relevant services verified, and X Money's authorised integration contract and failure-isolation tests must pass. This is an explicit ecosystem completion gate; it does not block independent X Money source recovery or safe local engineering work.
