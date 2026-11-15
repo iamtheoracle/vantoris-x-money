@@ -112,3 +112,40 @@ Vantoris Base is a required shared-infrastructure dependency in the wider Vantor
 ### Acceptance dependency
 
 Before X Money can be declared complete within the connected Vantoris ecosystem, the authoritative Base implementation must be identified, its relevant services verified, and X Money's authorised integration contract and failure-isolation tests must pass. This is an explicit ecosystem completion gate; it does not block independent X Money source recovery or safe local engineering work.
+
+
+## Recovery branch identity conflict — source inspection update (15 November 2026)
+
+The large branch `recovery/merge-vantoris-live` is **not yet accepted as a clean, authoritative X Money source tree**, despite its README heading identifying Vantoris X Money.
+
+### What the branch actually contains
+
+- 426 tracked tree entries, including 324 under `src/`, 62 under `base44/`, 5 SQL migrations, 2 test files, and only two Netlify function files (`ask.mjs`, `market.mjs`).
+- Its `package.json` uses the generic name `base44-app` and still includes `@base44/sdk`, `@base44/vite-plugin`, Stripe browser SDK packages and the Base44 Vite plugin.
+- Its `index.html` title is `Vantoris — Verified Member Banking`, canonical URL is `https://vantorispip.sbs`, and Open Graph title is `Vantoris — Private Investment & Payments`, not a clean X Money identity.
+- Its `docs/` directory contains AVCU-specific payment-rail, ACH/Fedwire, provider-gateway, transaction ownership and payment-store documents.
+- Its migrations create the `avcu_payments` schema and AVCU payment/ledger tables. The migration tests are named and written for AVCU.
+- Its recovery workflow injects an AVCU ledger test database secret and a Base44 app ID/server URL. These are not evidence of a dedicated X Money backend or production source identity.
+- The branch README says it restores the original Vantoris app from `The-Oracle-Arc/vantoris-live`, but also says source recovery remains incomplete and more entities/functions/workflows/components still need to be recovered.
+
+### Pull request and CI evidence
+
+- PR #2 is open, draft, unmerged and currently not mergeable; it contains 824 commits and 375 changed files.
+- Latest inspected head: `d0a68ddbfe7551835744624f39ff73445f6694e4`.
+- [Recovery build check — run 43307051683](https://github.com/iamtheoracle/vantoris-x-money/actions/runs/43307051683) failed in the Oracle runtime validation step.
+- Oracle runtime tests: 2 passed.
+- Payment store contract tests: 2 passed, 1 ignored because the disposable PostgreSQL URL was not configured.
+- Payment migration contract tests: 5 passed, 1 failed. The failing assertion expects `FOR UPDATE SKIP LOCKED` in `migrations/005_avcu_payment_outbox_claims.sql`; the inspected migration adds claim columns and an index but does not contain that locking clause. Subsequent entity validation, lint, typecheck and build steps were skipped.
+- No live Base44 RLS verification, PostgreSQL provider-store integration, authenticated browser QA or production deployment is established by this run.
+
+### Decision for source preservation
+
+This branch contains useful historical UI and recovery work, but its X Money README conflicts with AVCU-specific migrations/docs, Vantoris PIP canonical branding and generic Base44 app configuration. It cannot be treated as a clean X Money source manifest without resolving those conflicts.
+
+Do not merge PR #2 into X Money `main`, rename the branch, or transplant files into VPI/AVCU until the product/file-level provenance review is complete. Preserve the branch and its existing PR history. Recover the original X Money product specification, route map, identity, data ownership and exact source lineage before selecting any files.
+
+The VPI branch `migration/remove-base44-and-codex` remains a separate source-declared VPI implementation and must not be used to fill X Money gaps.
+
+### Required next recovery action
+
+Build a file-level provenance matrix for `recovery/merge-vantoris-live`: each route, component, entity, function, migration, asset and configuration file must be classified as X Money, VPI, AVCU, generic legacy/shared, or unresolved, with commit/source evidence. Only verified X Money-owned files may be retained in an X Money recovery branch. Do not delete or move unresolved files; preserve them pending review.
