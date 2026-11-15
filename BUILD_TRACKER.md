@@ -288,7 +288,7 @@ Exact upstream/recovery blob pairs have now been compared for:
 
 ### Current — delivery
 
-- Last pre-tracker HEAD: 9 commits ahead / 0 behind main.
+- Last pre-tracker HEAD: 10 commits ahead / 0 behind main. The tracker update and this correction add two commits after the preceding 9-ahead verification; verify the final branch ref for the current count.
 - This tracker update adds one documentation commit; verify the resulting ref before using the final ahead count.
 - No app code changed. No test, build, security or CI pass is claimed.
 - Merged: no. Deployed: no. Operational: not established.
