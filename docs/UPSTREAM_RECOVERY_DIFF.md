@@ -337,3 +337,32 @@ The recovery workflow also injects AVCU ledger test configuration and Base44 app
 - Product classification of all 139 upstream-only and 40 recovery-only paths: outstanding.
 - Clean X Money source manifest: not established.
 - Merge/deployment: not performed.
+
+
+## Content-level provenance review — identity and payment-control slice (15 November 2026)
+
+This is a first evidence slice for the required file-level provenance review. It does not classify all 138 changed blobs, all 40 recovery-only paths, or all 139 upstream-only paths. No file is moved, deleted, renamed, or accepted into an X Money source manifest by this review.
+
+| File / source | Current evidence observed | Provenance classification for X Money |
+|---|---|---|
+| `recovery/merge-vantoris-live:README.md` | The README self-identifies the branch as Vantoris X Money, but explicitly describes recovery as incomplete and says the branch restores Base44-backed application services. | **Unresolved.** A README label alone does not establish product ownership. |
+| `recovery/merge-vantoris-live:package.json` | Package name is `base44-app`; dependencies include `@base44/sdk`, `@base44/vite-plugin`, `@stripe/react-stripe-js` and `@stripe/stripe-js`. | **Unresolved / generic legacy shell.** Not an X Money-specific package identity; Base44 remains a build/runtime dependency. |
+| `recovery/merge-vantoris-live:index.html` | Browser title is “Vantoris — Verified Member Banking”; canonical and Open Graph URL are `https://vantorispip.sbs`; Open Graph title is “Vantoris — Private Investment & Payments”. | **Vantoris PIP identity contamination; ownership unresolved.** Not evidence of X Money's approved public identity. |
+| `recovery/merge-vantoris-live:migrations/001_avcu_payment_control_plane.sql` | SQL comment calls this an “AVCU payment-control foundation”; it creates schema `avcu_payments` and tables for provider events, payment operations, bank receipts and ledger accounts. | **AVCU-labelled; excluded from the X Money manifest.** The filename/schema are not evidence of X Money ownership. |
+| `recovery/merge-vantoris-live:docs/avcu-payment-rail-security-audit.md` | The document title is “AVCU ACH and Fedwire implementation audit” and its release gates explicitly require confirming the AVCU legal applicant and sponsor-bank relationship. | **AVCU-specific content; excluded from the X Money manifest.** |
+| `recovery/merge-vantoris-live:src/pages/operations/PaymentRailOperations.jsx` | The operations readiness page names AVCU as the legal applicant and states live payment processing is disabled; it describes a readiness guide, not payment submission or settlement. | **AVCU-specific content; excluded from the X Money manifest.** |
+| `recovery/merge-vantoris-live:base44/functions/createTransferRequest/entry.ts` | The function imports the Base44 request client, authenticates with `base44.auth.me()`, loads an account through `asServiceRole`, and calls the payment-store helpers. Its surrounding recovery documentation and payment routes are AVCU-labelled. | **Unresolved payment implementation.** Do not accept into X Money without independent product, account-domain, database and authorization provenance. |
+| `recovery/merge-vantoris-live:src/App.jsx` | The router imports member and operations route guards and declares member and operations application routes; the router itself does not establish which institution owns those routes. | **Unresolved shared application source.** Route-string parity is not feature, data, or permission parity. |
+| `migration/remove-base44-and-codex:package.json` | Package name is `vantoris-private-institution`; dependencies include `postgres`; the inspected dependency list does not include the Base44 SDK or Vite plugin. | **Vantoris Private Institution source, not X Money.** This is direct product-identity evidence for that branch and confirms it must not fill X Money's missing source tree. |
+| `main:README.md` and `main:package.json` | README identifies Vantoris X Money but says the full application tree is missing; package name is `vantoris-x-money`, and the package still includes the Base44 SDK/plugin. | **X Money partial shell only.** Main is not a complete executable product source tree. |
+
+### Result of this review slice
+
+- **Current — verified:** The recovered branch's self-declared X Money identity conflicts with its generic Base44 package, Vantoris PIP canonical metadata and AVCU-specific payment schema/docs/UI.
+- **Current — verified:** The recovered payment-rail UI describes disabled readiness controls and explicitly references AVCU; it is not evidence of live payment processing.
+- **Current — verified:** The separate `migration/remove-base44-and-codex` branch identifies as Vantoris Private Institution in `package.json`; it is not X Money.
+- **Current — verified:** X Money `main` identifies as X Money but documents its own application tree as incomplete and still depends on Base44.
+- **Planned:** Continue content review of the remaining changed router/authentication files, all payment functions/entities, all 40 recovery-only paths and the 139 upstream-only omissions. Record each path's source and product owner before any selection.
+- **Planned:** Obtain a founder-approved X Money route/API/schema/feature manifest and preserve the VPI source as a separate product.
+- **Current — verified:** No application code, migration, route, entity or provider configuration was changed by this review. No merge, deployment, provider activation or production migration occurred.
+
