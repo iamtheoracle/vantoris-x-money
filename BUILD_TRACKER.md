@@ -255,3 +255,45 @@ The full path-level comparison and the exact omitted-file inventory are recorded
 
 Continue semantic comparison of the 138 changed blobs against their exact upstream versions, prioritizing authentication/session, Account/Transaction/User, application/account issuance, AI gateway/runtime and payment paths. For each changed file record upstream behavior, recovery behavior, security/permission differences, product ownership and disposition. Then classify recovery-only paths and assess the omitted source inventory against approved X Money capabilities. Do not transplant unresolved source.
 
+
+
+## Semantic security and identity comparison update (15 November 2026)
+
+### Current — source evidence reviewed
+
+Exact upstream/recovery blob pairs have now been compared for:
+- Account and Transaction entity schemas.
+- User entity schema and role/admin_notes field rules.
+- Account issuance function.
+- Account application submission function.
+- Oracle runtime function.
+- Netlify AI gateway.
+- Operations and member route guards.
+
+### Current — findings
+
+- Account schema adds owner/operator read rules and denies browser create/update/delete.
+- Transaction schema adds user_id ownership and denies browser create/update/delete; historical rows require an ownership backfill before member history is complete.
+- User schema restricts the role field's update to super_administrator, but top-level user-record updates are allowed to a broad operator allowlist. This requires per-field and server-path review.
+- Account issuance adds operator allowlisting, approved-application/target-member binding, duplicate protection and zero opening balance. This is a source-level security improvement, still Base44-backed.
+- Oracle runtime adds an operator gate for health diagnostics and fixes baseline capabilities rather than trusting browser capability hints. It also writes the thread label AVCU Assistant and continuity memory without verified consent/retention lifecycle.
+- AI gateway adds authenticated provider routing, rate/spend reservations and explicit unavailable responses, but hardcodes Base44 defaults, uses AVCU-prefixed usage keys and declares an AVCU system identity. Provider fallback still includes Base44.
+- Frontend OperationsRoute remains a UI guard, not a server-side authorization boundary.
+
+### Fix queue
+
+1. **IN PROGRESS — provenance classification.** Full tree reconciliation and the first semantic security/identity tranche are documented. Remaining: review the other 129 changed blobs, classify all 40 recovery-only paths by product ownership, and map the 139 omissions to approved capabilities.
+2. **BLOCKED — executable baseline.** No terminal checkout; GitHub clone attempt failed DNS. No npm, Deno or PostgreSQL test command has run in this continuation.
+3. **PLANNED — implementation.** No X Money application change is safe until the authoritative source manifest is established. Keep VPI and AVCU separate.
+
+### Current — delivery
+
+- Last pre-tracker HEAD: 9 commits ahead / 0 behind main.
+- This tracker update adds one documentation commit; verify the resulting ref before using the final ahead count.
+- No app code changed. No test, build, security or CI pass is claimed.
+- Merged: no. Deployed: no. Operational: not established.
+
+### Exact next step
+
+Continue the semantic review of the remaining changed files and recovery-only source. The acceptance output is a path-by-path X Money source manifest with ownership, upstream/recovery behavior, security delta and disposition. Do not rename, delete, transplant or activate ambiguous source.
+
