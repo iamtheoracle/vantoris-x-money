@@ -462,3 +462,32 @@ Content inspection additionally confirmed:
 3. Classify all 40 recovery-only additions by product owner and dependency.
 4. Build an explicit inventory for all 139 upstream omissions and determine which are required for approved X Money capabilities.
 5. Keep AVCU-labelled source outside the X Money acceptance manifest unless the founder explicitly approves a documented ownership transfer. Keep VPI source separate.
+
+
+## Semantic comparison tranche — identity, ledger schemas, issuance and AI gateway
+
+Compared the following recovery files with their exact upstream blobs at 7ededd1eb4a7b946a9ac50371b33546aad0e0d29. Blob hashes are recorded for reproducibility.
+
+| Path | Upstream blob | Recovery blob | Semantic finding / disposition |
+|---|---|---|---|
+| base44/entities/Account.jsonc | 7d631d6911681563fe6b563aa5888480233ff3db | bcc905bc36973efe3122e6377681e8cf4023c0f7 | Recovery adds owner/operator read RLS and denies client create/update/delete. Positive hardening at schema-source level; runtime policy enforcement remains unverified. |
+| base44/entities/Transaction.jsonc | 2b1f650b2fcf3e7f28cc5d11cffdeaa1d4e07bdc | 2aac8533aed893186cb039be51cc16cddbd97e04 | Recovery adds user_id ownership and read RLS, denies client create/update/delete. Historical rows need verified owner backfill before member reads are complete; see docs/transaction-ownership-migration.md. |
+| base44/entities/User.jsonc | dea79d78f5b00135a7230990fdbbfa77f0ba0fe8 | e390866aafc26274be27f061db1644b403dcb1d9 | Recovery adds field-level role update restriction to super_administrator, admin_notes field restrictions, and a top-level operator allowlist for read/update. This is not least-privilege by itself: operator roles can update user records at the entity level, so every mutable non-role field and every update path still requires direct policy tests and server-side authorization review. |
+| base44/functions/generateAccount/entry.ts | e570b38de59891c498c20536c27439d8b5aed779 | 9430a13ef86e6d2abfd8a64cbb56effabe1dba36 | Recovery adds an operator role allowlist, approved application/target-member match, duplicate application guard and zero opening balance. This is a material security improvement. It still uses Base44 service-role entity operations and does not establish a self-owned PostgreSQL authority. |
+| base44/functions/submitApplication/entry.ts | 515acb7e85dfe824a7c2de790db5fd01908bb70c | b425adf0fec131e775c3db1ec7dd0dceafffcf1f | Recovery adds body shape, bounded field and document-reference validation before persistence. Product ownership remains inherited from the generic upstream application; Base44 is still required. |
+| base44/functions/oracleRuntime/entry.ts | f5d48acf897f2adb0eba34ba6149169b55ccf8b3 | 28749582ffbbd434a361e20940a684c75cb3b286 | Recovery restricts health diagnostics to an operator allowlist and fixes baseline capabilities to reasoning/knowledge instead of accepting browser capability hints. It labels conversation history AVCU Assistant and appends member/assistant continuity into a thread summary. The AVCU identity is a confirmed product-boundary defect for an X Money-labelled recovery branch; memory consent, retention and deletion enforcement are not proven. |
+| netlify/functions/ask.mjs | 7acf3a8297b29d4d195e2d3aec596a56692a9ee3 | 34e1d42d21eb18afa907e0ec825f7fbe28a17dc0 | Recovery replaces the local canned-response fallback with authenticated provider routing, bounded usage reservations and explicit unavailable responses. However, its system prompt says “America Vanguard Credit Union (AVCU)”, Redis keys are AVCU-prefixed, Base44 app/server defaults are hardcoded, and provider order includes Base44. This is not an independent X Money gateway and must not be treated as one. |
+| src/components/OperationsRoute.jsx | c2e3557313797340be50863bcbf76796c9ba8d24 | a8fb6f8522dc404b2df1c41ef4b15db0e026f1f9 | Frontend route guard uses hasOperationsAccess and super-admin checks. It is UI gating only; it does not replace server-side authorization. |
+| src/components/MemberRoute.jsx | d94090b0850fa60a1955459423533ef07ad3800e | identical d94090b0850fa60a1955459423533ef07ad3800e | Source-preserved; no semantic change in this file. |
+
+### Security and product-boundary disposition
+
+- **Current — verified in source:** Recovery improves account issuance validation and adds client-write-deny / owner-scoped schema rules for Account and Transaction.
+- **Current — verified in source:** Recovery still depends on Base44 for auth, entities, service-role access, AI routing and deployment configuration; it is not an independent PostgreSQL-backed X Money system.
+- **Current — verified in source:** AVCU is explicitly embedded in the AI system prompt, Redis keys, assistant history label, payment migrations/docs/tests. This conflicts with the branch's X Money label and the founder's separate-institution boundary.
+- **Current — verified in source:** The User entity top-level update policy permits a broad set of operator roles to update user records; field-level role restriction is narrower, but remaining mutable fields and server paths need verification.
+- **Current — verified in source:** Account and Transaction RLS source definitions are not proof that equivalent live Base44 policies are deployed or enforced.
+- **Planned:** Keep this source outside an X Money release acceptance manifest until product ownership, backend authority and identity are reconciled. Do not silently rename AVCU data into X Money.
+- **Planned:** For any eventual PostgreSQL replacement, implement explicit role/action policy tests, member row isolation, service-role least privilege, immutable audit and atomic ledger posting before any operational activation.
+- **Current — verified:** No application file or provider configuration was changed by this semantic comparison.
+
