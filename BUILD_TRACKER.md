@@ -241,7 +241,7 @@ The full path-level comparison and the exact omitted-file inventory are recorded
 ### Current — delivery and stats
 
 - Documentation updated: `docs/UPSTREAM_RECOVERY_DIFF.md` and this tracker.
-- Working branch comparison against `main`: 7 commits ahead, 0 behind (verified at update time).
+- Working branch comparison against `main`: 8 commits ahead, 0 behind at the pre-tracker verification; this tracker correction adds one further commit. Re-verify the resulting HEAD before treating the count as final.
 - No app code, migration, dependency, route, provider or secret changed.
 - Tests before/after: NOT RUN / NOT RUN; no local checkout.
 - Built: provenance documentation only.
