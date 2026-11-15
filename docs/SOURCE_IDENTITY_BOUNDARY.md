@@ -117,3 +117,16 @@ These results apply to the recovered VPI branch commit only. They do not prove t
 - AVCU migration original provenance: outstanding; current SQL content is Vantoris-labelled, filenames retain AVCU labels.
 - X Money-specific complete source tree: still not established on `main`.
 - Production database, customer-data continuity, backup/restore, browser QA and deployment: not verified.
+
+
+## Mandatory Vantoris Base integration dependency
+
+Vantoris Base is a required shared-infrastructure workstream for completion of the wider Vantoris ecosystem. It is distinct from the legacy `base44/` directory inventoried above and from the Base44 vendor platform.
+
+VPI retains its own member/staff identity authority, PostgreSQL database, `vantoris_ledger`, posted balances, holds, journals, approvals, audit and operational authority. Base may provide only explicitly authorised shared services through versioned APIs/events and least-privilege service identities. It must not receive unrestricted ledger access, become the financial system of record, or make Group HQ a VPI operator.
+
+VPI must continue to fail closed and preserve local authoritative records during a Base outage. Any future Base integration requires server-side actor/resource/action authorization, signed and replay-protected events, audit correlation, failure/retry contracts and cross-institution negative tests.
+
+The group master tracker records Base as a required ecosystem completion gate: https://github.com/iamtheoracle/vantoriss/blob/feat/vantoris-institutional-world/docs/MASTER_COMPLETION_TRACKER.md
+
+Current blocker: the authoritative Vantoris Base repository/runtime has not been identified, and Institutional Link sandbox access remains unavailable pending restored Base44 workspace integration credits. This does not block safe VPI source recovery, migration verification or independent product engineering, but VPI cannot be declared fully integrated into the Vantoris ecosystem until the Base contract is implemented and verified.
