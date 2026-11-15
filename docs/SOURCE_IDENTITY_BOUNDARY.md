@@ -67,3 +67,53 @@ The `main` README identifies this repository as Vantoris X Money and states that
 - **Merge/deployment:** not performed.
 
 This document is an evidence and preservation record. It does not authorise product consolidation or imply that any financial or institutional service is operational.
+
+
+## Expanded source inventory and current CI evidence (15 November 2026)
+
+### Recovered branch inventory
+
+At the inspected branch commit, the Git tree contains 480 tracked tree entries, including:
+
+- `src/`: 328 entries covering the application router, shared UI, member workspace, operations workspace, identity context, assistant client, page components and styles.
+- `base44/`: 62 entries, including 18 legacy entity schemas, 11 server-function entry points, shared payment code and the older Guardian/Nexus/Oracle/Orbit/Spark runtime files.
+- `migrations/`: 25 SQL files: bootstrap `000` and ordered versions `001`–`024`.
+- `netlify/functions/`: 9 function files for member/staff authentication, documents, staff actions, migration guard, Oracle assistant, market and compatibility ask routes.
+- `tests/`: 12 entries, including member-authentication, migration runner/guard, financial formatting, operational truthfulness, migration contracts and disposable PostgreSQL integration/concurrency tests.
+
+This is a substantial recovered VPI application source tree. It is not proof of an independent VPI repository, production source continuity or deployment.
+
+### Base44 source distinction
+
+The `base44/` directory is legacy application source retained in this branch. The branch README and package configuration describe the active VPI app as using first-party Netlify functions and a Vantoris-owned PostgreSQL ledger, with no Base44 SDK/Vite plugin in the active application configuration. The legacy files are not the Vantoris Base infrastructure described in the group architecture plan. They must be inventoried and safely archived or retired only after route/function/entity parity and historical-data continuity are proven.
+
+### Migration filename clarification
+
+The first five migration filenames retain the `avcu` label, but direct inspection of their SQL bodies shows Vantoris-specific schema and comments, including the `vantoris_ledger` schema, Vantoris-owned members/accounts/journals, `vantoris_backend` grants and internal-transfer functions. The migration contract tests explicitly assert Vantoris table/function names.
+
+The PostgreSQL CI workflow creates:
+- `vantoris_backend` as a restricted NOLOGIN role; and
+- `avcu_backend` as a CI runtime login that inherits `vantoris_backend` grants.
+
+The workflow then verifies the inherited least-privilege grants. Therefore the `avcu_backend` CI login and legacy filenames are naming artifacts in this recovered branch; they are not, by themselves, proof that AVCU production data or an AVCU ledger is being used. However, repository history and original migration provenance have not yet been independently established. Preserve the filenames and checksums; do not rename or rewrite already-recorded migrations. Record provenance as unresolved until the source history is traced.
+
+### Current branch CI — exact head commit
+
+The documentation commit `b62b2b53d9b2f83242c66ba7f19a46ea2390c447` triggered two successful workflows:
+
+- [Vantoris institutional ledger PostgreSQL — run 43669234464](https://github.com/iamtheoracle/vantoris-x-money/actions/runs/43669234464): passed on PostgreSQL 16. Verified ordered migrations and SHA-256 history, restricted runtime-role inheritance, ledger integration SQL, seeded concurrent-transfer race and forced rollback, member-auth cryptography and migration contract tests.
+- [Recovery build check — run 43669234441](https://github.com/iamtheoracle/vantoris-x-money/actions/runs/43669234441): passed. Verified syntax, migration runner/manifest, Oracle runtime checks, assistant and browser-side mutation guards, entity/security checks, Deno test suites, ESLint, TypeScript typecheck and Vite production build.
+
+These results apply to the recovered VPI branch commit only. They do not prove that VPI is independently hosted, merged, deployed, connected to production member data, or ready for live banking. The PostgreSQL database was disposable CI infrastructure; no production database was migrated.
+
+## Updated status
+
+- Recovered VPI application source tree: inspected and inventoried.
+- VPI package/README identity: source-declared and consistent on this branch.
+- VPI PostgreSQL migration/test pipeline: CI-verified on the exact branch commit above.
+- VPI build/lint/typecheck: CI-verified on the exact branch commit above.
+- Legacy Base44 source archive/parity: outstanding.
+- Independent VPI repository/application ownership: outstanding.
+- AVCU migration original provenance: outstanding; current SQL content is Vantoris-labelled, filenames retain AVCU labels.
+- X Money-specific complete source tree: still not established on `main`.
+- Production database, customer-data continuity, backup/restore, browser QA and deployment: not verified.
