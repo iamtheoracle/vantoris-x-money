@@ -366,3 +366,99 @@ This is a first evidence slice for the required file-level provenance review. It
 - **Planned:** Obtain a founder-approved X Money route/API/schema/feature manifest and preserve the VPI source as a separate product.
 - **Current — verified:** No application code, migration, route, entity or provider configuration was changed by this review. No merge, deployment, provider activation or production migration occurred.
 
+
+## Expanded path-level provenance reconciliation — 15 November 2026
+
+### Exact source comparison
+
+Compared the full recursive Git trees at:
+- Original source: `The-Oracle-Arc/vantoris-live`, commit `7ededd1eb4a7b946a9ac50371b33546aad0e0d29`.
+- Recovery PR head: `iamtheoracle/vantoris-x-money`, branch `recovery/merge-vantoris-live`, commit `d0a68ddbfe7551835744624f39ff73445f6694e4`.
+
+Git blob SHA comparison (path and content identity, not semantic correctness):
+- Original source: 478 tracked blobs.
+- Recovery source: 379 tracked blobs.
+- Common paths: 339.
+- Byte-identical common blobs: 201.
+- Changed common blobs: 138.
+- Original-only paths missing from recovery: 139.
+- Recovery-only paths: 40.
+- PR #2 file list: 375 changed paths (368 added, 7 modified).
+
+Changed common blobs by area:
+- `src/`: 107.
+- `base44/`: 20.
+- Root/config/docs/server: 11.
+
+The 201 byte-identical paths are source-preserved at the blob level only; this does not establish compatibility, secure behavior, complete wiring, or test coverage.
+
+### Original-only omissions — exact category counts
+
+The 104 missing `base44/` paths break down as:
+- Agent definitions: 17.
+- Connector definitions: 3.
+- Entity schemas: 44.
+- Server functions: 7.
+- Registries: 6.
+- Runtime modules: 3.
+- Shared services: 14.
+- Workflow definitions: 9.
+- Other Base44 paths: 1.
+
+Other original-only paths:
+- .gitignore, CLAUDE.md, Claude .pdf, Create GitHub App.pdf, components.json, docs/governance/assistant-orchestration.md, docs/governance/herobox-constitution.md, docs/governance/herobox-operating-manual.md, package-lock.json, scripts/test-zelle.mjs, server/llm-proxy.mjs, src/components/vantoris/SocialBanner.jsx, src/components/vantoris/herobox/CommunityFeed.jsx, src/components/vantoris/herobox/DiscoverCard.jsx, src/components/vantoris/herobox/DiscoverSection.jsx, src/components/vantoris/herobox/HeroBoxDiscover.jsx, src/components/vantoris/herobox/ImpactDashboard.jsx, src/components/vantoris/herobox/OrbitResultCard.jsx, src/components/vantoris/herobox/OrbitSearch.jsx, src/components/vantoris/herobox/PackageShowcase.jsx, src/components/vantoris/herobox/RequestCard.jsx, src/components/vantoris/herobox/SponsorFlow.jsx, src/components/vantoris/herobox/orbit/OrbitNoResults.jsx, src/components/vantoris/herobox/orbit/OrbitResultCard.jsx, src/components/vantoris/herobox/orbit/OrbitSearch.jsx, src/components/vantoris/herobox/orbit/OrbitSuggestions.jsx, src/components/vantoris/home/ImmersiveBalanceCard.jsx, src/docs/governance/herobox-platform-enhancement.md, src/hooks/useMemberAccess.jsx, src/lib/assistantRouter.js, src/lib/authReturnTo.js, src/lib/heroboxPackages.js, src/pages/OAuthConsent.jsx, src/styles/autofill.css, src/utils/index.ts.
+
+This is a material recovery gap: missing entities, functions, registries, services and workflows are not optional presentation files. They may underpin routes and behavior. Do not label the restored application feature-complete while these paths remain unclassified/unrecovered.
+
+### Recovery-only additions — exact category counts
+
+- `base44/`: 20.
+- `docs/`: 5.
+- `migrations/`: 5.
+- `tests/`: 2.
+- `src/`: 4.
+- `.github/`: 3.
+- Root/runtime config: deno.json.
+
+The recovery-only Base44 additions include payment authorization/store/rail helpers and transfer, webhook, reconciliation, manual receipt and approval functions. Their presence in the recovery branch is not proof that they belong to X Money.
+
+### Explicit AVCU contamination — confirmed by paths and content
+
+The following 11 paths are explicitly AVCU-named:
+- `docs/avcu-ai-provider-gateway.md`
+- `docs/avcu-manual-ach-wire-operations.md`
+- `docs/avcu-payment-rail-security-audit.md`
+- `docs/avcu-transactional-payment-store.md`
+- `migrations/001_avcu_payment_control_plane.sql`
+- `migrations/002_avcu_backend_grants.sql`
+- `migrations/003_avcu_outgoing_funds_holds.sql`
+- `migrations/004_avcu_payment_audit_hardening.sql`
+- `migrations/005_avcu_payment_outbox_claims.sql`
+- `tests/avcu-payment-migration.test.ts`
+- `tests/avcu-payment-store.test.ts`
+
+Content inspection additionally confirmed:
+- `base44/functions/oracleRuntime/entry.ts` stores history under the label `AVCU Assistant`.
+- `netlify/functions/ask.mjs` uses AVCU-prefixed usage/spend keys and a hardcoded Base44 app/server fallback.
+- The recovery package is named `base44-app` and depends on Base44 SDK/plugin and Stripe browser packages.
+- The recovery HTML canonical/OG metadata points to `https://vantorispip.sbs` and describes private investment/payments.
+- The original upstream README and package also identify as generic Base44 app source; package name and Base44 dependency are inherited, not X Money-specific provenance.
+- Original upstream `src/lib/assistantRouter.js` defines a Vantoris Command router and specialist divisions; that file is missing from recovery, replaced by a different Oracle/Nexus runtime surface. This is a semantic replacement, not source parity.
+- Original upstream `base44/shared/services/SessionService.ts` uses an in-memory Map and one-hour TTL; `MemoryService.ts` stores JSON via Base44 entities and its `clearExpired()` only queries expired rows; `CapabilityRegistry.ts` includes enabled capabilities with empty permission arrays. These legacy implementations are not accepted as production-grade Base services.
+
+### Classification outcome
+
+- **Current — verified, inherited source:** 201 common paths are byte-identical to the named upstream commit.
+- **Current — verified, modified source:** 138 common paths differ; all require review before acceptance.
+- **Current — verified, missing source:** 139 original paths are absent from recovery, including the complete listed Base44 agent/entity/function/registry/runtime/service/workflow inventory.
+- **Current — verified, recovery-only additions:** 40 paths do not exist in the original upstream tree; 11 of these are explicitly AVCU-labelled docs/migrations/tests. Other payment/runtime additions remain unresolved for X Money.
+- **Current — verified, identity conflict:** recovery README says X Money, while package name remains generic, canonical metadata is Vantoris PIP, and selected runtime/payment code contains AVCU identifiers.
+- **Current — verified, no code moved:** no source files were transplanted, renamed, deleted or merged in this review.
+
+### Next classification tranche
+
+1. Inspect the 138 changed blobs by functional group, prioritizing `src/App.jsx`, auth/session, Account/Transaction/User schemas, account issuance/application functions, Oracle runtime, AI gateway, and all payment store functions.
+2. Compare each changed blob to its exact upstream counterpart and record semantic differences, not only hashes.
+3. Classify all 40 recovery-only additions by product owner and dependency.
+4. Build an explicit inventory for all 139 upstream omissions and determine which are required for approved X Money capabilities.
+5. Keep AVCU-labelled source outside the X Money acceptance manifest unless the founder explicitly approves a documented ownership transfer. Keep VPI source separate.
