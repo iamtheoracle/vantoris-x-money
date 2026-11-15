@@ -149,3 +149,49 @@ The VPI branch `migration/remove-base44-and-codex` remains a separate source-dec
 ### Required next recovery action
 
 Build a file-level provenance matrix for `recovery/merge-vantoris-live`: each route, component, entity, function, migration, asset and configuration file must be classified as X Money, VPI, AVCU, generic legacy/shared, or unresolved, with commit/source evidence. Only verified X Money-owned files may be retained in an X Money recovery branch. Do not delete or move unresolved files; preserve them pending review.
+
+
+## Execution update — provenance evidence slice and execution-environment blocker (15 November 2026)
+
+### Repository and branch verification
+
+- **Current — verified:** Repository is `iamtheoracle/vantoris-x-money`; default/base branch is `main`; designated working branch is `work/xmoney-independent-runtime`.
+- **Current — verified:** Before this update, GitHub compare confirmed working branch HEAD `a0c37a351501b5cb73c31a9aaab96d86b7c932a6`. After the provenance evidence commit, compare confirmed HEAD `2791a9ae2433dc0d9320d82efbb75d03fba0cd7a`.
+- **Current — verified:** Working branch was 4 commits ahead of main before this continuation and 0 behind; its changes were documentation-only. The new provenance commit adds one further commit. No application source, migration or configuration from a recovered branch was merged.
+- **Current — verified:** The VPI source branch `migration/remove-base44-and-codex` is exactly at `11ec54f9067db3e8c24bf4b026daf2062a7d5978`; comparing that commit with the branch ref returns identical.
+- **Current — verified:** The public-site branch `iamtheoracle/vantoriss:feat/vantoris-institutional-world` is based on `main` and is 52 commits ahead / 0 behind at the comparison performed. The separate `feature/rcc-corporate-history` branch is diverged (4 ahead / 65 behind relative to the Vantoris institutional-world branch) and changes `src/App.jsx`; it was inspected read-only and not merged. This is an overlap warning for future public-site work, not part of this X Money change.
+
+### Fix queue status
+
+1. **BLOCKED — complete authoritative X Money source tree.** A first content-level provenance slice is recorded in `docs/UPSTREAM_RECOVERY_DIFF.md`. It confirms the recovery branch has conflicting X Money self-description, generic Base44 package identity, Vantoris PIP canonical metadata and AVCU-specific payment schema/docs/UI. The separate migration branch identifies as Vantoris Private Institution in `package.json`. The full 138 changed-file review and complete 40/139 path classifications remain outstanding. No source was moved or removed.
+2. **BLOCKED — executable exact-HEAD baseline.** A terminal-backed checkout is still unavailable. A clone attempt for `work/xmoney-independent-runtime` failed with `Could not resolve host: github.com`. The GitHub contents/compare APIs cannot execute project commands or expose a local working tree.
+3. **PLANNED — Base44 removal, PostgreSQL, identity, lifecycle and capability recovery.** These remain downstream of a verified X Money source manifest and executable baseline.
+
+### Tests and verification
+
+- **Current — verified:** `main/package.json` declares `build`, `lint` and `dev`; it does not declare a `test` or `typecheck` script. It still includes `@base44/sdk` and `@base44/vite-plugin`.
+- **Current — verified:** No local checkout was available; `git clone` failed at DNS resolution. Therefore `npm ci`, `npm test`, `npm run lint`, `npm run build`, migration tests and PostgreSQL tests were **NOT RUN** in this continuation. The working tree cannot be reported clean because it is not locally observable.
+- **Current — verified:** The new change is documentation-only. No application code, dependency, route, schema, migration, secret, provider setting or runtime behavior changed.
+- **Current — verified:** No CI result is claimed for this documentation commit. Prior CI evidence on the VPI branch applies only to its exact commit and is not an X Money baseline.
+
+### Files changed and delivery
+
+- `docs/UPSTREAM_RECOVERY_DIFF.md` — added a sourced first-slice provenance matrix for README, package metadata, canonical branding, AVCU payment migration/docs/UI, payment function and route source.
+- `BUILD_TRACKER.md` — this execution update and blocker record.
+- Tests before / after: **NOT RUN / NOT RUN** — no terminal checkout or DNS resolution; no `test` script on X Money main. No test pass is implied.
+- Built: no product code in this slice; provenance documentation built.
+- Tested: not run.
+- Security verified: no.
+- CI verified: no for this working-branch commit.
+- Committed: yes, documentation-only commits on `work/xmoney-independent-runtime`.
+- Merged: no.
+- Deployed: no.
+- Operational: not established.
+
+### Exact next action
+
+1. Restore terminal/network access or provide an executable checkout of `iamtheoracle/vantoris-x-money` at `work/xmoney-independent-runtime`.
+2. Verify local HEAD and clean/dirty working tree; run `npm ci`, then every declared lint/build/test/migration command and record output. Provision only a disposable PostgreSQL service for database tests.
+3. Continue the file-level provenance matrix for the remaining changed router/authentication files, payment functions/entities and all upstream-only/recovery-only paths. Do not transplant or rename unresolved files.
+4. Keep the VPI source on its own branch and preserve its existing migration history. Do not merge, deploy or activate providers.
+
