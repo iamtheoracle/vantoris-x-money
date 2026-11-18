@@ -13,13 +13,13 @@ import React, { useId } from 'react';
  * Treatments: flat | metallic | glass | monochrome | outline | foil | embossed
  */
 export const VANTORIS_COLORS = {
-  navy: '#071C38',
-  executiveBlue: '#0A2342',
-  royalBlue: '#1F5EFF',
-  champagneGold: '#C9A227',
-  brushedGold: '#C9A227',
-  white: '#F8FAFC',
-  slateGray: '#64748B',
+  navy: '#071A2D',
+  executiveBlue: '#123A43',
+  royalBlue: '#294C5A',
+  champagneGold: '#C9A962',
+  brushedGold: '#B89B62',
+  white: '#F7F5EF',
+  slateGray: '#68747B',
 };
 
 const V_PATH = 'M16,24 L32,24 L60,81 L88,24 L104,24 L60,96 Z';

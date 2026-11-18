@@ -107,7 +107,7 @@ export default {
       },
       fontFamily: {
         body: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        heading: ['Syne', 'Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        heading: ['Instrument Serif', 'Georgia', 'serif'],
         display: ['Instrument Serif', 'Georgia', 'serif'],
         mono: ['IBM Plex Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },

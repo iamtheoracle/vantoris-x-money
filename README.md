@@ -1,6 +1,6 @@
-# Vantoris X Money
+# Vantoris Private Investment
 
-Vantoris member app with the X Money-inspired member UI, Base44-backed application services, and a separated operations workspace.
+Vantoris is evolving into a premium private-investment experience while preserving its existing member services, Base44-backed application services, investment workflows and separated operations workspace. The new editorial identity, financial-history collection and print-scalable card artwork are documented in [docs/private-investment-identity.md](docs/private-investment-identity.md).
 
 - Repository: https://github.com/iamtheoracle/vantoris-x-money
 - Recovery branch: `recovery/merge-vantoris-live`
@@ -10,7 +10,7 @@ Vantoris member app with the X Money-inspired member UI, Base44-backed applicati
 
 This branch restores the original application entry point, route definitions, authentication context, Base44 client, member and operations screens, shared UI primitives, and the private LLM gateway/proxy files from `The-Oracle-Arc/vantoris-live`.
 
-**This is still a recovery-in-progress branch, not a production release.** The source repository contains substantially more files than have been restored so far. Remaining shared components, Base44 entity/function/workflow definitions, and other supporting modules still need to be recovered and audited. Original source contains no standalone raster card-image assets in its Git tree; visual assets appear to be implemented through components/styles or external references, which should be verified during UI QA.
+**This is still a recovery-in-progress branch, not a production release.** The source repository contains substantially more files than have been restored so far. Remaining shared components, Base44 entity/function/workflow definitions, and other supporting modules still need to be recovered and audited. The recovered source had no standalone raster card-image assets in its Git tree. This feature branch adds four original vector card-art editions under `public/card-art/`; portrait imagery in the financial-history collection remains sourced from documented public historical collections and must be checked at final display/print resolution.
 
 ## Safety and release rules
 

@@ -31,6 +31,9 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import ShieldLogo from '@/components/vantoris/ShieldLogo';
+import FinancialHeritage from '@/components/vantoris/FinancialHeritage';
+import HambrosTribute from '@/components/vantoris/HambrosTribute';
+import PrivateInvestmentCardGallery from '@/components/vantoris/PrivateInvestmentCardGallery';
 import { PROVIDERS } from '@/lib/providers';
 
 const NAV = [
@@ -39,6 +42,7 @@ const NAV = [
   { label: 'Cards', href: '#service-availability' },
   
   { label: 'About', href: '#about' },
+  { label: 'Heritage', href: '#hambros-tribute' },
   { label: 'Banking', href: '#banking' },
   { label: 'Invest', href: '#invest' },
   { label: 'Travel', href: '#travel' },
@@ -87,7 +91,7 @@ const MILITARY_ORGS = [
 const PILLARS = [
   {
     icon: Landmark,
-    title: 'Private member banking',
+    title: 'Private client services',
     body: 'A private member workspace for account records, statements, and activity. Live balances and payment execution appear only after an authorized core-banking and payments provider is connected.',
   },
   {
@@ -121,8 +125,8 @@ const HELP = [
     text: 'Business-oriented member tools, document organization, and access to support when decisions get complex.',
   },
   {
-    title: 'Global citizens',
-    text: 'Cross-border awareness, discovery tools, and support channels that don’t stop at a single zip code.',
+    title: 'U.S. households',
+    text: 'U.S.-focused account information, discovery tools, and dedicated support for households across the United States.',
   },
 ];
 
@@ -183,7 +187,7 @@ export default function Landing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-[#F4F6F9] text-navy scroll-smooth">
+    <div className="min-h-screen bg-[#F7F5EF] text-navy scroll-smooth">
       <header className="sticky top-0 z-50 border-b border-slate-200/80 bg-white/95 backdrop-blur-md">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
           <button
@@ -198,7 +202,7 @@ export default function Landing() {
             <div className="leading-tight">
               <p className="font-bold text-[15px] tracking-tight">Vantoris</p>
               <p className="text-[10px] uppercase tracking-[0.14em] text-slate-500 hidden sm:block">
-                Private banking · Impact
+                Private investment · Stewardship
               </p>
             </div>
           </button>
@@ -302,16 +306,15 @@ export default function Landing() {
             <div className="lg:col-span-7">
               <div className="inline-flex items-center gap-2 rounded-full border border-brass/30 bg-brass/10 px-3 py-1.5 mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span className="font-mono text-[11px] text-brass tracking-wide">AVCU MEMBER PLATFORM</span>
+                <span className="font-mono text-[11px] text-brass tracking-wide">VANTORIS PRIVATE INVESTMENT</span>
               </div>
               <h1 className="font-heading text-white text-[2.75rem] sm:text-5xl lg:text-[3.75rem] font-extrabold leading-[1.02] tracking-tight">
-                Money that moves
+                Capital, considered
                 <br />
-                <span className="font-display italic font-normal text-brass text-[1.05em]">with institutional chill.</span>
+                <span className="font-display italic font-normal text-brass text-[1.05em]">with enduring perspective.</span>
               </h1>
               <p className="mt-6 text-lg sm:text-xl text-white/65 max-w-xl leading-relaxed font-body">
-                U.S.-standard accounts, cards, wires, and statements—plus HeroBox impact.
-                A self-operating AI platform: members bank, assistants guide, ops stay isolated. Built for people who want bank energy without the 2012 website energy.
+                A private-client workspace for portfolio visibility, controlled capital requests, account records, statements and dedicated service. Investment trading, custody and external payment execution remain available only where an authorized provider and approval workflow are in place.
               </p>
               <div className="mt-10 flex flex-wrap gap-3">
                 <Link
@@ -347,8 +350,8 @@ export default function Landing() {
             <div className="lg:col-span-5 relative">
               <figure className="overflow-hidden rounded-[1.75rem] border border-white/15 bg-[#071C38] shadow-[0_30px_90px_rgba(0,0,0,.45)]">
                 <img
-                  src="https://raw.githubusercontent.com/iamtheoracle/vantoris-x-money/main/IMG_0981.jpeg"
-                  alt="Navy and gold Atchison Village Credit Union debit card concept artwork"
+                  src="/card-art/obsidian.svg"
+                  alt="Vantoris Private Investment Obsidian card artwork"
                   className="block w-full h-auto object-cover"
                   loading="eager"
                   fetchPriority="high"
@@ -436,7 +439,7 @@ export default function Landing() {
                 <Fingerprint size={14} /> Identity · KYC · session isolation
               </span>
               <span className="inline-flex items-center gap-1.5 rounded-full bg-slate-50 text-slate-600 border border-slate-200 px-3 py-1 text-[11px] font-semibold">
-                U.S. banking-style controls & statements
+                Institutional controls & statements
               </span>
             </div>
             <div className="grid lg:grid-cols-2 gap-8 items-center">
@@ -445,9 +448,7 @@ export default function Landing() {
                   Obvious trust.<span className="italic text-brass"> Premium clarity.</span>
                 </h2>
                 <p className="mt-4 text-slate-600 leading-relaxed font-body">
-                  Vantoris is built like serious American retail and private banking: verified membership,
-                  document vaults, elite statements, card chrome you recognize, and operator rails that
-                  stay separate from member screens. Sign in to access your authorized account workspace and available services.
+                  Vantoris brings a considered private-investment experience to portfolio records, account services and dedicated support. Identity checks, document records and operator workflows remain separated from client screens. Sign in to access your authorized workspace and available services.
                 </p>
                 <ul className="mt-6 space-y-2 text-sm text-navy font-body">
                   {[
@@ -466,9 +467,9 @@ export default function Landing() {
               <div className="rounded-[24px] bg-navy text-white p-6 sm:p-8 relative overflow-hidden">
                 <div className="absolute -right-10 -top-10 w-40 h-40 rounded-full bg-brass/20 blur-2xl" />
                 <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-brass">Institutional seal</p>
-                <p className="font-heading text-2xl font-bold mt-3">Vantoris Member Platform</p>
+                <p className="font-heading text-2xl font-bold mt-3">Vantoris Private Investment</p>
                 <p className="text-white/60 text-sm mt-2 font-body">
-                  Trust · Structure · Purpose — navy / brass identity system aligned with U.S. premium banking UX norms.
+                  Trust · Structure · Purpose — a restrained navy, ivory and brass identity with an editorial approach to private capital.
                 </p>
                 <div className="mt-6 grid grid-cols-2 gap-3 text-center">
                   {[
@@ -489,12 +490,12 @@ export default function Landing() {
         </section>
 
 
-        <section id="service-availability" className="scroll-mt-24 bg-[#F4F6F9] border-y border-slate-200 py-16 sm:py-20">
+        <section id="service-availability" className="scroll-mt-24 bg-[#F7F5EF] border-y border-slate-200 py-16 sm:py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-brass mb-3">Provider connectivity</p>
             <h2 className="font-heading text-3xl sm:text-4xl font-bold text-navy">Services, backed by real connections</h2>
             <p className="mt-4 max-w-3xl text-slate-600 leading-relaxed">
-              AVCU displays a service as connected only when its production provider is configured and verified.
+              Vantoris displays a service as connected only when its production provider is configured and verified.
               Internal records, sample artwork, and design concepts are not presented as live banking or payment services.
             </p>
             <div className="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -588,7 +589,7 @@ export default function Landing() {
             <div className="mt-10 grid sm:grid-cols-3 gap-4">
               {[
                 ['In-app messages', 'Secure member ↔ support threads', '/login'],
-                ['Voice desks', 'US + UK lines on Contact', '#contact'],
+                ['Voice desk', 'U.S. contact line on Contact', '#contact'],
                 ['HeroBox network', 'Volunteers, shipping, funds in ops', '/login'],
               ].map(([t, d, href]) => (
                 href.startsWith('#') ? (
@@ -613,12 +614,10 @@ export default function Landing() {
             <div>
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">About Vantoris</p>
               <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-navy leading-tight">
-                A sanctuary for members who need more than a basic bank app.
+                A private investment experience built around clarity and stewardship.
               </h2>
               <p className="mt-5 text-slate-600 text-[16px] leading-relaxed">
-                Vantoris combines institutional design with human outcomes. Members manage cash,
-                cards, and investments in one place—while operators run KYC, compliance, and
-                care logistics with the same platform backbone.
+                Vantoris combines institutional design with human outcomes. Clients review accounts, investment records and service requests in one place, while authorized operators manage verification, approvals and service workflows.
               </p>
               <p className="mt-4 text-slate-600 text-[16px] leading-relaxed">
                 We built Vantoris for people who carry responsibility: households, founders,
@@ -661,7 +660,7 @@ export default function Landing() {
                 ].map(({ icon: Icon, label }) => (
                   <div
                     key={label}
-                    className="rounded-xl bg-[#F4F6F9] px-3 py-3 flex items-center gap-2 text-sm font-medium text-navy"
+                    className="rounded-xl bg-[#F7F5EF] px-3 py-3 flex items-center gap-2 text-sm font-medium text-navy"
                   >
                     <Icon size={16} className="text-brass" />
                     {label}
@@ -672,16 +671,19 @@ export default function Landing() {
           </div>
         </section>
 
+        <FinancialHeritage className="py-20" />
+        <HambrosTribute />
+
         {/* Pillars */}
         <section id="banking" className="scroll-mt-24 bg-white border-y border-slate-200/80 py-20">
           <div className="max-w-6xl mx-auto px-4 sm:px-6">
             <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">What you can do</p>
-            <h2 className="text-3xl font-bold text-navy max-w-xl">Everything in one membership workspace</h2>
+            <h2 className="text-3xl font-bold text-navy max-w-xl">A considered private-client workspace</h2>
             <div className="mt-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
               {PILLARS.map(({ icon: Icon, title, body }) => (
                 <article
                   key={title}
-                  className="rounded-2xl border border-slate-200/80 bg-[#F4F6F9] p-6 hover:border-brass/40 transition"
+                  className="rounded-2xl border border-slate-200/80 bg-[#F7F5EF] p-6 hover:border-brass/40 transition"
                 >
                   <div className="w-11 h-11 rounded-xl bg-navy text-brass flex items-center justify-center mb-4">
                     <Icon size={20} />
@@ -698,12 +700,10 @@ export default function Landing() {
         <section id="cards" className="scroll-mt-24 max-w-6xl mx-auto px-4 sm:px-6 py-20">
           <div className="grid lg:grid-cols-2 gap-10 items-center">
             <div>
-              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Cards</p>
-              <h2 className="text-3xl font-bold text-navy">Debit and credit pathways, under your control</h2>
+              <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Private client card design</p>
+              <h2 className="text-3xl font-bold text-navy">A considered identity in four editions</h2>
               <p className="mt-4 text-slate-600 leading-relaxed">
-                Eligible members can request debit cards, review card services, and keep spend
-                visible next to cash and investments. Credit offerings follow compliance review—
-                never a one-click surprise.
+                Four print-scalable card artworks bring the institution’s visual language into a tangible format. Actual issuance, payment credentials and card-network availability remain subject to verified issuer arrangements.
               </p>
               <ul className="mt-6 space-y-2 text-[15px] text-navy">
                 {['Card request & status tracking', 'Spend visibility in Activity', 'Operator review for eligible products'].map(
@@ -716,13 +716,7 @@ export default function Landing() {
                 )}
               </ul>
             </div>
-            <div className="relative h-56 sm:h-64 rounded-[28px] bg-gradient-to-br from-navy to-[#0E2A4A] p-8 text-white shadow-xl overflow-hidden">
-              <div className="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-brass/20 blur-2xl" />
-              <p className="text-white/50 text-xs uppercase tracking-widest">Vantoris</p>
-              <p className="mt-8 text-2xl font-semibold tracking-wide">Member Debit</p>
-              <p className="mt-auto pt-16 text-white/60 text-sm">•••• •••• •••• secure</p>
-              <p className="text-brass text-sm font-medium mt-2">Your name · Your control</p>
-            </div>
+            <PrivateInvestmentCardGallery compact />
           </div>
         </section>
 
@@ -731,10 +725,9 @@ export default function Landing() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 grid lg:grid-cols-2 gap-12 items-center">
             <div>
               <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Investment</p>
-              <h2 className="text-3xl font-bold leading-tight">Grow with transparency</h2>
+              <h2 className="text-3xl font-bold leading-tight">Capital, considered with transparency</h2>
               <p className="mt-4 text-white/70 leading-relaxed">
-                Portfolio views, deposit and withdrawal workflows, and signals for authorized
-                operators mean members see progress while institutions keep process discipline.
+                Portfolio views, controlled deposit and withdrawal requests, and operator-reviewed signals give clients clarity while keeping every capital workflow accountable.
               </p>
             </div>
             <div className="rounded-2xl bg-white/5 border border-white/10 p-6 space-y-4">
@@ -821,7 +814,7 @@ export default function Landing() {
                   licensed professionals in your area.
                 </p>
               </div>
-              <div className="rounded-[24px] border border-slate-200 bg-[#F4F6F9] p-6 shadow-sm">
+              <div className="rounded-[24px] border border-slate-200 bg-[#F7F5EF] p-6 shadow-sm">
                 <div className="flex items-center gap-2 mb-3">
                   <Building2 size={18} className="text-brass" />
                   <p className="font-semibold text-navy text-sm">Property discovery</p>
@@ -831,7 +824,7 @@ export default function Landing() {
                   authorized data providers. No sample listing or estimated payment is presented as live market data.
                 </p>
                 <Link to="/login?intent=housing" className="mt-5 block w-full text-center rounded-full bg-navy text-white py-2.5 text-sm font-bold hover:bg-navy/90">
-                  Sign in to AVCU
+                  Sign in to Vantoris
                 </Link>
               </div>
             </div>
@@ -842,7 +835,7 @@ export default function Landing() {
           <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-brass mb-3">Wires & tracking</p>
           <h2 className="text-3xl font-bold text-navy max-w-2xl">Send with care. Track every step.</h2>
           <p className="mt-4 text-slate-600 max-w-3xl leading-relaxed">
-            Domestic and international wire-style transfers sit next to everyday Send / Request.
+            U.S. domestic wire-style requests sit next to everyday Send / Request. The public service scope is the United States.
             Members initiate, review beneficiary details, and follow status in Activity—so large
             moves are never a black box.
           </p>
@@ -893,10 +886,6 @@ export default function Landing() {
               <a href="tel:+12055688741" className="font-semibold text-navy underline">
                 +1 (205) 568-8741
               </a>{' '}
-              or{' '}
-              <a href="tel:+447404767964" className="font-semibold text-navy underline">
-                +44 7404 767964
-              </a>
               . Report suspected fraud to local authorities and, in the US, to reportfraud.ftc.gov where applicable.
             </p>
           </div>
@@ -970,7 +959,7 @@ export default function Landing() {
             <h2 className="text-3xl font-bold text-navy mb-10">People first. Products second.</h2>
             <div className="grid sm:grid-cols-2 gap-5">
               {HELP.map(({ title, text }) => (
-                <div key={title} className="rounded-2xl border border-slate-200 p-6 bg-[#F4F6F9]">
+                <div key={title} className="rounded-2xl border border-slate-200 p-6 bg-[#F7F5EF]">
                   <div className="flex items-center gap-2 mb-2">
                     <Heart size={18} className="text-brass" />
                     <h3 className="font-bold text-navy">{title}</h3>
@@ -1027,7 +1016,7 @@ export default function Landing() {
                   href={n.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="rounded-2xl border border-slate-200 bg-[#F4F6F9] p-5 hover:border-brass/50 transition block"
+                  className="rounded-2xl border border-slate-200 bg-[#F7F5EF] p-5 hover:border-brass/50 transition block"
                 >
                   <p className="font-bold text-navy">{n.name}</p>
                   <p className="text-[12px] font-semibold text-brass mt-1">{n.focus}</p>
@@ -1055,13 +1044,6 @@ export default function Landing() {
               >
                 <p className="text-xs text-white/60 uppercase tracking-wider">United States</p>
                 <p className="text-xl font-bold mt-1 tabular-nums">+1 (205) 568-8741</p>
-              </a>
-              <a
-                href="tel:+447404767964"
-                className="flex-1 rounded-2xl border border-slate-200 bg-[#F4F6F9] text-navy p-5 hover:border-brass/40 transition"
-              >
-                <p className="text-xs text-slate-500 uppercase tracking-wider">United Kingdom</p>
-                <p className="text-xl font-bold mt-1 tabular-nums">+44 7404 767964</p>
               </a>
             </div>
           </div>
@@ -1102,12 +1084,11 @@ export default function Landing() {
             </div>
             <div>
               <p className="font-bold text-navy text-sm">Vantoris</p>
-              <p className="text-[11px] text-slate-500">Private banking with impact</p>
+              <p className="text-[11px] text-slate-500">Private investment with purpose</p>
             </div>
           </div>
           <p className="text-[12px] text-slate-400 max-w-md">
-            Banking services provided through Vantoris. Features depend on eligibility, verification,
-            and applicable terms. This public information page is not an account statement or proof of deposit-taking or payment-rail availability.
+            Services depend on eligibility, verification, provider availability and applicable terms. This public information page is not an account statement or proof of investment custody, deposit-taking or payment-rail availability.
           </p>
         </div>
       </footer>
