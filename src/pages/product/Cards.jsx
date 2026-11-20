@@ -1,47 +1,137 @@
-import React, { useEffect, useState } from 'react';
-import { base44 } from '@/api/base44Client';
-import ProductShell from './ProductShell';
-import UnavailableState from '@/components/vantoris/UnavailableState';
-import { PROVIDERS } from '@/lib/providers';
-import { notifyOperators } from '@/lib/notifyOperators';
+import React from "react";
+import { Link } from "react-router-dom";
+import {
+  CreditCard,
+  ShieldCheck,
+  Snowflake,
+  SlidersHorizontal,
+  ArrowUpRight,
+  MessageCircle,
+} from "lucide-react";
+import { useBankingRecords } from "@/hooks/useBankingRecords";
+import {
+  BankingPage,
+  BankLoading,
+  BankError,
+  BankEmpty,
+} from "@/components/banking/BankingUI";
 
 export default function Cards() {
-  const [cards, setCards] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const me = await base44.auth.me();
-        const rows = await base44.entities.PaymentCard.filter({ user_id: me.id }, '-created_date').catch(() => []);
-        setCards(Array.isArray(rows) ? rows : []);
-      } catch (_) {
-        setCards([]);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
+  const { cards, loading, error, retry } = useBankingRecords({ cards: true });
   return (
-    <ProductShell kicker="Cards" title="Cards" subtitle="Only card records returned by the backend are shown. Freeze, spend controls, and issuance stay off until a card issuer is connected.">
-      {loading && <p className="text-sm text-slate-500">Loading card records…</p>}
-      {!loading && !cards.length && (
-        <>
-          <UnavailableState title="No card product connected" detail={PROVIDERS.cards.note} />
-          <button type="button" onClick={async () => {
-            const me = await base44.auth.me().catch(() => null);
-            await notifyOperators({ title: 'Card request', message: `${me?.full_name || me?.email || 'A member'} requested card issuance.`, type: 'warning' });
-          }} className="mt-3 text-sm font-semibold text-navy underline">Request a card</button>
-        </>
-      )}
-      {cards.map((c) => (
-        <div key={c.id} className="mb-3 rounded-2xl border border-slate-200 bg-white p-4">
-          <p className="text-xs uppercase tracking-wider text-slate-400">{c.card_type || c.brand || 'Card'}</p>
-          <p className="mt-1 font-mono text-lg">•••• {String(c.last_four || c.last4 || '').slice(-4) || 'on file'}</p>
-          <p className="mt-1 text-xs text-slate-500">{c.status || 'status not supplied'}</p>
+    <BankingPage
+      title="Your cards"
+      description="The details you need. A little peace of mind in your pocket."
+    >
+      {loading ? (
+        <BankLoading />
+      ) : error ? (
+        <BankError onRetry={retry} />
+      ) : (
+        <div className="bank-grid">
+          <section className="bank-card">
+            {cards.length ? (
+              cards.map((card) => (
+                <article key={card.id}>
+                  <div className="bank-debit">
+                    <div>
+                      <b>vantoris.</b>
+                      <CreditCard size={26} />
+                    </div>
+                    <p>
+                      •••• •••• ••••{" "}
+                      {String(card.last_four || card.last4 || "").slice(-4) ||
+                        "••••"}
+                    </p>
+                    <div>
+                      <small>{card.cardholder_name || "CARD ON FILE"}</small>
+                      <small>
+                        {String(card.card_type || "Card").toUpperCase()}
+                      </small>
+                    </div>
+                  </div>
+                  <dl className="bank-review">
+                    <div>
+                      <dt>Status on file</dt>
+                      <dd>{card.status || "Not provided"}</dd>
+                    </div>
+                    <div>
+                      <dt>Card type</dt>
+                      <dd>{card.card_type || card.brand || "Not provided"}</dd>
+                    </div>
+                  </dl>
+                </article>
+              ))
+            ) : (
+              <BankEmpty
+                title="Your next everyday companion."
+                action={
+                  <Link className="bank-button" to="/support">
+                    Ask about card availability <ArrowUpRight size={16} />
+                  </Link>
+                }
+              >
+                No cards are linked to your membership yet. We can help you
+                check eligibility and available options.
+              </BankEmpty>
+            )}
+            <div className="bank-notice">
+              <strong>Card controls are not enabled yet.</strong>Freezing,
+              replacing, issuing cards, and changing spending limits require an
+              enabled card service. Contact support if your card is lost or
+              something looks wrong.
+            </div>
+            <div className="bank-action-list">
+              {[
+                [
+                  Snowflake,
+                  "Freeze or replace a card",
+                  "Get help with a missing or compromised card.",
+                ],
+                [
+                  SlidersHorizontal,
+                  "Spending controls",
+                  "Ask which controls are available for your card.",
+                ],
+              ].map(([Icon, title, copy]) => (
+                <Link className="bank-action-item" to="/support" key={title}>
+                  <Icon size={21} />
+                  <span className="bank-row-copy">
+                    <strong>{title}</strong>
+                    <small>{copy}</small>
+                  </span>
+                  <ArrowUpRight size={16} />
+                </Link>
+              ))}
+            </div>
+          </section>
+          <aside>
+            <div className="bank-help-card">
+              <ShieldCheck size={26} />
+              <h2>
+                A few good habits
+                <br />
+                go a long way.
+              </h2>
+              <p>
+                Keep your PIN private, check your activity regularly, and report
+                unfamiliar transactions promptly.
+              </p>
+              <Link className="bank-text-link" to="/transactions">
+                Review your activity <ArrowUpRight size={16} />
+              </Link>
+            </div>
+            <Link to="/support" className="bank-action-item">
+              <MessageCircle size={22} />
+              <span className="bank-row-copy">
+                <strong>Need a hand?</strong>
+                <small>Find your support options.</small>
+              </span>
+              <ArrowUpRight size={16} />
+            </Link>
+          </aside>
         </div>
-      ))}
-    </ProductShell>
+      )}
+    </BankingPage>
   );
 }

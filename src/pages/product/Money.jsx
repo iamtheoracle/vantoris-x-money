@@ -1,98 +1,214 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
-import { formatCurrency } from '@/lib/formatCurrency';
-import ProductShell from './ProductShell';
-import UnavailableState from '@/components/vantoris/UnavailableState';
-import { PROVIDERS } from '@/lib/providers';
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  ArrowRight,
+  Plus,
+  Eye,
+  EyeOff,
+  FileText,
+  ShieldCheck,
+  Wallet,
+} from "lucide-react";
+import { useBankingRecords } from "@/hooks/useBankingRecords";
+import { formatCurrency } from "@/lib/formatCurrency";
+import {
+  BankingPage,
+  BankLoading,
+  BankError,
+  BankEmpty,
+  AccountRow,
+  ActivityRow,
+} from "@/components/banking/BankingUI";
 
-export default function Money() {
-  const [accounts, setAccounts] = useState([]);
-  const [txns, setTxns] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    let cancel = false;
-    (async () => {
-      try {
-        const me = await base44.auth.me();
-        const [a, t] = await Promise.all([
-          base44.entities.Account.filter({ user_id: me.id }, '-created_date').catch(() => []),
-          base44.entities.Transaction.filter({ user_id: me.id }, '-created_date', 20).catch(() => []),
-        ]);
-        if (!cancel) {
-          setAccounts(Array.isArray(a) ? a : []);
-          setTxns(Array.isArray(t) ? t : []);
-        }
-      } catch (e) {
-        if (!cancel) setError(e.message || 'Could not load accounts');
-      } finally {
-        if (!cancel) setLoading(false);
-      }
-    })();
-    return () => { cancel = true; };
-  }, []);
-
-  const balance = useMemo(
-    () => accounts.reduce((s, a) => s + (Number(a.balance) || 0), 0),
-    [accounts]
+export default function Money({ accountsOnly = false, overview = false }) {
+  const { accounts, transactions, loading, error, activityError, retry } =
+    useBankingRecords({ activity: !accountsOnly });
+  const [hidden, setHidden] = useState(false);
+  const hasCompleteBalance =
+    accounts.length > 0 &&
+    accounts.every(
+      (account) =>
+        account.balance != null && Number.isFinite(Number(account.balance)),
+    );
+  const balance = accounts.reduce(
+    (sum, account) => sum + (Number(account.balance) || 0),
+    0,
   );
-
   return (
-    <ProductShell
-      kicker="USD"
-      title="Money"
-      subtitle="Balances and activity come from your connected account records. Transfers execute only when a payments provider confirms them."
+    <BankingPage
+      title={
+        overview
+          ? "Good to see you."
+          : accountsOnly
+            ? "Your accounts"
+            : "Your money, in view."
+      }
+      description={
+        overview
+          ? "Your everyday money. One clear place to start."
+          : accountsOnly
+            ? "Your accounts, balances, and details. All together."
+            : "A clear view of today. A little more room for tomorrow."
+      }
+      action={
+        <Link
+          className="bank-icon-button"
+          aria-label="Account documents"
+          to="/documents"
+        >
+          <FileText size={19} />
+        </Link>
+      }
     >
-      {loading && <p className="text-sm text-slate-500">Loading account records…</p>}
-      {error && <p className="text-sm text-crimson">{error}</p>}
-      {!loading && !accounts.length && (
-        <UnavailableState
-          title="No USD account on file"
-          detail="There is no account record for this member yet. Vantoris will not display a simulated balance."
-        />
-      )}
-      {!!accounts.length && (
-        <div className="space-y-4">
-          <div className="rounded-2xl bg-navy p-5 text-white">
-            <p className="text-[11px] uppercase tracking-[0.16em] text-white/50">Available · USD</p>
-            <p className="mt-2 font-mono text-3xl font-semibold tabular-nums">{formatCurrency(balance)}</p>
-            <p className="mt-2 text-xs text-white/50">{accounts.length} account record{accounts.length === 1 ? '' : 's'}</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Link to="/move-money?action=send" className="rounded-xl bg-white border border-slate-200 py-3 text-center text-sm font-semibold">Send</Link>
-            <Link to="/qr" className="rounded-xl bg-white border border-slate-200 py-3 text-center text-sm font-semibold">Receive</Link>
-            <Link to="/move-money?action=deposit" className="rounded-xl bg-white border border-slate-200 py-3 text-center text-sm font-semibold">Add funds</Link>
-            <Link to="/?tab=activity" className="rounded-xl bg-white border border-slate-200 py-3 text-center text-sm font-semibold">Activity</Link>
-          </div>
-          <UnavailableState
-            title="Payments provider"
-            detail={PROVIDERS.payments.note + ' Send opens the existing transfer workflow; completion is not claimed until the backend records a transaction.'}
-          />
-          <div className="rounded-2xl bg-white border border-slate-200 divide-y divide-slate-100">
-            {accounts.map((a) => (
-              <Link key={a.id} to={`/accounts/${a.id}`} className="flex items-center justify-between px-4 py-3 text-sm">
-                <span>
-                  <span className="block font-semibold">{a.account_name || a.account_type || 'Account'}</span>
-                  <span className="text-xs text-slate-500">{a.status || 'on file'}</span>
-                </span>
-                <span className="font-mono tabular-nums">{formatCurrency(Number(a.balance) || 0)}</span>
-              </Link>
-            ))}
-          </div>
+      {loading ? (
+        <BankLoading />
+      ) : error ? (
+        <BankError onRetry={retry} />
+      ) : (
+        <div className="bank-grid">
           <div>
-            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Recent activity</p>
-            {!txns.length && <p className="text-sm text-slate-500">No transaction records returned.</p>}
-            {txns.map((tx) => (
-              <div key={tx.id} className="flex justify-between border-b border-slate-100 py-2 text-sm">
-                <span className="truncate pr-3">{tx.description || tx.type || 'Transaction'}</span>
-                <span className="font-mono tabular-nums">{formatCurrency(Number(tx.amount) || 0)}</span>
+            <section className="bank-card bank-balance">
+              <div className="bank-balance-label">
+                <p>Recorded account balance · USD</p>
+                <button
+                  className="bank-icon-button"
+                  onClick={() => setHidden((value) => !value)}
+                  aria-label={hidden ? "Show balances" : "Hide balances"}
+                >
+                  {hidden ? <Eye size={17} /> : <EyeOff size={17} />}
+                </button>
               </div>
-            ))}
+              <strong className="bank-balance-number">
+                {hidden
+                  ? "••••••"
+                  : hasCompleteBalance
+                    ? formatCurrency(balance)
+                    : "—"}
+              </strong>
+              <small>
+                {accounts.length
+                  ? `Across ${accounts.length} account${accounts.length === 1 ? "" : "s"} · Check account details before a transfer`
+                  : "Your balance appears when an account is linked."}
+              </small>
+            </section>
+            <nav className="bank-actions" aria-label="Money actions">
+              {[
+                ["/move-money?action=send", "Send", ArrowUpRight],
+                ["/move-money?action=request", "Request", ArrowDownLeft],
+                ["/move-money?action=deposit", "Add money", Plus],
+                ["/move-money?action=bank-transfer", "Transfer", ArrowRight],
+              ].map(([to, label, Icon]) => (
+                <Link key={label} to={to}>
+                  <i>
+                    <Icon size={21} />
+                  </i>
+                  {label}
+                </Link>
+              ))}
+            </nav>
+            <section className="bank-card">
+              <div className="bank-section-heading">
+                <h2>Your accounts</h2>
+                <span className="bank-label">{accounts.length} linked</span>
+              </div>
+              {accounts.length ? (
+                accounts.map((account) => (
+                  <AccountRow
+                    key={account.id}
+                    account={account}
+                    hidden={hidden}
+                  />
+                ))
+              ) : (
+                <BankEmpty
+                  title="Make yourself at home."
+                  action={
+                    <Link to="/support" className="bank-button secondary">
+                      Get account help <ArrowRight size={15} />
+                    </Link>
+                  }
+                >
+                  Your account details appear here once they’re available. Need
+                  a hand with your membership?
+                </BankEmpty>
+              )}
+            </section>
+            {!accountsOnly && (
+              <section className="bank-card">
+                <div className="bank-section-heading">
+                  <h2>Recent activity</h2>
+                  <Link className="bank-text-link" to="/transactions">
+                    View all <ArrowRight size={14} />
+                  </Link>
+                </div>
+                {activityError ? (
+                  <BankError onRetry={retry} />
+                ) : transactions.length ? (
+                  transactions
+                    .slice(0, 5)
+                    .map((tx) => <ActivityRow key={tx.id} transaction={tx} />)
+                ) : (
+                  <BankEmpty title="A fresh start.">
+                    Your payments and deposits appear here as they’re recorded.
+                  </BankEmpty>
+                )}
+              </section>
+            )}
           </div>
+          <aside>
+            {overview && (
+              <div className="bank-help-card">
+                <h2>Your next goal starts with a number.</h2>
+                <p>
+                  Put a timeframe around something you’re saving for. Our
+                  planner helps you find a monthly starting point.
+                </p>
+                <Link className="bank-text-link" to="/learn?topic=saving">
+                  Make a savings plan <ArrowUpRight size={16} />
+                </Link>
+              </div>
+            )}
+            <div className="bank-help-card">
+              <Wallet size={25} />
+              <h2>
+                Your next move,
+                <br />
+                made simpler.
+              </h2>
+              <p>
+                Find bank transfers, money requests, and ways to add money in
+                one place. See what’s available before you begin.
+              </p>
+              <Link className="bank-button" to="/move-money">
+                Pay & transfer <ArrowUpRight size={16} />
+              </Link>
+            </div>
+            <div className="bank-card">
+              <ShieldCheck size={23} />
+              <h2 className="mt-4 text-lg font-semibold">
+                A moment to double-check.
+              </h2>
+              <p className="bank-description">
+                Know the recipient. Check the details. Only send money to people
+                and businesses you trust.
+              </p>
+              <Link className="bank-text-link mt-4" to="/support">
+                Get help with a payment <ArrowRight size={14} />
+              </Link>
+            </div>
+            <Link className="bank-action-item" to="/documents">
+              <FileText size={23} />
+              <span className="bank-row-copy">
+                <strong>Statements & documents</strong>
+                <small>Your account paperwork, in one place.</small>
+              </span>
+              <ArrowUpRight size={17} />
+            </Link>
+          </aside>
         </div>
       )}
-    </ProductShell>
+    </BankingPage>
   );
 }

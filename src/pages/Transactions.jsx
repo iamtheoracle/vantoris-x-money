@@ -1,40 +1,146 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { base44 } from "@/api/base44Client";
-import { ArrowLeft } from "lucide-react";
+import { ArrowUpRight, Search } from "lucide-react";
+import { useBankingRecords } from "@/hooks/useBankingRecords";
+import { filterActivity } from "@/lib/banking-experience";
+import {
+  BankingPage,
+  BankLoading,
+  BankError,
+  BankEmpty,
+  ActivityRow,
+} from "@/components/banking/BankingUI";
 
 export default function Transactions() {
-  const [rows, setRows] = useState([]);
-  const [note, setNote] = useState("Loading account records...");
-  useEffect(() => {
-    base44.entities.Transaction.list("-created_date", 40)
-      .then((list) => {
-        setRows(Array.isArray(list) ? list : []);
-        setNote(list?.length ? "" : "No transaction records were returned for this session.");
-      })
-      .catch((e) => setNote(e?.message || "Transactions could not be loaded."));
-  }, []);
+  const { transactions, loading, error, activityError, retry } =
+    useBankingRecords({ activity: true });
+  const [query, setQuery] = useState(""),
+    [status, setStatus] = useState("all"),
+    [period, setPeriod] = useState("all"),
+    [page, setPage] = useState(0);
+  const filtered = useMemo(
+    () => filterActivity(transactions, { query, status, period }),
+    [transactions, query, status, period],
+  );
+  const count = Math.max(1, Math.ceil(filtered.length / 15));
+  const current = Math.min(page, count - 1);
+  const change = (setter) => (event) => {
+    setter(event.target.value);
+    setPage(0);
+  };
   return (
-    <div className="min-h-screen bg-[#F4F6F9] pb-28">
-      <div className="sticky top-0 z-10 flex items-center gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 safe-top">
-        <Link to="/" className="rounded-lg p-1.5" aria-label="Back"><ArrowLeft size={20} /></Link>
-        <h1 className="font-bold text-navy">Transactions</h1>
-      </div>
-      <div className="app-frame space-y-3 p-4">
-        {note && <p className="rounded-2xl bg-white p-4 text-sm text-slate-500">{note}</p>}
-        {rows.map((tx) => (
-          <article key={tx.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-navy">{tx.description || tx.type || "Transaction"}</p>
-                <p className="mt-1 text-xs text-slate-500">{tx.status || "recorded"} · {tx.created_date || tx.date || ""}</p>
+    <BankingPage
+      title="Your activity"
+      description="Find a payment, check its status, or take a closer look."
+      action={
+        <Link className="bank-button secondary" to="/move-money">
+          Pay & transfer <ArrowUpRight size={16} />
+        </Link>
+      }
+    >
+      {loading ? (
+        <BankLoading />
+      ) : error || activityError ? (
+        <BankError onRetry={retry} />
+      ) : (
+        <section className="bank-card">
+          <div className="bank-filter">
+            <div>
+              <label htmlFor="activity-query">Search activity</label>
+              <div className="relative">
+                <Search
+                  size={16}
+                  className="absolute right-3 top-4 text-[#6c8166]"
+                />
+                <input
+                  id="activity-query"
+                  value={query}
+                  onChange={change(setQuery)}
+                  placeholder="Search a name or description"
+                  type="search"
+                  className="pr-10"
+                />
               </div>
-              <p className="font-mono text-sm font-semibold">{tx.amount != null ? `$${Number(tx.amount).toFixed(2)}` : "—"}</p>
             </div>
-          </article>
-        ))}
-        <Link to="/move-money" className="block rounded-full bg-navy py-3 text-center text-sm font-semibold text-white">Move money</Link>
-      </div>
-    </div>
+            <div>
+              <label htmlFor="activity-status">Status</label>
+              <select
+                id="activity-status"
+                value={status}
+                onChange={change(setStatus)}
+              >
+                <option value="all">All statuses</option>
+                {[
+                  ...new Set(
+                    transactions.map((tx) => tx.status).filter(Boolean),
+                  ),
+                ].map((value) => (
+                  <option key={value} value={value}>
+                    {value.replaceAll("_", " ")}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label htmlFor="activity-period">Time period</label>
+              <select
+                id="activity-period"
+                value={period}
+                onChange={change(setPeriod)}
+              >
+                <option value="all">All loaded activity</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </div>
+          </div>
+          <p className="bank-eyebrow" role="status">
+            {filtered.length} matching record{filtered.length === 1 ? "" : "s"}
+          </p>
+          {filtered.length ? (
+            filtered
+              .slice(current * 15, (current + 1) * 15)
+              .map((tx) => <ActivityRow key={tx.id} transaction={tx} />)
+          ) : (
+            <BankEmpty
+              title={
+                transactions.length
+                  ? "No matches this time."
+                  : "Your story starts here."
+              }
+            >
+              {transactions.length
+                ? "Try another search or choose a different time period."
+                : "Your payment and deposit activity appears here as it is recorded."}
+            </BankEmpty>
+          )}
+          {filtered.length > 15 && (
+            <nav className="bank-pagination" aria-label="Activity pages">
+              <button
+                className="bank-button secondary"
+                disabled={current === 0}
+                onClick={() => setPage(current - 1)}
+              >
+                Previous
+              </button>
+              <span>
+                Page {current + 1} of {count}
+              </span>
+              <button
+                className="bank-button secondary"
+                disabled={current + 1 >= count}
+                onClick={() => setPage(current + 1)}
+              >
+                Next
+              </button>
+            </nav>
+          )}
+          <p className="mt-5 text-[10px] leading-5 text-[#72816a]">
+            Shows up to the latest 100 records per linked account. For older
+            activity, check your statements.
+          </p>
+        </section>
+      )}
+    </BankingPage>
   );
 }

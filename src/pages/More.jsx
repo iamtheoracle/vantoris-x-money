@@ -11,10 +11,10 @@ const SECTIONS = [
   {
     title: 'Platform',
     items: [
-      { id: 'travel', label: 'Travel', desc: 'Flights, hotels, cars — provider required', icon: Compass, route: '/travel', color: 'bg-navy/8 text-navy' },
-      { id: 'homes', label: 'Homes', desc: 'Licensed listings only', icon: Info, route: '/homes', color: 'bg-navy/8 text-navy' },
-      { id: 'news', label: 'News', desc: 'Attributed sources only', icon: FileText, route: '/news', color: 'bg-navy/8 text-navy' },
-      { id: 'ask', label: 'Ask Vantoris', desc: 'Private AI when configured; no fabricated answers', icon: Sparkles, route: '/ask', color: 'bg-brass/10 text-brass' },
+      { id: 'travel', label: 'Travel', desc: 'Explore travel options and availability', icon: Compass, route: '/travel', color: 'bg-navy/8 text-navy' },
+      { id: 'homes', label: 'Homes', desc: 'Explore housing and property', icon: Info, route: '/homes', color: 'bg-navy/8 text-navy' },
+      { id: 'news', label: 'News', desc: 'Catch up on financial news', icon: FileText, route: '/news', color: 'bg-navy/8 text-navy' },
+      { id: 'ask', label: 'Ask Vantoris', desc: 'Guidance and service availability', icon: Sparkles, route: '/ask', color: 'bg-brass/10 text-brass' },
       { id: 'support', label: 'Support', desc: 'Help and contact', icon: Phone, route: '/support', color: 'bg-emerald-500/10 text-emerald-700' },
     ],
   },
@@ -32,14 +32,14 @@ const SECTIONS = [
       { id: 'discover', label: 'Discover hub', desc: 'Invest, HeroBox, news, NGO, FX', icon: Compass, route: '/discover', color: 'bg-navy/8 text-navy' },
       { id: 'investment', label: 'Investment', desc: 'Portfolios & capital', icon: TrendingUp, route: '/investment', color: 'bg-brass/10 text-brass' },
       { id: 'herobox', label: 'HeroBox', desc: 'Care packages & missions', icon: Package, route: '/herobox', color: 'bg-emerald-500/10 text-emerald-700' },
-      { id: 'tx', label: 'Transactions', desc: 'Records returned for this account', icon: FileText, route: '/transactions', color: 'bg-navy/8 text-navy' },
+      { id: 'tx', label: 'Transactions', desc: 'Search and filter your account activity', icon: FileText, route: '/transactions', color: 'bg-navy/8 text-navy' },
       { id: 'qr', label: 'Member QR', desc: 'Pay & locate members', icon: QrCode, route: '/qr', color: 'bg-blue-500/10 text-blue-600' },
     ],
   },
   {
     title: 'Banking',
     items: [
-      { id: 'cards', label: 'Cards', desc: 'Manage your debit cards', icon: CreditCard, route: '/services', color: 'bg-brass/10 text-brass' },
+      { id: 'cards', label: 'Cards', desc: 'Manage your debit cards', icon: CreditCard, route: '/cards', color: 'bg-brass/10 text-brass' },
       { id: 'accounts', label: 'Accounts', desc: 'Accounts, payments and transfers', icon: CreditCard, route: '/accounts', color: 'bg-blue-500/10 text-blue-600' },
       { id: 'statements', label: 'Statements & Documents', desc: 'Account documents', icon: FileText, route: '/documents', color: 'bg-blue-500/10 text-blue-600' },
     ],

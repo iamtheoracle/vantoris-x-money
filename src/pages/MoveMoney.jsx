@@ -1,126 +1,502 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
-import { formatCurrency } from '@/lib/formatCurrency';
-import { useToast } from '@/components/ui/use-toast';
-import { ArrowDownToLine, ArrowUpRight, Check, ChevronRight, CreditCard, QrCode, Search, Send, ShieldCheck, Wallet, X, Landmark } from 'lucide-react';
-import { findZelleRecipient, maskZelleIdentifier, normalizeZelleIdentifier } from '@/lib/zelle';
-import { notifyOperators } from '@/lib/notifyOperators';
+import React, { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import {
+  ArrowUpRight,
+  ArrowDownLeft,
+  ArrowRight,
+  Landmark,
+  Plus,
+  ShieldCheck,
+  CheckCircle2,
+  CreditCard,
+  FileText,
+} from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { formatCurrency } from "@/lib/formatCurrency";
+import { useBankingRecords } from "@/hooks/useBankingRecords";
+import { dollarsToCents, validRoutingNumber } from "@/lib/banking-experience";
+import {
+  BankingPage,
+  BankLoading,
+  BankError,
+  BankDialog,
+  BankEmpty,
+} from "@/components/banking/BankingUI";
 
-// Payment creation stays disabled until a trusted server ledger workflow is integrated.
-const SERVER_MONEY_OPERATIONS_ENABLED = false;
-
-const maskAccount = (value = '') => { const d = String(value).replace(/\D/g, ''); return d.length >= 4 ? `•••• ${d.slice(-4)}` : '••••'; };
-
+const actions = [
+  {
+    id: "bank-transfer",
+    title: "Transfer to a U.S. bank",
+    description: "Prepare an ACH or domestic wire request.",
+    status: "Request review",
+    Icon: Landmark,
+  },
+  {
+    id: "send",
+    title: "Send money to someone",
+    description: "Pay people you know and trust.",
+    status: "Not available yet",
+    Icon: ArrowUpRight,
+  },
+  {
+    id: "request",
+    title: "Request money",
+    description: "Ask someone to pay you back.",
+    status: "Not available yet",
+    Icon: ArrowDownLeft,
+  },
+  {
+    id: "deposit",
+    title: "Add money",
+    description: "Explore deposit and funding options.",
+    status: "Not available yet",
+    Icon: Plus,
+  },
+];
+const unavailable = {
+  send: [
+    "Sending money isn’t available yet.",
+    "Person-to-person payments are not enabled for this experience. No money is sent from this screen.",
+  ],
+  request: [
+    "Money requests aren’t available yet.",
+    "Payment links and money requests are not enabled. You can still review your accounts and payment activity.",
+  ],
+  deposit: [
+    "Deposit options are coming together.",
+    "Electronic deposits and mobile check deposits are not enabled here. Contact support to confirm funding options for your account.",
+  ],
+};
 export default function MoveMoney() {
-  const [user, setUser] = useState(null), [accounts, setAccounts] = useState([]), [cards, setCards] = useState([]), [portfolios, setPortfolios] = useState([]), [loading, setLoading] = useState(true), [panel, setPanel] = useState(null);
-  const { toast } = useToast();
-  const [searchParams] = useSearchParams();
-  useEffect(() => {
-    const action = searchParams.get('action');
-    const to = searchParams.get('to');
-    if (action === 'send' || action === 'request' || action === 'add' || action === 'deposit' || action === 'qr') {
-      // Deep links must obey the same server-side payment gate as the visible controls.
-      setPanel(SERVER_MONEY_OPERATIONS_ENABLED ? (action === 'deposit' ? 'add' : action) : null);
-    } else if (to) {
-      setPanel(SERVER_MONEY_OPERATIONS_ENABLED ? 'send' : null);
-    }
-  }, [searchParams]);
-  useEffect(() => { let cancelled = false; (async () => { try { const me = await base44.auth.me(); const [a,c,p] = await Promise.all([base44.entities.Account.filter({ user_id: me.id }, '-created_date').catch(() => []), base44.entities.PaymentCard.filter({ user_id: me.id, status: 'active' }, '-created_date').catch(() => []), base44.entities.InvestmentPortfolio.filter({ user_id: me.id }, '-created_date').catch(() => [])]); if (!cancelled) { setUser(me); setAccounts(a); setCards(c); setPortfolios(p); } } catch (e) { if (!cancelled) toast({ title: 'Money unavailable', description: e.message || 'Please try again.', variant: 'destructive' }); } finally { if (!cancelled) setLoading(false); } })(); return () => { cancelled = true; }; }, [toast]);
-  const totalBalance = useMemo(() => accounts.reduce((s,a) => s + (a.balance || 0), 0), [accounts]);
-  const portfolioValue = useMemo(() => portfolios.reduce((s,p) => s + (p.total_value || 0), 0), [portfolios]);
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" /></div>;
-  /** @type {[string, string, React.ComponentType<any>][]} */
-  const actionItems = [['send','Send',Send],['request','Request',ArrowDownToLine],['add','Add money',ArrowUpRight],['qr','QR',QrCode]];
-  return <div className="px-5 pt-6 pb-28 max-w-[430px] mx-auto">
-    <header className="mb-6"><p className="text-gray text-sm">AVCU member payments</p><h1 className="text-3xl font-bold mt-1">Pay</h1><p className="text-gray text-sm mt-1">View accounts and prepare payment requests.</p></header>
-    <section role="status" className="mb-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-amber-950"><p className="font-semibold text-sm">Transfers are not enabled yet</p><p className="text-xs mt-1 leading-5">Sending and deposits are unavailable until an authorized server-side ledger and bank processing workflow is connected. Displayed balances are account records, not verified available funds or a live bank balance.</p></section>
-    <section className="mb-6 rounded-[28px] bg-[#0B2342] text-white p-5 shadow-xl relative overflow-hidden"><div className="absolute -right-16 -top-16 w-40 h-40 rounded-full bg-brass/10"/><p className="text-white/55 text-xs uppercase tracking-[0.18em]">Recorded account balance</p><p className="text-4xl font-semibold mt-2">{formatCurrency(totalBalance)}</p><p className="text-white/55 text-xs mt-2">{accounts.length} account{accounts.length === 1 ? '' : 's'}</p>{portfolioValue > 0 && <div className="mt-5 pt-4 border-t border-white/10 flex justify-between"><span className="text-white/60 text-xs">Investment portfolio</span><span className="font-semibold">{formatCurrency(portfolioValue)}</span></div>}</section>
-    <section className="mb-6 rounded-2xl border border-border bg-white p-4">
-      <div className="flex items-center gap-3">
-        <span className="w-11 h-11 rounded-xl bg-navy/5 text-navy flex items-center justify-center"><Landmark size={20}/></span>
-        <div className="flex-1"><h2 className="font-semibold">U.S. bank transfer</h2><p className="text-xs text-gray mt-1">Prepare an ACH or domestic wire request</p></div>
+  const { accounts, loading, error, retry } = useBankingRecords();
+  const [params, setParams] = useSearchParams();
+  const rawAction = params.get("action");
+  const action = rawAction === "add" ? "deposit" : rawAction;
+  const openAction = (id) => {
+    const next = new URLSearchParams(params);
+    next.set("action", id);
+    setParams(next);
+  };
+  const close = () => {
+    const next = new URLSearchParams(params);
+    next.delete("action");
+    setParams(next, { replace: true });
+  };
+  return (
+    <BankingPage
+      title="Pay & transfer"
+      description="Your money has places to be. Choose how it gets there."
+      action={
+        <Link className="bank-text-link" to="/transactions">
+          Activity <ArrowRight size={15} />
+        </Link>
+      }
+    >
+      <div className="bank-grid">
+        <div>
+          <section className="bank-card">
+            <div className="bank-section-heading">
+              <h2>What would you like to do?</h2>
+            </div>
+            <div className="bank-action-list">
+              {actions.map(({ id, title, description, status, Icon }) => (
+                <button
+                  key={id}
+                  className="bank-action-item"
+                  onClick={() => openAction(id)}
+                >
+                  <span className="bank-account-icon">
+                    <Icon size={21} />
+                  </span>
+                  <span className="bank-row-copy">
+                    <strong>{title}</strong>
+                    <small>
+                      {description}
+                      <br />
+                      <span className="bank-label">{status}</span>
+                    </small>
+                  </span>
+                  <ArrowRight size={17} />
+                </button>
+              ))}
+            </div>
+          </section>
+          {loading ? (
+            <BankLoading />
+          ) : error ? (
+            <BankError onRetry={retry} />
+          ) : (
+            <div className="bank-notice">
+              <strong>
+                {accounts.length
+                  ? `${accounts.length} account${accounts.length === 1 ? "" : "s"} on file`
+                  : "No accounts linked yet"}
+              </strong>
+              {accounts.length
+                ? "Bank-transfer requests go to review. A recorded request is not a completed payment."
+                : "You need an eligible account before submitting a bank-transfer request."}{" "}
+              <Link className="bank-text-link" to="/accounts">
+                View accounts <ArrowRight size={14} />
+              </Link>
+            </div>
+          )}
+        </div>
+        <aside>
+          <div className="bank-help-card">
+            <ShieldCheck size={26} />
+            <h2>
+              Pause. Check.
+              <br />
+              Then take the next step.
+            </h2>
+            <p>
+              A bank will never ask you to transfer money to keep it “safe.”
+              Confirm unexpected payment requests using a contact method you
+              already trust.
+            </p>
+            <Link to="/support" className="bank-text-link">
+              Something doesn’t look right? <ArrowRight size={15} />
+            </Link>
+          </div>
+          <Link className="bank-action-item" to="/cards">
+            <CreditCard size={22} />
+            <span className="bank-row-copy">
+              <strong>Looking for your card?</strong>
+              <small>View your card details and availability.</small>
+            </span>
+            <ArrowUpRight size={17} />
+          </Link>
+          <Link className="bank-action-item mt-3" to="/documents">
+            <FileText size={22} />
+            <span className="bank-row-copy">
+              <strong>Find a statement</strong>
+              <small>Visit your document centre.</small>
+            </span>
+            <ArrowUpRight size={17} />
+          </Link>
+        </aside>
       </div>
-      <button onClick={() => setPanel('bank-transfer')} className="mt-4 w-full rounded-xl bg-navy text-white py-3 text-sm font-semibold">Start transfer request</button>
-      <p className="mt-2 text-[11px] text-gray">Requests enter operations review. They are not transmitted to a bank or deducted from your account in this release.</p>
-    </section>
-    <section className="grid grid-cols-4 gap-2 mb-7">{actionItems.map(([id,label,Icon]) => <button key={id} onClick={() => setPanel(id)} disabled={!SERVER_MONEY_OPERATIONS_ENABLED} title={!SERVER_MONEY_OPERATIONS_ENABLED ? "Unavailable until secure payment processing is enabled" : undefined} className="flex flex-col items-center gap-2 py-3 rounded-2xl bg-white border border-border shadow-sm disabled:opacity-45 disabled:cursor-not-allowed"><span className="w-11 h-11 rounded-full bg-brass/10 text-brass flex items-center justify-center"><Icon size={19}/></span><span className="text-[11px] font-medium">{label}</span></button>)}</section>
-    <section className="mb-7"><div className="flex justify-between mb-3"><h2 className="font-semibold">Accounts</h2><span className="text-xs text-gray">{accounts.length}</span></div><div className="space-y-3">{accounts.map(a => <button key={a.id} onClick={() => setPanel({type:'account',account:a})} className="w-full text-left bg-white border border-border rounded-[24px] p-4 shadow-sm flex items-center gap-3"><span className="w-11 h-11 rounded-2xl bg-navy/5 text-navy flex items-center justify-center"><Wallet size={20}/></span><span className="flex-1 min-w-0"><span className="block font-semibold truncate">{a.account_name || a.account_type}</span><span className="block text-xs text-gray mt-0.5">{a.account_type} · {maskAccount(a.account_number)}</span></span><span className="text-right"><span className="block font-semibold">{formatCurrency(a.balance || 0)}</span><span className="text-[11px] text-mint">{a.status || 'active'}</span></span><ChevronRight size={17} className="text-gray/50"/></button>)}{accounts.length === 0 && <div className="rounded-[24px] border border-dashed border-border p-6 text-center text-sm text-gray">No accounts yet.</div>}</div></section>
-    {cards.length > 0 && <section className="mb-7"><div className="flex justify-between mb-3"><h2 className="font-semibold">Cards</h2><span className="text-xs text-gray">{cards.length}</span></div><div className="space-y-3">{cards.map(card => <PaymentCard key={card.id} card={card}/>)}</div></section>}
-    {portfolioValue > 0 && <section className="mb-7 rounded-[28px] bg-white border border-border p-5 shadow-sm"><p className="text-xs uppercase tracking-[0.16em] text-gray">Wealth</p><div className="flex justify-between items-center mt-1"><h2 className="text-xl font-semibold">Portfolio</h2><button onClick={() => window.location.assign('/investment')} className="text-brass text-sm font-semibold">Open</button></div><p className="text-3xl font-semibold mt-5">{formatCurrency(portfolioValue)}</p><p className="text-xs text-gray mt-1">Across your investment portfolios</p></section>}
-    {panel === 'bank-transfer' ? <BankTransferPanel accounts={accounts} onClose={() => setPanel(null)} /> : panel && <MoneyPanel panel={panel} accounts={accounts} user={user} onClose={() => setPanel(null)}/ >} 
-  </div>;
+      {action === "bank-transfer" && (
+        <BankDialog
+          open
+          title="Bank-transfer request"
+          description="Prepare your details, review them, then send a request for review."
+          onClose={close}
+        >
+          {loading ? (
+            <BankLoading />
+          ) : error ? (
+            <BankError onRetry={retry} />
+          ) : (
+            <TransferRequest
+              accounts={accounts.filter(
+                (account) => account.status === "active",
+              )}
+              onClose={close}
+            />
+          )}
+        </BankDialog>
+      )}
+      {unavailable[action] && (
+        <BankDialog
+          open
+          title={actions.find((item) => item.id === action)?.title}
+          description="Availability for your member experience"
+          onClose={close}
+        >
+          <BankEmpty
+            title={unavailable[action][0]}
+            action={
+              <div className="bank-form-buttons">
+                <button onClick={close} className="bank-button secondary">
+                  Go back
+                </button>
+                <Link to="/support" className="bank-button">
+                  Get help <ArrowRight size={16} />
+                </Link>
+              </div>
+            }
+          >
+            {unavailable[action][1]}
+          </BankEmpty>
+        </BankDialog>
+      )}
+    </BankingPage>
+  );
 }
-
-function BankTransferPanel({accounts,onClose}) {
-  const [rail,setRail]=useState('ACH');
-  const [accountId,setAccountId]=useState(accounts[0]?.id||'');
-  const [amount,setAmount]=useState('');
-  const [beneficiary,setBeneficiary]=useState('');
-  const [bank,setBank]=useState('');
-  const [routing,setRouting]=useState('');
-  const [last4,setLast4]=useState('');
-  const [memo,setMemo]=useState('');
-  const [busy,setBusy]=useState(false);
-  const {toast}=useToast();
-  async function submit(e) {
-    e.preventDefault();
-    const dollars=Number(amount);
-    if(!Number.isFinite(dollars)||dollars<=0||Math.round(dollars*100)!==dollars*100) {
-      toast({title:'Enter a valid amount',description:'Use dollars and cents, for example 125.00.',variant:'destructive'}); return;
+function TransferRequest({ accounts, onClose }) {
+  const [details, setDetails] = useState({
+    rail: "ACH",
+    accountId: accounts[0]?.id || "",
+    amount: "",
+    beneficiary: "",
+    bank: "",
+    routing: "",
+    last4: "",
+    memo: "",
+  });
+  const [step, setStep] = useState("details");
+  const stepHeading = useRef(null);
+  useEffect(() => {
+    if (step !== "details") stepHeading.current?.focus();
+  }, [step]);
+  const [errors, setErrors] = useState({});
+  const [failure, setFailure] = useState("");
+  const [reservation, setReservation] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const submissionKey = useRef(null);
+  const submitting = useRef(false);
+  const update = (key, value) => {
+    setDetails((previous) => ({ ...previous, [key]: value }));
+    setErrors((previous) => ({ ...previous, [key]: "" }));
+    submissionKey.current = null;
+  };
+  const account = accounts.find((item) => item.id === details.accountId);
+  const cents = dollarsToCents(details.amount);
+  function review(event) {
+    event.preventDefault();
+    const next = {};
+    if (!account) next.accountId = "Choose an account.";
+    if (cents === null)
+      next.amount =
+        "Enter an amount greater than zero, with up to two decimal places.";
+    if (!details.beneficiary.trim())
+      next.beneficiary = "Enter the recipient’s full name.";
+    if (!details.bank.trim()) next.bank = "Enter the recipient’s bank name.";
+    if (!validRoutingNumber(details.routing))
+      next.routing = "Enter a valid 9-digit U.S. routing number.";
+    if (!/^\d{4}$/.test(details.last4))
+      next.last4 = "Enter the last four digits of the recipient’s account.";
+    setErrors(next);
+    if (Object.keys(next).length) {
+      requestAnimationFrame(() =>
+        document.querySelector('[aria-invalid="true"]')?.focus(),
+      );
+      return;
     }
-    if(!accountId||!beneficiary.trim()||!bank.trim()||!/^\d{9}$/.test(routing)||!/^\d{4}$/.test(last4)) {
-      toast({title:'Complete the transfer details',description:'Check the beneficiary, bank, 9-digit routing number and account last four.',variant:'destructive'}); return;
-    }
-    setBusy(true);
-    try {
-      const result=await base44.functions.invoke('createTransferRequest',{
-        rail,source_account_id:accountId,amount_cents:Math.round(dollars*100),
-        beneficiary_name:beneficiary,beneficiary_bank_name:bank,
-        beneficiary_routing_number:routing,beneficiary_account_last4:last4,
-        memo,idempotency_key:crypto.randomUUID()
-      });
-      toast({title:'Transfer request recorded',description:result?.data?.message||'Your request is awaiting operations review. No funds have moved.'});
-      onClose();
-    } catch(error) {
-      toast({title:'Request not submitted',description:error?.message||'The server could not record this request.',variant:'destructive'});
-    } finally { setBusy(false); }
+    setFailure("");
+    setStep("review");
   }
-  return <Sheet title="U.S. bank transfer" subtitle="Secure transfer request intake" onClose={onClose}>
-    <form onSubmit={submit} className="space-y-4">
-      <div><label className="block text-xs text-gray mb-2">Transfer rail</label><select value={rail} onChange={e=>setRail(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"><option value="ACH">ACH transfer</option><option value="FEDWIRE">Domestic Fedwire</option></select></div>
-      <div><label className="block text-xs text-gray mb-2">From AVCU account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{accounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · •••• {String(a.account_number||'').slice(-4)}</option>)}</select></div>
-      <div><label className="block text-xs text-gray mb-2">Amount (USD)</label><input required inputMode="decimal" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
-      <div><label className="block text-xs text-gray mb-2">Beneficiary full name</label><input required maxLength={120} value={beneficiary} onChange={e=>setBeneficiary(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
-      <div><label className="block text-xs text-gray mb-2">Beneficiary bank</label><input required maxLength={120} value={bank} onChange={e=>setBank(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
-      <div><label className="block text-xs text-gray mb-2">9-digit ABA routing number</label><input required inputMode="numeric" maxLength={9} value={routing} onChange={e=>setRouting(e.target.value.replace(/\D/g,'').slice(0,9))} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
-      <div><label className="block text-xs text-gray mb-2">Beneficiary account last four digits</label><input required inputMode="numeric" maxLength={4} value={last4} onChange={e=>setLast4(e.target.value.replace(/\D/g,'').slice(0,4))} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
-      <div><label className="block text-xs text-gray mb-2">Memo (optional)</label><input maxLength={140} value={memo} onChange={e=>setMemo(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div>
-      <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 text-xs text-amber-950">This records a request for review only. No bank submission, debit, settlement or transfer confirmation occurs here.</div>
-      <button disabled={busy||!accounts.length} className="w-full h-12 rounded-xl bg-navy text-white font-semibold disabled:opacity-50">{busy?'Submitting request…':'Submit transfer request'}</button>
-    </form>
-  </Sheet>;
+  async function submit() {
+    if (submitting.current || !account || cents === null) return;
+    submitting.current = true;
+    setBusy(true);
+    setFailure("");
+    submissionKey.current ||= crypto.randomUUID();
+    try {
+      const response = await base44.functions.invoke("createTransferRequest", {
+        rail: details.rail,
+        source_account_id: details.accountId,
+        amount_cents: cents,
+        beneficiary_name: details.beneficiary.trim(),
+        beneficiary_bank_name: details.bank.trim(),
+        beneficiary_routing_number: details.routing,
+        beneficiary_account_last4: details.last4,
+        memo: details.memo.trim(),
+        idempotency_key: submissionKey.current,
+      });
+      if (
+        response?.status >= 400 ||
+        response?.data?.error ||
+        response?.data?.success === false ||
+        !response?.data?.request?.id
+      )
+        throw new Error("Request was not confirmed");
+      setReservation(response.data.funds_reserved === true);
+      setStep("complete");
+    } catch {
+      setFailure(
+        "We couldn’t confirm your request. Your details are still here. Retry this request or contact support before creating another one.",
+      );
+    } finally {
+      submitting.current = false;
+      setBusy(false);
+    }
+  }
+  const field = (id, label, inputProps = {}) => (
+    <div key={id}>
+      <label htmlFor={`transfer-${id}`}>{label}</label>
+      <input
+        id={`transfer-${id}`}
+        value={details[id]}
+        onChange={(event) => update(id, event.target.value)}
+        aria-invalid={!!errors[id]}
+        aria-describedby={errors[id] ? `error-${id}` : undefined}
+        {...inputProps}
+      />
+      {errors[id] && (
+        <p className="field-error" id={`error-${id}`}>
+          {errors[id]}
+        </p>
+      )}
+    </div>
+  );
+  if (!accounts.length)
+    return (
+      <BankEmpty
+        title="An account comes first."
+        action={
+          <Link className="bank-button" to="/support">
+            Get account help
+          </Link>
+        }
+      >
+        A linked, eligible account is required to submit a bank-transfer
+        request.
+      </BankEmpty>
+    );
+  if (step === "complete")
+    return (
+      <div className="bank-success" role="status">
+        <CheckCircle2 size={48} />
+        <h3 ref={stepHeading} tabIndex={-1}>
+          Request recorded for review.
+        </h3>
+        <p>
+          No bank payment has been sent.{" "}
+          {reservation
+            ? "The requested amount is reserved from available funds while the request is reviewed."
+            : "Review the request with support to confirm any pending holds."}{" "}
+          Your request still needs review and bank processing before a payment
+          can be completed.
+        </p>
+        <button className="bank-button" onClick={onClose}>
+          Back to payments <ArrowRight size={16} />
+        </button>
+      </div>
+    );
+  return (
+    <>
+      <div className="bank-steps" aria-label="Request progress">
+        <span
+          className={step === "details" ? "current" : ""}
+          aria-current={step === "details" ? "step" : undefined}
+        >
+          01 / Details
+        </span>
+        <span
+          className={step === "review" ? "current" : ""}
+          aria-current={step === "review" ? "step" : undefined}
+        >
+          02 / Review
+        </span>
+        <span>03 / Request recorded</span>
+      </div>
+      {step === "details" ? (
+        <form className="bank-form" onSubmit={review} noValidate>
+          <div>
+            <label htmlFor="transfer-rail">Transfer method</label>
+            <select
+              id="transfer-rail"
+              value={details.rail}
+              onChange={(event) => update("rail", event.target.value)}
+            >
+              <option value="ACH">ACH bank transfer</option>
+              <option value="FEDWIRE">Domestic wire</option>
+            </select>
+          </div>
+          <div>
+            <label htmlFor="transfer-account">From account</label>
+            <select
+              id="transfer-account"
+              value={details.accountId}
+              onChange={(event) => update("accountId", event.target.value)}
+            >
+              {accounts.map((item) => (
+                <option key={item.id} value={item.id}>
+                  {item.account_name || item.account_type} · ending{" "}
+                  {String(item.account_number || "").slice(-4) ||
+                    "not provided"}
+                </option>
+              ))}
+            </select>
+          </div>
+          {field("amount", "Amount (USD)", {
+            inputMode: "decimal",
+            placeholder: "0.00",
+            maxLength: 16,
+          })}
+          {field("beneficiary", "Recipient’s full name", {
+            autoComplete: "off",
+            maxLength: 120,
+          })}
+          {field("bank", "Recipient’s bank", { maxLength: 120 })}
+          <div className="bank-form-grid">
+            {field("routing", "Routing number", {
+              inputMode: "numeric",
+              maxLength: 9,
+              placeholder: "9 digits",
+            })}
+            {field("last4", "Account last four", {
+              inputMode: "numeric",
+              maxLength: 4,
+              placeholder: "4 digits",
+            })}
+          </div>
+          {field("memo", "Memo (optional)", { maxLength: 140 })}
+          <div className="bank-notice">
+            <strong>A request, then a review.</strong>Submitting does not send a
+            bank payment. The requested amount may be reserved from available
+            funds pending review. Fees, timing, limits, and eligibility must be
+            confirmed before bank processing.
+          </div>
+          <button className="bank-button" type="submit">
+            Review request <ArrowRight size={16} />
+          </button>
+        </form>
+      ) : (
+        <div>
+          <h3 ref={stepHeading} tabIndex={-1} className="sr-only">
+            Review your bank-transfer request
+          </h3>
+          <dl className="bank-review">
+            {[
+              ["Amount", formatCurrency(cents / 100)],
+              [
+                "Method",
+                details.rail === "ACH" ? "ACH bank transfer" : "Domestic wire",
+              ],
+              [
+                "From",
+                `${account?.account_name || account?.account_type} · •••• ${String(account?.account_number || "").slice(-4)}`,
+              ],
+              ["Recipient", details.beneficiary],
+              ["Bank", details.bank],
+              ["Routing number", details.routing],
+              ["Account ending", details.last4],
+              ["Memo", details.memo || "None"],
+              ["Fees & timing", "Not quoted — confirm before authorization"],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="bank-notice">
+            <strong>Check every detail.</strong>This sends a request for review.
+            It may reserve the requested amount from available funds. It does
+            not authorize a bank payment or guarantee completion.
+          </div>
+          {failure && (
+            <p className="bank-inline-error" role="alert">
+              {failure}
+            </p>
+          )}
+          <div className="bank-form-buttons">
+            <button
+              className="bank-button secondary"
+              disabled={busy || !!failure}
+              onClick={() => setStep("details")}
+            >
+              Edit details
+            </button>
+            <button className="bank-button" disabled={busy} onClick={submit}>
+              {busy ? "Submitting…" : "Submit request"}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
-
-function PaymentCard({card}) { return <div className="relative overflow-hidden rounded-[26px] p-5 min-h-[190px] text-white shadow-2xl bg-gradient-to-br from-[#0A2140] via-[#122F53] to-[#07162A]"><div className="absolute -right-10 -top-10 w-32 h-32 rounded-full border border-brass/25"/><div className="flex justify-between"><span className="text-sm font-semibold tracking-[0.18em]">VANTORIS</span><CreditCard size={22} className="text-white/70"/></div><div className="mt-10 text-lg tracking-[0.22em]">•••• •••• •••• {card.last4}</div><div className="mt-5 flex justify-between"><div><p className="text-[9px] uppercase text-white/45">Cardholder</p><p className="text-xs mt-1 uppercase">{card.cardholder_name || 'Vantoris Member'}</p></div><div><p className="text-[9px] uppercase text-white/45">Type</p><p className="text-xs mt-1 capitalize">{card.card_type || 'debit'}</p></div></div></div>; }
-
-function AddMoneyPanel({accounts,user,onClose}){const [accountId,setAccountId]=useState(accounts[0]?.id||'');const [amount,setAmount]=useState('');const [note,setNote]=useState('Member deposit');const [loading,setLoading]=useState(false);const {toast}=useToast();
-  async function post(){
-    if (!SERVER_MONEY_OPERATIONS_ENABLED) { toast({ title: 'Payments unavailable', description: 'Payment and deposit requests are disabled until a trusted server-side ledger and approval workflow is connected. No transaction was created.', variant: 'destructive' }); return; }
-const value=Number(amount);const account=accounts.find(a=>a.id===accountId);if(!account||!value||value<=0){toast({title:'Enter an amount',variant:'destructive'});return;}setLoading(true);try{const next=Math.round(((account.balance||0)+value)*100)/100;const txn=await base44.entities.Transaction.create({account_id:account.id,user_id:user?.id,type:'deposit',amount:value,description:note||'Add money',status:'pending'});await notifyOperators({title:'Deposit requested',message:`${user?.full_name||user?.email||'A member'} requested to add ${formatCurrency(value)} to ${account.account_name||account.account_type}. txn:${txn?.id||''}`,type:'warning'});toast({title:'Sent for approval',description:`${formatCurrency(value)} is pending. An operator must approve it before the balance changes.`});onClose();}catch(e){toast({title:'Deposit not posted',description:e.message||'The ledger rejected this deposit.',variant:'destructive'});}finally{setLoading(false);}}
-  return <Sheet title="Add money" subtitle="Deposit requests are unavailable until an authorized payments workflow is connected" onClose={onClose}><div className="space-y-4"><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">To account</label><select value={accountId} onChange={e=>setAccountId(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm">{accounts.map(a=><option key={a.id} value={a.id}>{a.account_name||a.account_type} · {formatCurrency(a.balance||0)}</option>)}</select></div><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">Amount</label><input value={amount} onChange={e=>setAmount(e.target.value)} inputMode="decimal" placeholder="0.00" className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">Note</label><input value={note} onChange={e=>setNote(e.target.value)} className="w-full h-12 rounded-xl border border-border px-3 text-sm"/></div><button type="button" disabled={loading || !SERVER_MONEY_OPERATIONS_ENABLED} onClick={post} className="w-full h-12 rounded-xl bg-navy text-white font-semibold">{loading?'Posting…':'Add money'}</button></div></Sheet>;
-}
-function MoneyPanel({panel,accounts,user,onClose}) { if(panel==='qr') return <QrPanel user={user} onClose={onClose}/>; if(panel==='send'||panel==='request') return <ZellePanel accounts={accounts} user={user} mode={panel} onClose={onClose}/>; if(panel==='add') return <AddMoneyPanel accounts={accounts} user={user} onClose={onClose}/>; if(panel?.type==='account') return <Sheet title={panel.account.account_name || panel.account.account_type} subtitle="Account details" onClose={onClose}><div className="rounded-2xl bg-slate-50 p-4 space-y-3 text-sm"><Detail label="Recorded balance (not live)" value={formatCurrency(panel.account.balance || 0)}/><Detail label="Account type" value={panel.account.account_type}/><Detail label="Account number" value={maskAccount(panel.account.account_number)}/><Detail label="Routing number" value={panel.account.routing_number || '—'}/><Detail label="Status" value={panel.account.status || 'active'}/></div></Sheet>; return null; }
-
-function ZellePanel({accounts,user,mode,onClose}) { const [identifier,setIdentifier]=useState(''),[recipient,setRecipient]=useState(null),[amount,setAmount]=useState(''),[selectedAccountId,setSelectedAccountId]=useState(accounts[0]?.id||''),[searching,setSearching]=useState(false),[loading,setLoading]=useState(false),[showBank,setShowBank]=useState(false),[ownProfile,setOwnProfile]=useState(null); const {toast}=useToast();
-  useEffect(()=>{base44.entities.ZelleProfile.filter({user_id:user?.id}).then(rows=>setOwnProfile(rows.find(p=>p.status==='enrolled')||null)).catch(()=>{});},[user?.id]);
-  async function lookup(value){setIdentifier(value);setRecipient(null);const normalized=normalizeZelleIdentifier(value);if(!normalized)return;setSearching(true);try{const rows=normalized.includes('@')?await base44.entities.ZelleProfile.filter({zelle_email:normalized}):await base44.entities.ZelleProfile.filter({zelle_phone:normalized});setRecipient(findZelleRecipient(rows,normalized));}catch(e){toast({title:'Recipient lookup failed',description:e.message||'Please try again.',variant:'destructive'});}finally{setSearching(false);}}
-  async function review(){
-    if (!SERVER_MONEY_OPERATIONS_ENABLED) { toast({ title: 'Payments unavailable', description: 'Payment and deposit requests are disabled until a trusted server-side ledger and approval workflow is connected. No transaction was created.', variant: 'destructive' }); return; }
-const value=Number(amount),account=accounts.find(a=>a.id===selectedAccountId);if(!recipient||!account||!value||value<=0)return;if(mode==='send'&&value>(account.balance||0)){toast({title:'Insufficient funds',description:'The selected account does not have enough balance.',variant:'destructive'});return;}setLoading(true);try{if(mode==='send'){const txn=await base44.entities.Transaction.create({account_id:account.id,user_id:user?.id,type:'send',amount:-value,description:`Pay to ${recipient.display_name||recipient.zelle_email||'member'}`,status:'pending',counterparty:recipient.display_name||recipient.zelle_email||''});await notifyOperators({title:'Transaction requested',message:`${user?.full_name||user?.email||'A member'} requested to send ${formatCurrency(value)} to ${recipient.display_name||'a member'}. txn:${txn?.id||''}`,type:'warning'});toast({title:'Sent for approval',description:`${formatCurrency(value)} is pending. An operator must approve it before the balance changes.`});}else{await base44.entities.Notification.create({user_id:recipient.user_id,title:'Vantoris payment request',message:`${user?.full_name||'A member'} requested ${formatCurrency(value)}.`,type:'info'});await notifyOperators({title:'Payment request',message:`${user?.full_name||user?.email||'A member'} requested ${formatCurrency(value)} from ${recipient.display_name||'a member'}.`,type:'warning'});toast({title:'Request sent',description:`${formatCurrency(value)} requested from ${recipient.display_name}. Operators were notified.`});}onClose();}catch(e){toast({title:'Payment not posted',description:e.message||'The ledger rejected this payment.',variant:'destructive'});}finally{setLoading(false);}}
-  return <Sheet title="Member payments" subtitle="Recipient lookup is not a payment rail; sending stays disabled until an authorized provider is connected." onClose={onClose}>{!ownProfile&&<div className="rounded-2xl border border-brass/20 bg-brass/5 p-4 mb-4 flex gap-3"><ShieldCheck size={19} className="text-brass"/><div><p className="font-semibold text-sm">Zelle enrollment required</p><p className="text-xs text-gray mt-1">Member-to-member payments are not enabled yet. Enrollment alone does not enable transfers.</p></div></div>}<div className="space-y-4"><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">Recipient email or U.S. mobile</label><div className="relative"><Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray"/><input value={identifier} onChange={e=>lookup(e.target.value)} placeholder="name@email.com or +1..." className="w-full pl-10 pr-3 py-3 rounded-2xl border border-border bg-white text-sm outline-none focus:border-brass"/></div>{searching&&<p className="text-[11px] text-gray mt-2">Checking enrolled recipients…</p>}</div>{identifier&&!searching&&!recipient&&<div className="rounded-2xl bg-slate-50 p-4 text-sm text-gray">No enrolled Zelle recipient was found for that email or mobile number.</div>}{recipient&&<div className="rounded-[24px] border border-border bg-white p-4 shadow-sm"><div className="flex items-center gap-3"><div className="w-12 h-12 rounded-full bg-navy text-white flex items-center justify-center font-semibold">{recipient.display_name?.charAt(0)?.toUpperCase()||'V'}</div><div className="flex-1"><p className="font-semibold">{recipient.display_name}</p><p className="text-xs text-gray mt-0.5">Verified Vantoris member</p></div><Check size={18} className="text-mint"/></div><p className="mt-4 text-xs text-gray">{recipient.zelle_email?maskZelleIdentifier(recipient.zelle_email):maskZelleIdentifier(recipient.zelle_phone)}</p><button onClick={()=>setShowBank(!showBank)} className="mt-3 text-xs font-semibold text-brass">{showBank?'Hide recipient details':'Show recipient details'}</button>{showBank&&<div className="mt-3 pt-3 border-t border-border/70 space-y-2 text-xs"><Detail label="Zelle bank" value={recipient.bank_name||'Not disclosed'}/><Detail label="Linked account" value={recipient.bank_account_last4?`•••• ${recipient.bank_account_last4}`:'Not disclosed'}/></div>}</div>}<div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">From account</label><select value={selectedAccountId} onChange={e=>setSelectedAccountId(e.target.value)} className="w-full py-3 px-3 rounded-2xl border border-border bg-white text-sm"><option value="">Select account</option>{accounts.map(a=><option key={a.id} value={a.id}>{a.account_name} · {formatCurrency(a.balance||0)}</option>)}</select></div><div><label className="text-xs uppercase tracking-[0.15em] text-gray block mb-2">Amount</label><input type="number" min="0" step="0.01" value={amount} onChange={e=>setAmount(e.target.value)} placeholder="0.00" className="w-full py-3 px-3 rounded-2xl border border-border bg-white text-sm"/></div><button disabled={!SERVER_MONEY_OPERATIONS_ENABLED||!recipient||!selectedAccountId||!amount||loading} onClick={review} className="w-full py-3.5 rounded-2xl bg-brass text-white font-semibold disabled:opacity-40">{loading?'Checking…':mode==='send'?'Review & Send':'Review Request'}</button></div></Sheet>; }
-
-function QrPanel({onClose}) { return <Sheet title="Member QR" subtitle="QR payments are unavailable until a privacy-safe, first-party implementation is connected." onClose={onClose}><div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950"><p className="font-semibold">QR temporarily unavailable</p><p className="mt-1 text-xs leading-5">Member identifiers will not be sent to an external QR image service. QR receive and scanning will return after a first-party renderer and trusted recipient lookup are implemented. No payment can be made from this screen.</p></div></Sheet>; }
-
-function Sheet({title,subtitle,onClose,children}) { return <div className="fixed inset-0 z-[70] bg-black/45 backdrop-blur-sm flex items-end justify-center"><div className="w-full max-w-[430px] max-h-[88vh] overflow-y-auto rounded-t-[32px] bg-white p-5 pb-8 safe-bottom shadow-2xl"><div className="flex items-start justify-between gap-3 mb-5"><div><h2 className="text-xl font-bold">{title}</h2>{subtitle&&<p className="text-sm text-gray mt-1">{subtitle}</p>}</div><button onClick={onClose} className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center"><X size={18}/></button></div>{children}</div></div>; }
-function Detail({label,value}) { return <div className="flex items-center justify-between gap-4"><span className="text-gray">{label}</span><span className="font-medium text-right">{value}</span></div>; }

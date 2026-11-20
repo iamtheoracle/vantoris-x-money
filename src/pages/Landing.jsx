@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowUpRight, ArrowDownLeft, ArrowRight, ShieldCheck, CreditCard, Wallet, Menu, X, Plus, Check, ChevronDown } from 'lucide-react';
 import './banking.css';
+import ProductCatalogue from '@/components/banking/ProductCatalogue';
 
 const questions = [
   ['What can I do with Vantoris?', 'View your linked accounts, review activity, manage eligible cards, and access transfer and deposit options from your member workspace. Available services depend on your account and eligibility.'],
@@ -18,7 +19,7 @@ export default function Landing() {
       <Link to="/welcome" className="wordmark" aria-label="Vantoris home"><span className="brand-symbol">v</span>vantoris<span className="wordmark-dot">.</span></Link>
       <button className="menu-toggle" aria-label={menuOpen ? 'Close menu' : 'Open menu'} aria-expanded={menuOpen} aria-controls="public-navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
       <nav id="public-navigation" className={menuOpen ? 'public-nav open' : 'public-nav'} aria-label="Main navigation">
-        <a href="#everyday" onClick={() => setMenuOpen(false)}>Everyday money</a><a href="#your-way" onClick={() => setMenuOpen(false)}>The Vantoris way</a><a href="#questions" onClick={() => setMenuOpen(false)}>Questions?</a>
+        <a href="#explore" onClick={() => setMenuOpen(false)}>Explore products</a><Link to="/learn?topic=workplace">At work</Link><Link to="/learn">Money guides</Link><a href="#questions" onClick={() => setMenuOpen(false)}>Questions?</a>
         <Link className="login-link" to="/login">Log in <ArrowUpRight size={16} /></Link><Link className="pill pill-dark nav-cta" to="/register">Get started <ArrowRight size={16}/></Link>
       </nav>
     </header>
@@ -32,9 +33,10 @@ export default function Landing() {
         </div>
       </section>
       <div className="value-strip"><span><Check size={18}/> Clarity at a glance</span><span><Check size={18}/> Everyday made easier</span><span><Check size={18}/> Space for your goals</span><span><Check size={18}/> Always within reach</span></div>
+      <ProductCatalogue/>
       <section id="everyday" className="everyday-section"><div className="section-heading"><div><span className="eyebrow">LESS FRICTION. MORE FORWARD.</span><h2>Life moves.<br/>Your money should too.</h2></div><p>From the everyday essentials to the plans you’re dreaming up. Find your next move, without the runaround.</p></div><div className="feature-grid"><article className="feature feature-spending"><span className="feature-icon"><Wallet/></span><span className="feature-number">01 / EVERYDAY</span><h3>A home for your<br/>day-to-day.</h3><p>See your linked accounts and recent activity in one place. Know where you stand before your next move.</p><Link to="/login">Explore your money <ArrowUpRight size={20}/></Link><div className="feature-art"><span>YOUR MONEY</span><div><i/><b>Spending</b><ArrowUpRight size={18}/></div><div><i/><b>Saving</b><Plus size={18}/></div></div></article><article className="feature feature-cards"><span className="feature-icon"><CreditCard/></span><span className="feature-number">02 / ON YOUR TERMS</span><h3>Your card.<br/>Your call.</h3><p>Find eligible cards and account controls in your member workspace. A little more confidence in your pocket.</p><Link to="/cards">Explore cards <ArrowUpRight size={20}/></Link><div className="small-bank-card" aria-hidden="true"><b>vantoris.</b><CreditCard/><span>MADE FOR YOUR EVERYDAY</span></div></article></div></section>
       <section id="your-way" className="your-way"><span className="eyebrow">THE VANTORIS WAY</span><h2>Big on possibility.<br/><em>Easy on your everyday.</em></h2><div className="way-details"><p>Good money habits start with understanding your money. We put the essentials up front, use words that make sense, and keep your next step close.</p><Link className="pill pill-dark" to="/register">Let’s make a start <ArrowUpRight size={18}/></Link></div></section>
       <section id="questions" className="faq-section"><div><span className="eyebrow">GOOD TO KNOW</span><h2>A little clarity<br/>goes a long way.</h2><p>A few answers before your next step.</p></div><div className="faq-list">{questions.map(([title, answer], i) => <div className="faq-item" key={title}><h3><button onClick={() => setExpanded(expanded === i ? null : i)} aria-expanded={expanded === i} aria-controls={`answer-${i}`}>{title}<ChevronDown size={20} className={expanded === i ? 'rotated' : ''}/></button></h3><p id={`answer-${i}`} hidden={expanded !== i}>{answer}</p></div>)}</div></section>
-    </main><footer className="banking-footer"><Link to="/welcome" className="wordmark"><span className="brand-symbol">v</span>vantoris.</Link><div><Link to="/login">Member login <ArrowUpRight size={14}/></Link><a href="#questions">Help & questions</a></div><p>© {new Date().getFullYear()} Vantoris. Product availability, eligibility, fees, and terms vary. Review the disclosures for your account. Interface illustrations do not represent an issued account or card. Vantoris is not affiliated with SoFi or Chime.</p></footer>
+    </main><footer className="banking-footer"><Link to="/welcome" className="wordmark"><span className="brand-symbol">v</span>vantoris.</Link><div><Link to="/login">Member login <ArrowUpRight size={14}/></Link><a href="#questions">Help & questions</a></div><p>© {new Date().getFullYear()} Vantoris. Product availability, eligibility, fees, and terms vary. Review the disclosures for your account. Interface illustrations do not represent an issued account or card. Vantoris is not affiliated with SoFi, Chime, or Chase.</p></footer>
   </div>;
 }

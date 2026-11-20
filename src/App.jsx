@@ -18,6 +18,7 @@ import MemberRoute from './components/MemberRoute';
 
 const Login = React.lazy(() => import('./pages/Login'));
 const Landing = React.lazy(() => import('./pages/Landing'));
+const Learn = React.lazy(() => import('./pages/Learn'));
 const Register = React.lazy(() => import('./pages/Register'));
 const ForgotPassword = React.lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = React.lazy(() => import('./pages/ResetPassword'));
@@ -148,6 +149,7 @@ const AuthenticatedApp = () => {
         <Routes>
           <Route element={<PageTransition />}>
             <Route path="/welcome" element={<Landing />} />
+            <Route path="/learn" element={<Learn />} />
             <Route path="/login" element={<Login />} />
             <Route path="/brand" element={<BrandIdentity />} />
             <Route path="/register" element={<Register />} />
