@@ -1,0 +1,787 @@
+import React, { useState, useEffect } from 'react';
+import { base44 } from '@/api/base44Client';
+import { formatCurrency } from '@/lib/formatCurrency';
+import { exportToCsv } from '@/lib/exportCsv';
+import StatusBadge from '@/components/vantoris/StatusBadge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Plus, Search, Download, History, Pencil, ArrowLeft, ScrollText, Mail, Lock, Unlock, Upload } from 'lucide-react';
+import { logAuditEntry } from '@/lib/auditLogger';
+import { sendTransactionEmail } from '@/lib/transactionEmails';
+import { useToast } from '@/components/ui/use-toast';
+
+// Financial mutations remain disabled until a trusted server workflow is integrated.
+const SERVER_OPERATIONS_MUTATIONS_ENABLED = false;
+
+export default function AdminAccounts() {
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [showTxn, setShowTxn] = useState(null);
+  const [txnForm, setTxnForm] = useState({ type: 'deposit', amount: '', description: '', reference: '', transaction_date: '' });
+  const [submitting, setSubmitting] = useState(false);
+  const [viewingHistory, setViewingHistory] = useState(null);
+  const [transactions, setTransactions] = useState([]);
+  const [loadingTxns, setLoadingTxns] = useState(false);
+  const [editingTxn, setEditingTxn] = useState(null);
+  const [exporting, setExporting] = useState(false);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [toggleFreezeAccount, setToggleFreezeAccount] = useState(null);
+  const [freezing, setFreezing] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => { loadAccounts(); }, []);
+
+  async function loadAccounts() {
+    const accts = await base44.entities.Account.filter({}, '-created_date', 50);
+    setAccounts(accts);
+    setLoading(false);
+  }
+
+  async function viewHistory(acct) {
+    setViewingHistory(acct);
+    setLoadingTxns(true);
+    try {
+      const [txns, logs] = await Promise.all([
+        base44.entities.Transaction.filter({ account_id: acct.id }, '-created_date', 200),
+        base44.entities.AuditLog.filter({ account_id: acct.id }, '-created_date', 50),
+      ]);
+      setTransactions(txns);
+      setAuditLogs(logs);
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Failed to load history', description: e.message || 'Unable to load transaction history.', variant: 'destructive' });
+    }
+    setLoadingTxns(false);
+  }
+
+  async function handleAddTransaction() {
+    if (!SERVER_OPERATIONS_MUTATIONS_ENABLED) {
+      toast({ title: 'Action unavailable', description: 'Account and ledger changes are blocked until a trusted server-side workflow with authorization, ledger validation, and audit logging is connected. No records or balances were changed.', variant: 'destructive' });
+      return;
+    }
+
+    if (!showTxn) return;
+    setSubmitting(true);
+    try {
+      const amount = parseFloat(txnForm.amount);
+      let newBalance = showTxn.balance;
+      if (txnForm.type === 'deposit') newBalance += amount;
+      else if (txnForm.type === 'withdrawal') newBalance -= amount;
+      else newBalance += amount; // adjustment can be negative
+
+      const txnData = {
+        account_id: showTxn.id,
+        type: txnForm.type,
+        amount: txnForm.type === 'withdrawal' ? -Math.abs(amount) : amount,
+        description: txnForm.description,
+        reference: txnForm.reference,
+        balance_after: newBalance,
+        created_by_admin: true,
+      };
+      if (txnForm.transaction_date) {
+        txnData.transaction_date = txnForm.transaction_date;
+      }
+
+      await base44.entities.Transaction.create(txnData);
+      await base44.entities.Account.update(showTxn.id, { balance: newBalance });
+
+      const typeLabel = txnForm.type === 'deposit' ? 'Deposit Received'
+        : txnForm.type === 'withdrawal' ? 'Withdrawal Processed'
+        : 'Account Adjustment';
+      await base44.entities.Notification.create({
+        user_id: showTxn.user_id,
+        title: typeLabel,
+        message: `${txnForm.description || typeLabel}: ${formatCurrency(Math.abs(amount))}`,
+        type: txnForm.type === 'withdrawal' ? 'action' : 'success',
+      });
+
+      await sendTransactionEmail({
+        user_id: showTxn.user_id,
+        account: showTxn,
+        type: txnForm.type,
+        amount,
+        description: txnForm.description,
+        newBalance,
+      });
+
+      await logAuditEntry({
+        action_type: txnForm.type === 'adjustment' ? 'balance_adjusted' : 'transaction_created',
+        description: `${typeLabel}: ${formatCurrency(Math.abs(amount))} — ${txnForm.description || 'No description'}`,
+        details: `Type: ${txnForm.type}, Reference: ${txnForm.reference || 'N/A'}${txnForm.transaction_date ? `, Backdated: ${txnForm.transaction_date}` : ''}`,
+        account_id: showTxn.id,
+        amount: txnForm.type === 'withdrawal' ? -Math.abs(amount) : amount,
+        balance_before: showTxn.balance,
+        balance_after: newBalance,
+      });
+
+      setShowTxn(null);
+      setTxnForm({ type: 'deposit', amount: '', description: '', reference: '', transaction_date: '' });
+      loadAccounts();
+      toast({ title: 'Transaction added', description: `${formatCurrency(Math.abs(parseFloat(txnForm.amount)))} ${txnForm.type} processed successfully.` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Transaction failed', description: e.message || 'Unable to add transaction.', variant: 'destructive' });
+    }
+    setSubmitting(false);
+  }
+
+  async function handleEditTransaction() {
+    if (!SERVER_OPERATIONS_MUTATIONS_ENABLED) {
+      toast({ title: 'Action unavailable', description: 'Account and ledger changes are blocked until a trusted server-side workflow with authorization, ledger validation, and audit logging is connected. No records or balances were changed.', variant: 'destructive' });
+      return;
+    }
+
+    if (!editingTxn) return;
+    setSubmitting(true);
+    try {
+      const amount = parseFloat(txnForm.amount);
+      const oldAmount = editingTxn.amount;
+      const diff = (txnForm.type === 'withdrawal' ? -Math.abs(amount) : amount) - oldAmount;
+
+      await base44.entities.Transaction.update(editingTxn.id, {
+        type: txnForm.type,
+        amount: txnForm.type === 'withdrawal' ? -Math.abs(amount) : amount,
+        description: txnForm.description,
+        reference: txnForm.reference,
+        ...(txnForm.transaction_date ? { transaction_date: txnForm.transaction_date } : {}),
+      });
+
+      // Update account balance
+      const newBalance = viewingHistory.balance + diff;
+      await base44.entities.Account.update(viewingHistory.id, { balance: newBalance });
+
+      // Recalculate balance_after for all subsequent transactions
+      const allTxns = await base44.entities.Transaction.filter({ account_id: viewingHistory.id }, 'created_date', 200);
+      let runningBalance = 0;
+      for (const t of allTxns) {
+        runningBalance += (t.amount || 0);
+        if (t.id !== editingTxn.id) {
+          await base44.entities.Transaction.update(t.id, { balance_after: runningBalance });
+        } else {
+          await base44.entities.Transaction.update(t.id, { balance_after: runningBalance });
+        }
+      }
+
+      await logAuditEntry({
+        action_type: 'transaction_edited',
+        description: `Edited transaction: ${txnForm.type} of ${formatCurrency(Math.abs(parseFloat(txnForm.amount)))}`,
+        details: `Old amount: ${formatCurrency(oldAmount)}, New amount: ${formatCurrency(txnForm.type === 'withdrawal' ? -Math.abs(amount) : amount)}, Description: ${txnForm.description || 'N/A'}`,
+        account_id: viewingHistory.id,
+        amount: txnForm.type === 'withdrawal' ? -Math.abs(amount) : amount,
+        balance_before: viewingHistory.balance,
+        balance_after: newBalance,
+      });
+
+      setEditingTxn(null);
+      setTxnForm({ type: 'deposit', amount: '', description: '', reference: '', transaction_date: '' });
+      setViewingHistory({ ...viewingHistory, balance: newBalance });
+      viewHistory({ ...viewingHistory, balance: newBalance });
+      loadAccounts();
+      toast({ title: 'Transaction updated', description: 'The transaction has been edited and balances recalculated.' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Edit failed', description: e.message || 'Unable to edit transaction.', variant: 'destructive' });
+    }
+    setSubmitting(false);
+  }
+
+  function openEditTxn(txn) {
+    setEditingTxn(txn);
+    setTxnForm({
+      type: txn.type,
+      amount: String(Math.abs(txn.amount)),
+      description: txn.description || '',
+      reference: txn.reference || '',
+      transaction_date: txn.transaction_date ? txn.transaction_date.split('T')[0] : '',
+    });
+  }
+
+  async function handleExportCsv() {
+    if (!viewingHistory) return;
+    setExporting(true);
+    try {
+      const txns = transactions.length > 0 ? transactions : await base44.entities.Transaction.filter({ account_id: viewingHistory.id }, '-created_date', 200);
+      const headers = ['Date', 'Type', 'Description', 'Reference', 'Amount', 'Balance After'];
+      const rows = txns.map(t => ({
+        Date: (t.transaction_date || t.created_date).split('T')[0],
+        Type: t.type,
+        Description: t.description || '',
+        Reference: t.reference || '',
+        Amount: t.amount,
+        'Balance After': t.balance_after,
+      }));
+      exportToCsv(`account_${viewingHistory.account_number}_transactions`, headers, rows);
+      toast({ title: 'Export complete', description: 'Transactions exported to CSV.' });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Export failed', description: e.message || 'Unable to export CSV.', variant: 'destructive' });
+    }
+    setExporting(false);
+  }
+
+  async function handleToggleFreeze(account) {
+    if (!SERVER_OPERATIONS_MUTATIONS_ENABLED) {
+      toast({ title: 'Action unavailable', description: 'Account and ledger changes are blocked until a trusted server-side workflow with authorization, ledger validation, and audit logging is connected. No records or balances were changed.', variant: 'destructive' });
+      return;
+    }
+
+    setToggleFreezeAccount(account);
+    setFreezing(true);
+    try {
+      const newStatus = account.status === 'frozen' ? 'active' : 'frozen';
+      await base44.entities.Account.update(account.id, { status: newStatus });
+      
+      // Log in audit trail
+      await logAuditEntry({
+        action_type: 'account_status_changed',
+        description: `Account ${newStatus === 'frozen' ? 'FROZEN' : 'UNFROZEN'}: ${account.account_name}`,
+        details: `Account disabled for ${newStatus === 'frozen' ? 'trading and withdrawals' : 'all operations'}`,
+        account_id: account.id,
+        target_user_id: account.user_id,
+      });
+
+      // Notify member
+      await base44.entities.Notification.create({
+        user_id: account.user_id,
+        title: newStatus === 'frozen' ? 'Account Frozen' : 'Account Unfrozen',
+        message: newStatus === 'frozen'
+          ? `Your ${account.account_name} account has been frozen and is now unavailable for trading and withdrawals.`
+          : `Your ${account.account_name} account has been unfrozen and is now available for use.`,
+        type: newStatus === 'frozen' ? 'warning' : 'success',
+      });
+
+      setToggleFreezeAccount(null);
+      loadAccounts();
+      if (viewingHistory) viewHistory({ ...viewingHistory, status: newStatus });
+      toast({ title: newStatus === 'frozen' ? 'Account frozen' : 'Account unfrozen', description: `${account.account_name} is now ${newStatus}.` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Action failed', description: e.message || 'Unable to change account status.', variant: 'destructive' });
+    }
+    setFreezing(false);
+  }
+
+  async function handleImportTransactions(file) {
+    if (!SERVER_OPERATIONS_MUTATIONS_ENABLED) {
+      toast({ title: 'Action unavailable', description: 'Account and ledger changes are blocked until a trusted server-side workflow with authorization, ledger validation, and audit logging is connected. No records or balances were changed.', variant: 'destructive' });
+      return;
+    }
+
+    if (!file) return;
+    setImporting(true);
+    try {
+      const text = await file.text();
+      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+      
+      if (lines.length < 2) {
+        alert('CSV must have header row and at least one transaction');
+        setImporting(false);
+        return;
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const dateIdx = headers.indexOf('date');
+      const typeIdx = headers.indexOf('type');
+      const descIdx = headers.indexOf('description');
+      const refIdx = headers.indexOf('reference');
+      const amountIdx = headers.indexOf('amount');
+      const accountIdx = headers.indexOf('account_number');
+
+      if (dateIdx === -1 || typeIdx === -1 || amountIdx === -1 || accountIdx === -1) {
+        alert('CSV must have columns: date, type, amount, account_number (description and reference optional)');
+        setImporting(false);
+        return;
+      }
+
+      let imported = 0;
+      for (let i = 1; i < lines.length; i++) {
+        const parts = lines[i].split(',').map(p => p.trim());
+        const accountNum = parts[accountIdx];
+        const account = accounts.find(a => a.account_number === accountNum);
+        if (!account) {
+          console.warn(`Account ${accountNum} not found, skipping row ${i}`);
+          continue;
+        }
+
+        const txnData = {
+          account_id: account.id,
+          type: parts[typeIdx],
+          amount: parseFloat(parts[amountIdx]),
+          description: descIdx >= 0 ? parts[descIdx] || '' : '',
+          reference: refIdx >= 0 ? parts[refIdx] || '' : '',
+          balance_after: account.balance,
+          created_by_admin: true,
+          transaction_date: dateIdx >= 0 ? parts[dateIdx] : undefined,
+        };
+
+        await base44.entities.Transaction.create(txnData);
+        imported++;
+      }
+
+      alert(`Successfully imported ${imported} transactions`);
+      setShowImport(false);
+      loadAccounts();
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Import failed', description: e.message || 'Unable to import transactions.', variant: 'destructive' });
+    }
+    setImporting(false);
+  }
+
+  if (loading) {
+    return <div className="flex items-center justify-center h-96">
+      <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
+    </div>;
+  }
+
+  const filtered = accounts.filter(a =>
+    (a.account_name || '').toLowerCase().includes(search.toLowerCase()) ||
+    (a.account_number || '').toLowerCase().includes(search.toLowerCase())
+  );
+
+  // History View
+  if (viewingHistory) {
+    return (
+      <div>
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => setViewingHistory(null)} className="text-[#AAB4C3] hover:text-white transition-all">
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-white">{viewingHistory.account_name}</h1>
+            <p className="text-[#AAB4C3] text-sm font-mono">{viewingHistory.account_number}</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          <div className="vantoris-card p-5">
+            <p className="text-[#AAB4C3] text-xs mb-1">Current Balance</p>
+            <p className="text-white font-bold text-2xl">{formatCurrency(viewingHistory.balance)}</p>
+          </div>
+          <div className="vantoris-card p-5">
+            <p className="text-[#AAB4C3] text-xs mb-1">Account Type</p>
+            <p className="text-white font-semibold text-lg">{viewingHistory.account_type}</p>
+          </div>
+          <div className="vantoris-card p-5">
+            <p className="text-[#AAB4C3] text-xs mb-1">Status</p>
+            <StatusBadge status={viewingHistory.status} />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <div>
+            <h2 className="text-white font-semibold text-lg">Transaction History</h2>
+            <div className="flex items-center gap-2 mt-1">
+              {viewingHistory.status === 'frozen' && (
+                <span className="flex items-center gap-1 px-2.5 py-1 bg-crimson/15 text-red-400 rounded-lg text-xs font-medium">
+                  <Lock size={12} /> Account Frozen
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => handleToggleFreeze(viewingHistory)}
+              disabled={freezing}
+              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-medium transition-all ${
+                viewingHistory.status === 'frozen'
+                  ? 'bg-olive/15 text-emerald-400 hover:bg-olive/25'
+                  : 'bg-crimson/15 text-red-400 hover:bg-crimson/25'
+              } disabled:opacity-40`}
+            >
+              {viewingHistory.status === 'frozen' ? <Unlock size={14} /> : <Lock size={14} />}
+              {freezing ? 'Processing...' : viewingHistory.status === 'frozen' ? 'Unfreeze' : 'Freeze Account'}
+            </button>
+            <button
+              onClick={() => { setShowTxn(viewingHistory); setTxnForm({ type: 'deposit', amount: '', description: '', reference: '', transaction_date: '' }); }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-brass/15 text-brass rounded-xl text-xs font-medium hover:bg-brass/25 transition-all"
+            >
+              <Plus size={14} /> Add Transaction
+            </button>
+            <button
+              onClick={handleExportCsv}
+              disabled={exporting || transactions.length === 0}
+              className="flex items-center gap-1.5 px-4 py-2 bg-olive/15 text-emerald-400 rounded-xl text-xs font-medium hover:bg-olive/25 transition-all disabled:opacity-40"
+            >
+              <Download size={14} /> {exporting ? 'Exporting...' : 'Export CSV'}
+            </button>
+          </div>
+        </div>
+
+        <div className="hidden md:block vantoris-card overflow-hidden">
+          {loadingTxns ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#242D38] bg-[#1a2535]">
+                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Date</th>
+                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Type</th>
+                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Description</th>
+                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Reference</th>
+                  <th className="text-right text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Amount</th>
+                  <th className="text-right text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Balance</th>
+                  <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map(txn => (
+                  <tr key={txn.id} className="border-b border-[#242D38]/40 hover:bg-[#242D38]/20 transition-all">
+                    <td className="px-5 py-3 text-[#AAB4C3] text-xs">
+                      {(txn.transaction_date || txn.created_date).split('T')[0]}
+                    </td>
+                    <td className="px-5 py-3">
+                      <span className={`px-2 py-1 rounded text-xs font-medium ${
+                        txn.type === 'deposit' || txn.type === 'opening_balance' ? 'bg-emerald-500/10 text-emerald-400' :
+                        txn.type === 'withdrawal' ? 'bg-red-500/10 text-red-400' :
+                        'bg-brass/10 text-brass'
+                      }`}>
+                        {txn.type.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3 text-white text-xs">{txn.description || '—'}</td>
+                    <td className="px-5 py-3 text-[#AAB4C3] text-xs font-mono">{txn.reference || '—'}</td>
+                    <td className={`px-5 py-3 text-right font-semibold text-xs ${
+                      (txn.amount || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'
+                    }`}>
+                      {formatCurrency(txn.amount)}
+                    </td>
+                    <td className="px-5 py-3 text-right text-white text-xs font-medium">
+                      {txn.balance_after != null ? formatCurrency(txn.balance_after) : '—'}
+                    </td>
+                    <td className="px-5 py-3">
+                      <button
+                        onClick={() => openEditTxn(txn)}
+                        className="flex items-center gap-1 px-2.5 py-1 bg-[#242D38] text-[#AAB4C3] rounded-lg text-xs font-medium hover:bg-[#242D38]/80 hover:text-white transition-all"
+                      >
+                        <Pencil size={10} /> Edit
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {transactions.length === 0 && (
+                  <tr><td colSpan={7} className="py-12 text-center text-[#AAB4C3]">No transactions found</td></tr>
+                )}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Mobile Transaction Cards */}
+        <div className="md:hidden space-y-3">
+          {loadingTxns ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="w-8 h-8 border-2 border-brass/30 border-t-brass rounded-full animate-spin" />
+            </div>
+          ) : (
+            <>
+              {transactions.map(txn => (
+                <div key={txn.id} className="vantoris-card p-4 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      txn.type === 'deposit' || txn.type === 'opening_balance' ? 'bg-emerald-500/10 text-emerald-400' :
+                      txn.type === 'withdrawal' ? 'bg-red-500/10 text-red-400' :
+                      'bg-brass/10 text-brass'
+                    }`}>{txn.type.replace('_', ' ')}</span>
+                    <span className="text-[#AAB4C3] text-xs">{(txn.transaction_date || txn.created_date).split('T')[0]}</span>
+                  </div>
+                  <p className="text-white text-xs">{txn.description || '—'}</p>
+                  {txn.reference && <p className="text-[#AAB4C3] text-xs font-mono">{txn.reference}</p>}
+                  <div className="flex items-center justify-between">
+                    <span className={`font-semibold text-sm ${(txn.amount || 0) >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>{formatCurrency(txn.amount)}</span>
+                    <span className="text-white text-xs font-medium">{txn.balance_after != null ? formatCurrency(txn.balance_after) : '—'}</span>
+                  </div>
+                  <button onClick={() => openEditTxn(txn)} className="flex items-center gap-1 px-2.5 py-1 bg-[#242D38] text-[#AAB4C3] rounded-lg text-xs font-medium">
+                    <Pencil size={10} /> Edit
+                  </button>
+                </div>
+              ))}
+              {transactions.length === 0 && <p className="text-center text-[#AAB4C3] py-8">No transactions found</p>}
+            </>
+          )}
+        </div>
+
+        {/* Audit Trail */}
+        {auditLogs.length > 0 && (
+          <div className="mt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <ScrollText size={16} className="text-brass" />
+              <h2 className="text-white font-semibold text-lg">Audit Trail</h2>
+              <span className="text-[#AAB4C3] text-xs">{auditLogs.length} entries</span>
+            </div>
+            <div className="vantoris-card p-4 space-y-3">
+              {auditLogs.map(log => (
+                <div key={log.id} className="flex items-start gap-3 pb-3 border-b border-[#242D38]/60 last:border-0 last:pb-0">
+                  <div className="w-2 h-2 rounded-full bg-brass mt-1.5 flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-white text-sm font-medium">{log.description}</p>
+                    <p className="text-[#AAB4C3] text-xs mt-0.5">
+                      {log.admin_name} • {new Date(log.created_date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                    {log.details && <p className="text-[#AAB4C3]/70 text-xs mt-1">{log.details}</p>}
+                    {(log.balance_before != null || log.balance_after != null) && (
+                      <p className="text-[#AAB4C3]/50 text-[11px] mt-0.5 font-mono">
+                        {log.balance_before != null && `Before: ${formatCurrency(log.balance_before)}`}
+                        {log.balance_before != null && log.balance_after != null && ' → '}
+                        {log.balance_after != null && `After: ${formatCurrency(log.balance_after)}`}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Add Transaction Dialog (reused in history view) */}
+        <Dialog open={!!showTxn} onOpenChange={() => setShowTxn(null)}>
+          <DialogContent className="bg-[#0E1A2B] border-[#242D38] max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white">Add Transaction</DialogTitle>
+            </DialogHeader>
+            {showTxn && <TransactionForm txnForm={txnForm} setTxnForm={setTxnForm} submitting={submitting} onSubmit={handleAddTransaction} account={viewingHistory} />}
+          </DialogContent>
+        </Dialog>
+
+        {/* Edit Transaction Dialog */}
+        <Dialog open={!!editingTxn} onOpenChange={() => setEditingTxn(null)}>
+          <DialogContent className="bg-[#0E1A2B] border-[#242D38] max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-white">Edit Transaction</DialogTitle>
+            </DialogHeader>
+            {editingTxn && <TransactionForm txnForm={txnForm} setTxnForm={setTxnForm} submitting={submitting} onSubmit={handleEditTransaction} account={viewingHistory} isEdit />}
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h1 className="text-2xl font-bold text-white mb-1">Accounts</h1>
+      <p className="text-[#AAB4C3] text-sm mb-6">{accounts.length} total accounts</p>
+
+      <div className="relative mb-6">
+        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#AAB4C3]" />
+        <input
+          value={search}
+          onChange={e => setSearch(e.target.value)}
+          placeholder="Search accounts..."
+          className="w-full bg-[#242D38] border border-[#242D38] rounded-xl pl-10 pr-4 py-3 text-white text-sm focus:border-brass/50 focus:outline-none"
+        />
+      </div>
+
+      <div className="flex justify-end mb-6">
+        <button
+          onClick={() => setShowImport(true)}
+          className="flex items-center gap-1.5 px-4 py-2.5 bg-olive/15 text-emerald-400 rounded-xl text-xs font-medium hover:bg-olive/25 transition-all"
+        >
+          <Upload size={14} /> Import CSV
+        </button>
+      </div>
+
+      <div className="hidden md:block vantoris-card overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b border-[#242D38] bg-[#1a2535]">
+              <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Account</th>
+              <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Number</th>
+              <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Type</th>
+              <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Balance</th>
+              <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Status</th>
+              <th className="text-left text-[#AAB4C3] text-xs font-medium uppercase tracking-wider px-5 py-3">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filtered.map(acct => (
+              <tr key={acct.id} className="border-b border-[#242D38]/40 hover:bg-[#242D38]/20 transition-all">
+                <td className="px-5 py-4 text-white font-medium">{acct.account_name}</td>
+                <td className="px-5 py-4 text-[#AAB4C3] font-mono text-xs">{acct.account_number}</td>
+                <td className="px-5 py-4 text-white">{acct.account_type}</td>
+                <td className="px-5 py-4 text-white font-semibold">{formatCurrency(acct.balance)}</td>
+                <td className="px-5 py-4"><StatusBadge status={acct.status} /></td>
+                <td className="px-5 py-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => viewHistory(acct)}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-[#242D38] text-[#AAB4C3] rounded-lg text-xs font-medium hover:bg-[#242D38]/80 hover:text-white transition-all"
+                    >
+                      <History size={12} /> History
+                    </button>
+                    <button
+                      onClick={() => { setShowTxn(acct); setTxnForm({ type: 'deposit', amount: '', description: '', reference: '', transaction_date: '' }); }}
+                      className="flex items-center gap-1 px-3 py-1.5 bg-brass/15 text-brass rounded-lg text-xs font-medium hover:bg-brass/25 transition-all"
+                    >
+                      <Plus size={12} /> Add Txn
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+            {filtered.length === 0 && (
+              <tr><td colSpan={6} className="py-12 text-center text-[#AAB4C3]">No accounts found</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile Cards */}
+      <div className="md:hidden space-y-3">
+        {filtered.map(acct => (
+          <div key={acct.id} className="vantoris-card p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-white font-medium text-sm">{acct.account_name}</p>
+              <StatusBadge status={acct.status} />
+            </div>
+            <p className="text-[#AAB4C3] font-mono text-xs">{acct.account_number}</p>
+            <div className="flex items-center justify-between">
+              <span className="text-white text-xs">{acct.account_type}</span>
+              <span className="text-white font-semibold">{formatCurrency(acct.balance)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button onClick={() => viewHistory(acct)} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-[#242D38] text-[#AAB4C3] rounded-lg text-xs font-medium">
+                <History size={12} /> History
+              </button>
+              <button onClick={() => { setShowTxn(acct); setTxnForm({ type: 'deposit', amount: '', description: '', reference: '', transaction_date: '' }); }} className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-brass/15 text-brass rounded-lg text-xs font-medium">
+                <Plus size={12} /> Add Txn
+              </button>
+            </div>
+          </div>
+        ))}
+        {filtered.length === 0 && <p className="text-center text-[#AAB4C3] py-8">No accounts found</p>}
+      </div>
+
+      <Dialog open={!!showTxn} onOpenChange={() => setShowTxn(null)}>
+        <DialogContent className="bg-[#0E1A2B] border-[#242D38] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white">Add Transaction</DialogTitle>
+          </DialogHeader>
+          {showTxn && <TransactionForm txnForm={txnForm} setTxnForm={setTxnForm} submitting={submitting} onSubmit={handleAddTransaction} account={showTxn} />}
+        </DialogContent>
+      </Dialog>
+
+      {/* CSV Import Dialog */}
+      <Dialog open={showImport} onOpenChange={setShowImport}>
+        <DialogContent className="bg-[#0E1A2B] border-[#242D38] max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-white flex items-center gap-2">
+              <Upload size={18} className="text-olive" /> Import Transactions
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="vantoris-card p-4 bg-olive/5 border border-olive/20">
+              <p className="text-[#AAB4C3] text-xs mb-2"><strong>CSV Format Required:</strong></p>
+              <p className="text-[#AAB4C3] text-xs font-mono">date,type,description,reference,amount,account_number</p>
+              <p className="text-[#AAB4C3] text-xs mt-2 mb-1"><strong>Example:</strong></p>
+              <p className="text-[#AAB4C3] text-xs font-mono">2025-01-15,deposit,Wire deposit,WT-001,5000,ACC-00001</p>
+              <p className="text-[#AAB4C3] text-xs mt-2">• Date: YYYY-MM-DD format</p>
+              <p className="text-[#AAB4C3] text-xs">• Type: deposit, withdrawal, or adjustment</p>
+              <p className="text-[#AAB4C3] text-xs">• Amount: positive number (signs added automatically)</p>
+            </div>
+            <div>
+              <label className="text-[#AAB4C3] text-xs uppercase tracking-wider mb-2 block">Select CSV File</label>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={e => {
+                  if (e.target.files?.[0]) {
+                    handleImportTransactions(e.target.files[0]);
+                  }
+                }}
+                disabled={importing}
+                className="w-full px-4 py-3 bg-[#242D38] border border-[#242D38] rounded-xl text-[#AAB4C3] text-sm focus:border-olive/50 focus:outline-none disabled:opacity-40 cursor-pointer"
+              />
+            </div>
+            {importing && (
+              <div className="flex items-center gap-2 text-olive text-xs">
+                <div className="w-4 h-4 border-2 border-olive/30 border-t-olive rounded-full animate-spin" />
+                <span>Importing transactions...</span>
+              </div>
+            )}
+            <button
+              onClick={() => setShowImport(false)}
+              disabled={importing}
+              className="w-full py-2.5 bg-[#242D38] text-[#AAB4C3] rounded-xl text-sm font-medium hover:text-white transition-all disabled:opacity-40"
+            >
+              Close
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
+
+function TransactionForm({ txnForm, setTxnForm, submitting, onSubmit, account, isEdit = false }) {
+  return (
+    <div className="space-y-4 mt-2">
+      <div className="vantoris-card p-3">
+        <p className="text-white text-sm font-medium">{account.account_name}</p>
+        <p className="text-[#AAB4C3] text-xs">Balance: {formatCurrency(account.balance)}</p>
+      </div>
+      <div>
+        <label className="text-[#AAB4C3] text-xs uppercase tracking-wider mb-1.5 block">Type</label>
+        <select
+          value={txnForm.type}
+          onChange={e => setTxnForm({ ...txnForm, type: e.target.value })}
+          className="w-full bg-[#242D38] border border-[#242D38] rounded-xl px-4 py-3 text-white text-sm focus:border-brass/50 focus:outline-none"
+        >
+          <option value="deposit">Deposit</option>
+          <option value="withdrawal">Withdrawal</option>
+          <option value="adjustment">Adjustment</option>
+          {!isEdit && <option value="opening_balance">Opening Balance</option>}
+        </select>
+      </div>
+      <div>
+        <label className="text-[#AAB4C3] text-xs uppercase tracking-wider mb-1.5 block">Amount (USD)</label>
+        <input
+          type="number"
+          value={txnForm.amount}
+          onChange={e => setTxnForm({ ...txnForm, amount: e.target.value })}
+          className="w-full bg-[#242D38] border border-[#242D38] rounded-xl px-4 py-3 text-white text-sm focus:border-brass/50 focus:outline-none"
+          placeholder="0.00"
+        />
+      </div>
+      <div>
+        <label className="text-[#AAB4C3] text-xs uppercase tracking-wider mb-1.5 block">Description</label>
+        <input
+          value={txnForm.description}
+          onChange={e => setTxnForm({ ...txnForm, description: e.target.value })}
+          className="w-full bg-[#242D38] border border-[#242D38] rounded-xl px-4 py-3 text-white text-sm focus:border-brass/50 focus:outline-none"
+          placeholder="e.g. Wire deposit from client"
+        />
+      </div>
+      <div>
+        <label className="text-[#AAB4C3] text-xs uppercase tracking-wider mb-1.5 block">Reference</label>
+        <input
+          value={txnForm.reference}
+          onChange={e => setTxnForm({ ...txnForm, reference: e.target.value })}
+          className="w-full bg-[#242D38] border border-[#242D38] rounded-xl px-4 py-3 text-white text-sm focus:border-brass/50 focus:outline-none"
+          placeholder="e.g. WT-2025-001"
+        />
+      </div>
+      <div>
+        <label className="text-[#AAB4C3] text-xs uppercase tracking-wider mb-1.5 block">
+          Transaction Date {isEdit ? '' : '(optional — for backdating)'}
+        </label>
+        <input
+          type="date"
+          value={txnForm.transaction_date}
+          onChange={e => setTxnForm({ ...txnForm, transaction_date: e.target.value })}
+          className="w-full bg-[#242D38] border border-[#242D38] rounded-xl px-4 py-3 text-white text-sm focus:border-brass/50 focus:outline-none"
+        />
+      </div>
+      <button
+        disabled={!txnForm.amount || submitting}
+        onClick={onSubmit}
+        className="w-full py-3 bg-brass text-[#0E1A2B] font-semibold rounded-xl disabled:opacity-40"
+      >
+        {submitting ? 'Processing...' : isEdit ? 'Save Changes' : 'Add Transaction'}
+      </button>
+    </div>
+  );
+}

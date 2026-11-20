@@ -1,0 +1,6 @@
+import React from 'react';
+import { Heart, LockKeyhole, X } from 'lucide-react';
+
+export default function DonationFlow({ onClose, onOrderComplete = null }) {
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-navy/50 p-3 sm:items-center"><section role="dialog" aria-modal="true" aria-labelledby="donation-title" className="w-full max-w-lg rounded-3xl bg-white p-5 shadow-2xl"><div className="mb-4 flex items-center justify-between"><h2 id="donation-title" className="flex items-center gap-2 text-lg font-bold text-navy"><Heart size={18} className="text-brass" /> Donation support</h2><button type="button" onClick={onClose} aria-label="Close donation" className="rounded-lg p-2 hover:bg-slate-100"><X size={18} /></button></div><div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900"><p className="flex items-center gap-2 font-semibold"><LockKeyhole size={16} /> Donations are not enabled</p><p className="mt-2 text-xs leading-relaxed">Donation processing requires verified case provenance, recipient authorization, and a connected payment provider. No donation has been initiated and no funds have moved.</p></div><button type="button" onClick={onClose} className="mt-4 w-full rounded-xl bg-navy px-4 py-3 text-sm font-semibold text-white">Close</button></section></div>;
+}

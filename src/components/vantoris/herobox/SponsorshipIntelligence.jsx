@@ -1,0 +1,8 @@
+import React from 'react';
+import { Users, HeartHandshake } from 'lucide-react';
+
+export default function SponsorshipIntelligence({ stats = {}, monthlyActivity = [] }) {
+  const entries = Object.entries(stats || {}).filter(([, value]) => ['string','number'].includes(typeof value)).slice(0, 6);
+  const activity = Array.isArray(monthlyActivity) ? monthlyActivity.slice(0, 6) : [];
+  return <section className="vantoris-glass-premium rounded-2xl p-5"><div className="mb-4 flex items-center gap-2"><HeartHandshake size={16} className="text-brass" /><h3 className="text-sm font-semibold text-foreground">Sponsorship snapshot</h3></div>{entries.length ? <div className="grid grid-cols-2 gap-3">{entries.map(([key,value]) => <div key={key} className="rounded-xl bg-slate-50 p-3"><p className="text-lg font-bold text-navy">{String(value)}</p><p className="mt-1 break-words text-[10px] text-slate-500">{key.replace(/[_-]+/g,' ')}</p></div>)}</div> : <p className="text-sm text-slate-500">No sponsorship metrics returned.</p>}{activity.length > 0 && <div className="mt-4 space-y-2">{activity.map((item,index) => <div key={item.id || index} className="flex items-center gap-2 border-t border-slate-100 pt-2 text-xs"><Users size={13} className="text-slate-400" /><span className="flex-1">{item.label || item.month || item.name || 'Activity record'}</span><span className="font-semibold text-navy">{item.count ?? item.total ?? item.value ?? '—'}</span></div>)}</div>}<p className="mt-3 text-[10px] text-gray/70">Snapshot reflects only supplied records and is not an audited sponsorship statement.</p></section>;
+}
