@@ -1,0 +1,9 @@
+import React, { useMemo } from 'react';
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+
+export default function CommunityGrowthChart({ data = [] }) {
+  const rows = Array.isArray(data) ? data : [];
+  const numericKeys = useMemo(() => rows.length ? Object.keys(rows[0]).filter(key => typeof rows[0][key] === 'number' && !['id'].includes(key)).slice(0, 3) : [], [rows]);
+  const labelKey = rows.length ? (['month','period','date','label','name'].find(key => key in rows[0]) || 'month') : 'month';
+  return <section className="vantoris-glass-premium rounded-2xl p-5"><h3 className="mb-1 text-sm font-semibold text-foreground">Community growth</h3><p className="mb-4 text-[11px] text-gray">Based on returned records</p>{rows.length && numericKeys.length ? <div className="h-64"><ResponsiveContainer width="100%" height="100%"><LineChart data={rows}><CartesianGrid strokeDasharray="3 3" vertical={false} /><XAxis dataKey={labelKey} tick={{fontSize:10}} /><YAxis tick={{fontSize:10}} /><Tooltip /><Line type="monotone" dataKey={numericKeys[0]} stroke="#C9A227" strokeWidth={2} dot={false} />{numericKeys[1] && <Line type="monotone" dataKey={numericKeys[1]} stroke="#123A6E" strokeWidth={2} dot={false} />}{numericKeys[2] && <Line type="monotone" dataKey={numericKeys[2]} stroke="#10B981" strokeWidth={2} dot={false} />}</LineChart></ResponsiveContainer></div> : <p className="rounded-xl bg-slate-50 p-6 text-center text-sm text-slate-500">No numeric growth series returned.</p>}<p className="mt-3 text-[10px] text-gray/70">This is a sample visualization, not a complete audited impact report.</p></section>;
+}
